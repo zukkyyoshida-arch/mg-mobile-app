@@ -40,7 +40,7 @@ function CompanyBoardMinimap({ results }) {
     }
   }
 
-  const idleWorkers = Math.max(0, remainingWorkers);
+  const salesmen = Math.max(0, remainingWorkers);
   const requiredWorkers = (machines.large * 2) + machines.small;
   const isShortOfWorkers = totalWorkers < requiredWorkers;
 
@@ -219,28 +219,24 @@ function CompanyBoardMinimap({ results }) {
                   </div>
                 </div>
 
-                {/* 待機人員 ＆ 要員警告 */}
-                <div style={{ borderTop: '1px dashed rgba(224, 64, 251, 0.2)', paddingTop: '6px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.62rem', color: '#ea80fc' }}>
-                    <span>ワーカー:</span>
-                    <span style={{ letterSpacing: '2px' }}>{idleWorkers > 0 ? "👤".repeat(idleWorkers) : "なし"} ({idleWorkers}名)</span>
+                {/* 要員警告のみ工場に配置 */}
+                {isShortOfWorkers && (
+                  <div style={{ 
+                    borderTop: '1px dashed rgba(224, 64, 251, 0.2)', 
+                    paddingTop: '6px',
+                    marginTop: '6px', 
+                    padding: '4px 6px', 
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)', 
+                    border: '1px solid rgba(239, 68, 68, 0.4)', 
+                    borderRadius: '6px', 
+                    color: '#ff8a80', 
+                    fontSize: '0.58rem', 
+                    fontWeight: '700',
+                    lineHeight: '1.25'
+                  }}>
+                    ⚠️ 人員不足！必要 {requiredWorkers}名 / 在籍 {totalWorkers}名。一部の機械が動きません。
                   </div>
-                  {isShortOfWorkers && (
-                    <div style={{ 
-                      marginTop: '6px', 
-                      padding: '4px 6px', 
-                      backgroundColor: 'rgba(239, 68, 68, 0.15)', 
-                      border: '1px solid rgba(239, 68, 68, 0.4)', 
-                      borderRadius: '6px', 
-                      color: '#ff8a80', 
-                      fontSize: '0.58rem', 
-                      fontWeight: '700',
-                      lineHeight: '1.25'
-                    }}>
-                      ⚠️ 人員不足！必要 {requiredWorkers}名 / 在籍 {totalWorkers}名。一部の機械が動きません。
-                    </div>
-                  )}
-                </div>
+                )}
 
               </div>
             </div>
@@ -251,7 +247,7 @@ function CompanyBoardMinimap({ results }) {
             </div>
           </div>
 
-          {/* 3. 製品倉庫 (グリーン) */}
+          {/* 3. 販売所 (グリーン ＆ セールスマン枠) */}
           <div style={{ 
             backgroundColor: 'rgba(76, 175, 80, 0.05)', 
             border: '1px solid rgba(76, 175, 80, 0.25)', 
@@ -264,6 +260,32 @@ function CompanyBoardMinimap({ results }) {
           }}>
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#4caf50', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>販売所</div>
+              
+              {/* セールスマン枠 */}
+              <div style={{ 
+                backgroundColor: 'rgba(76, 175, 80, 0.08)', 
+                border: '1px dashed rgba(76, 175, 80, 0.3)', 
+                borderRadius: '8px', 
+                padding: '6px', 
+                marginBottom: '10px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}>
+                <div style={{ fontSize: '0.62rem', fontWeight: '800', color: '#81c784', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>セールスマン</span>
+                  <span>{salesmen}名</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', minHeight: '18px', alignItems: 'center' }}>
+                  {Array.from({ length: salesmen }).map((_, i) => (
+                    <span key={i} style={{ fontSize: '0.9rem', lineHeight: '1' }}>🧑‍💼</span>
+                  ))}
+                  {salesmen === 0 && (
+                    <span style={{ fontSize: '0.55rem', color: '#ff8a80', fontWeight: '700' }}>⚠️ 不在</span>
+                  )}
+                </div>
+              </div>
+
               {/* チップの並び */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                 {prodChips.map((i) => (
