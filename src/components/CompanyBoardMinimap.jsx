@@ -114,7 +114,7 @@ function CompanyBoardMinimap({ results }) {
             justifyContent: 'space-between'
           }}>
             <div>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#e040fb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>工場 (人員・生産ライン)</div>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#e040fb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>工場</div>
               
               {/* 機械と人員の表示 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -195,7 +195,7 @@ function CompanyBoardMinimap({ results }) {
 
                 {/* 仕掛品の丸チップ */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px dashed rgba(224, 64, 251, 0.2)', paddingTop: '6px' }}>
-                  <div style={{ fontSize: '0.62rem', color: '#ea80fc', fontWeight: '700' }}>生産中の仕掛品:</div>
+                  <div style={{ fontSize: '0.62rem', color: '#ea80fc', fontWeight: '700' }}>仕掛品:</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                     {wipChips.map((i) => (
                       <div 
@@ -222,7 +222,7 @@ function CompanyBoardMinimap({ results }) {
                 {/* 待機人員 ＆ 要員警告 */}
                 <div style={{ borderTop: '1px dashed rgba(224, 64, 251, 0.2)', paddingTop: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.62rem', color: '#ea80fc' }}>
-                    <span>待機・間接社員:</span>
+                    <span>ワーカー:</span>
                     <span style={{ letterSpacing: '2px' }}>{idleWorkers > 0 ? "👤".repeat(idleWorkers) : "なし"} ({idleWorkers}名)</span>
                   </div>
                   {isShortOfWorkers && (
@@ -263,7 +263,7 @@ function CompanyBoardMinimap({ results }) {
             justifyContent: 'space-between'
           }}>
             <div>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#4caf50', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>製品倉庫</div>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#4caf50', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>販売所</div>
               {/* チップの並び */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                 {prodChips.map((i) => (
@@ -305,7 +305,7 @@ function CompanyBoardMinimap({ results }) {
           alignItems: 'center'
         }}>
           <div>
-            <div style={{ fontSize: '0.68rem', fontWeight: '800', color: '#00e676', textTransform: 'uppercase', letterSpacing: '0.5px' }}>金庫 (現金トレイ)</div>
+            <div style={{ fontSize: '0.68rem', fontWeight: '800', color: '#00e676', textTransform: 'uppercase', letterSpacing: '0.5px' }}>現金</div>
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '2px' }}>帳簿上 現金総資産</div>
           </div>
           
