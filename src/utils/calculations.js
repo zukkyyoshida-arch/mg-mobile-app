@@ -53,7 +53,8 @@ export const DEFAULT_PERIOD_DATA = {
     // 機械内訳
     largeMachines: 0,       // 大型機械台数
     smallMachines: 0,       // 小型機械台数
-    attachments: 0          // アタッチメント数
+    attachments: 0,         // アタッチメント数
+    workers: 3              // 社員数 (標準初期値: 3名)
   },
   ledger: [],               // 現金出納帳
   actuals: {
@@ -423,6 +424,7 @@ export function calculateFinancials(carryover, ledger, actuals) {
       totalCF
     },
 
+    workers: carryover.workers !== undefined ? Number(carryover.workers) : 3,
     rank: evaluationRank
   };
 }

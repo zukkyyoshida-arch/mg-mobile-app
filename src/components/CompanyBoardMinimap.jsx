@@ -1,7 +1,10 @@
 import React from 'react';
 
 function CompanyBoardMinimap({ results }) {
-  const { mat, wip, prod, machines, bookEndingCash } = results;
+  const { mat, wip, prod, machines, bookEndingCash, workers } = results;
+
+  const totalWorkers = workers !== undefined ? workers : 3;
+  let remainingWorkers = totalWorkers;
 
   // 各種在庫の数に応じた配列を作成（レンダリング用）
   const matChips = Array.from({ length: Math.max(0, Math.min(15, mat.endingCount)) }, (_, i) => i);
@@ -12,6 +15,34 @@ function CompanyBoardMinimap({ results }) {
   const largeMachList = Array.from({ length: Math.max(0, machines.large) }, (_, i) => i);
   const smallMachList = Array.from({ length: Math.max(0, machines.small) }, (_, i) => i);
   const attachList = Array.from({ length: Math.max(0, machines.attachments) }, (_, i) => i);
+
+  // 機械ごとの人員アサインの計算
+  const largeMachWorkers = [];
+  for (let i = 0; i < machines.large; i++) {
+    if (remainingWorkers >= 2) {
+      largeMachWorkers.push(2);
+      remainingWorkers -= 2;
+    } else if (remainingWorkers === 1) {
+      largeMachWorkers.push(1);
+      remainingWorkers -= 1;
+    } else {
+      largeMachWorkers.push(0);
+    }
+  }
+
+  const smallMachWorkers = [];
+  for (let i = 0; i < machines.small; i++) {
+    if (remainingWorkers >= 1) {
+      smallMachWorkers.push(1);
+      remainingWorkers -= 1;
+    } else {
+      smallMachWorkers.push(0);
+    }
+  }
+
+  const idleWorkers = Math.max(0, remainingWorkers);
+  const requiredWorkers = (machines.large * 2) + machines.small;
+  const isShortOfWorkers = totalWorkers < requiredWorkers;
 
   return (
     <div className="glass-card" style={{ padding: '16px', background: 'rgba(15, 17, 26, 0.95)', border: '1px solid rgba(0, 176, 255, 0.25)', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)' }}>
@@ -71,7 +102,7 @@ function CompanyBoardMinimap({ results }) {
             </div>
           </div>
 
-          {/* 2. 生産工場 (パープル & ブルー仕掛) */}
+          {/* 2. 生産工場 (パープル & ブルー仕掛 & 人員配置) */}
           <div style={{ 
             backgroundColor: 'rgba(156, 39, 176, 0.05)', 
             border: '1px solid rgba(156, 39, 176, 0.25)', 
@@ -83,93 +114,139 @@ function CompanyBoardMinimap({ results }) {
             justifyContent: 'space-between'
           }}>
             <div>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#e040fb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>工場 (生産ライン)</div>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#e040fb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>工場 (人員・生産ライン)</div>
               
-              {/* 機械と仕掛品の表示 */}
+              {/* 機械と人員の表示 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 
-                {/* 設備された機械のアイコン表示 */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {largeMachList.map((i) => (
-                    <div 
-                      key={i} 
-                      style={{ 
-                        padding: '3px 6px', 
-                        fontSize: '0.6rem', 
-                        fontWeight: '800', 
-                        color: 'white', 
-                        backgroundColor: '#8e24aa', 
-                        borderRadius: '4px',
-                        border: '1px solid #d1c4e9',
-                        boxShadow: '0 2px 4px rgba(142, 36, 170, 0.3)'
-                      }}
-                    >
-                      大型
-                    </div>
-                  ))}
-                  {smallMachList.map((i) => (
-                    <div 
-                      key={i} 
-                      style={{ 
-                        padding: '3px 6px', 
-                        fontSize: '0.6rem', 
-                        fontWeight: '800', 
-                        color: 'white', 
-                        backgroundColor: '#ab47bc', 
-                        borderRadius: '4px',
-                        border: '1px solid #e1bee7',
-                        boxShadow: '0 2px 4px rgba(186, 104, 200, 0.3)'
-                      }}
-                    >
-                      小型
-                    </div>
-                  ))}
+                {/* 設備された機械のアイコン ＆ 人員配置 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {largeMachList.map((i) => {
+                    const assigned = largeMachWorkers[i] !== undefined ? largeMachWorkers[i] : 0;
+                    const workerIcons = "🧑‍🔧".repeat(assigned) + (assigned < 2 ? "💨".repeat(2 - assigned) : "");
+                    const isOperating = assigned === 2;
+                    return (
+                      <div 
+                        key={`l-${i}`} 
+                        style={{ 
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '3px 6px', 
+                          fontSize: '0.62rem', 
+                          fontWeight: '800', 
+                          color: 'white', 
+                          backgroundColor: isOperating ? '#8e24aa' : 'rgba(142, 36, 170, 0.4)', 
+                          borderRadius: '6px',
+                          border: isOperating ? '1.5px solid #d1c4e9' : '1px dashed rgba(209, 196, 233, 0.4)',
+                          boxShadow: isOperating ? '0 2px 4px rgba(142, 36, 170, 0.3)' : 'none'
+                        }}
+                      >
+                        <span>大型 ({assigned}/2人)</span>
+                        <span>{workerIcons}</span>
+                      </div>
+                    );
+                  })}
+                  {smallMachList.map((i) => {
+                    const assigned = smallMachWorkers[i] !== undefined ? smallMachWorkers[i] : 0;
+                    const workerIcons = assigned === 1 ? "🧑‍🔧" : "💨";
+                    const isOperating = assigned === 1;
+                    return (
+                      <div 
+                        key={`s-${i}`} 
+                        style={{ 
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '3px 6px', 
+                          fontSize: '0.62rem', 
+                          fontWeight: '800', 
+                          color: 'white', 
+                          backgroundColor: isOperating ? '#ab47bc' : 'rgba(186, 104, 200, 0.4)', 
+                          borderRadius: '6px',
+                          border: isOperating ? '1.5px solid #e1bee7' : '1px dashed rgba(225, 190, 231, 0.4)',
+                          boxShadow: isOperating ? '0 2px 4px rgba(186, 104, 200, 0.3)' : 'none'
+                        }}
+                      >
+                        <span>小型 ({assigned}/1人)</span>
+                        <span>{workerIcons}</span>
+                      </div>
+                    );
+                  })}
                   {attachList.map((i) => (
                     <div 
-                      key={i} 
+                      key={`a-${i}`} 
                       style={{ 
-                        padding: '3px 5px', 
-                        fontSize: '0.55rem', 
+                        padding: '2px 4px', 
+                        fontSize: '0.52rem', 
                         fontWeight: '800', 
                         color: '#4a148c', 
                         backgroundColor: '#ea80fc', 
                         borderRadius: '4px',
-                        border: '1px solid #f3e5f5'
+                        border: '1px solid #f3e5f5',
+                        alignSelf: 'flex-start',
+                        marginTop: '2px'
                       }}
                     >
-                      ⚙️
+                      アタッチメント ⚙️
                     </div>
                   ))}
                 </div>
 
                 {/* 仕掛品の丸チップ */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
-                  {wipChips.map((i) => (
-                    <div 
-                      key={i} 
-                      style={{ 
-                        width: '18px', 
-                        height: '18px', 
-                        borderRadius: '50%', 
-                        background: 'radial-gradient(circle, #4fc3f7 0%, #0288d1 100%)', 
-                        border: '1.5px solid #e0f7fa',
-                        boxShadow: '0 2px 4px rgba(2, 136, 209, 0.4)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    />
-                  ))}
-                  {wip.endingCount === 0 && (
-                    <div style={{ fontSize: '0.65rem', color: 'rgba(156, 39, 176, 0.5)', fontStyle: 'italic', marginTop: '4px' }}>生産ライン停止中</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px dashed rgba(224, 64, 251, 0.2)', paddingTop: '6px' }}>
+                  <div style={{ fontSize: '0.62rem', color: '#ea80fc', fontWeight: '700' }}>生産中の仕掛品:</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                    {wipChips.map((i) => (
+                      <div 
+                        key={i} 
+                        style={{ 
+                          width: '16px', 
+                          height: '16px', 
+                          borderRadius: '50%', 
+                          background: 'radial-gradient(circle, #4fc3f7 0%, #0288d1 100%)', 
+                          border: '1.5px solid #e0f7fa',
+                          boxShadow: '0 2px 4px rgba(2, 136, 209, 0.4)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      />
+                    ))}
+                    {wip.endingCount === 0 && (
+                      <div style={{ fontSize: '0.62rem', color: 'rgba(156, 39, 176, 0.5)', fontStyle: 'italic' }}>稼働ラインなし</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 待機人員 ＆ 要員警告 */}
+                <div style={{ borderTop: '1px dashed rgba(224, 64, 251, 0.2)', paddingTop: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.62rem', color: '#ea80fc' }}>
+                    <span>待機・間接社員:</span>
+                    <span style={{ letterSpacing: '2px' }}>{idleWorkers > 0 ? "👤".repeat(idleWorkers) : "なし"} ({idleWorkers}名)</span>
+                  </div>
+                  {isShortOfWorkers && (
+                    <div style={{ 
+                      marginTop: '6px', 
+                      padding: '4px 6px', 
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)', 
+                      border: '1px solid rgba(239, 68, 68, 0.4)', 
+                      borderRadius: '6px', 
+                      color: '#ff8a80', 
+                      fontSize: '0.58rem', 
+                      fontWeight: '700',
+                      lineHeight: '1.25'
+                    }}>
+                      ⚠️ 人員不足！必要 {requiredWorkers}名 / 在籍 {totalWorkers}名。一部の機械が動きません。
+                    </div>
                   )}
                 </div>
 
               </div>
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.75rem', fontWeight: '800', color: '#e040fb' }}>
-              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: '500' }}>設備: {machines.large + machines.small}台</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.72rem', fontWeight: '800', color: '#e040fb', marginTop: '6px' }}>
+              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: '500' }}>在籍社員: {totalWorkers}名</span>
               <span>仕掛: {wip.endingCount} 個</span>
             </div>
           </div>
