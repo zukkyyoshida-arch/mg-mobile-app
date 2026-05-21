@@ -175,6 +175,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     if (!needsQty) {
       setQuantity('');
       setPrice('');
+    } else {
+      if (symbol === "コ") setPrice('2');
+      if (symbol === "サ") setPrice('1');
     }
     // 事故の場合は専用の初期値をセット
     if (symbol === "製造ミス") setQuantity('1');
