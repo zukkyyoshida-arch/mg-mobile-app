@@ -279,9 +279,22 @@ export function calculateFinancials(carryover, ledger, actuals) {
   // 減価償却費の決定 (大型機械・小型機械・アタッチメントの台数に基づく固定費)
   // 機械内訳は、期首＋購入（ケ の数量）−売却（イ の数量）
   // 簡略化のため、機械の台数は前期繰越に「ケ」で買った分を加算、売却「イ」を減算
-  const largeMachines = carryover.largeMachines || 0;
-  const smallMachines = carryover.smallMachines || 0;
-  const attachments = carryover.attachments || 0;
+  let newLargeMachines = 0;
+  let newSmallMachines = 0;
+  let newAttachments = 0;
+
+  ledger.forEach(entry => {
+    if (entry.category === "ケ") {
+      newLargeMachines += entry.largeMachines || 0;
+      newSmallMachines += entry.smallMachines || 0;
+      newAttachments += entry.attachments || 0;
+    }
+    // TODO: 売却（イ）でどの機械を売ったかのトラッキングは未実装のため今回は加算のみ
+  });
+
+  const largeMachines = (carryover.largeMachines || 0) + newLargeMachines;
+  const smallMachines = (carryover.smallMachines || 0) + newSmallMachines;
+  const attachments = (carryover.attachments || 0) + newAttachments;
   
   // 減価償却費 (大型: 20/台, 小型: 10/台, アタッチメント: 2/台)
   const depreciation = (largeMachines * 20) + (smallMachines * 10) + (attachments * 2);
