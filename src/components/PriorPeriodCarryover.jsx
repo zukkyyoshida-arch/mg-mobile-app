@@ -67,219 +67,288 @@ function PriorPeriodCarryover({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* 流動資産系 */}
-          <div>
-            <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-pink)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>流動資産項目</h4>
-            <div className="grid-2">
+          {currentPeriod === 1 ? (
+            <>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                第1期は期首繰越がないため、設立時の資本金と借入金のみを入力します。現金は自動計算されます。
+              </p>
+              <div className="grid-2">
+                <div className="form-group">
+                  <label className="form-label">資本金 (万)</label>
+                  <input
+                    type="number"
+                    value={carryover.capital || ''}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : Number(e.target.value);
+                      onUpdateCarryover({ ...carryover, capital: val, cash: val + (carryover.loan || 0) });
+                    }}
+                    placeholder="300"
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">⑰ 借入金 (万)</label>
+                  <input
+                    type="number"
+                    value={carryover.loan || ''}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : Number(e.target.value);
+                      onUpdateCarryover({ ...carryover, loan: val, cash: (carryover.capital || 0) + val });
+                    }}
+                    placeholder="0"
+                    className="form-input"
+                  />
+                </div>
+              </div>
               <div className="form-group">
-                <label className="form-label">⑬ 現金 (万)</label>
+                <label className="form-label">⑬ 現金 (万) - 自動計算</label>
                 <input
                   type="number"
                   value={carryover.cash || ''}
-                  onChange={(e) => handleInputChange('cash', e.target.value)}
-                  placeholder="0"
+                  readOnly
                   className="form-input"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">⑱ 売掛金 (万)</label>
-                <input
-                  type="number"
-                  value={carryover.receivables || ''}
-                  onChange={(e) => handleInputChange('receivables', e.target.value)}
-                  placeholder="0"
-                  className="form-input"
-                />
-              </div>
-            </div>
-
-            {/* 在庫（材料、仕掛品、製品） */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>⑧ 材料 (原料)</span>
-                <input
-                  type="number"
-                  value={carryover.materialsCount || ''}
-                  onChange={(e) => handleInputChange('materialsCount', e.target.value)}
-                  placeholder="個数"
-                  className="form-input"
-                  style={{ padding: '8px' }}
-                />
-                <input
-                  type="number"
-                  value={carryover.materialsValue || ''}
-                  onChange={(e) => handleInputChange('materialsValue', e.target.value)}
-                  placeholder="金額(万)"
-                  className="form-input"
-                  style={{ padding: '8px' }}
+                  style={{ backgroundColor: 'rgba(0,0,0,0.2)', color: 'var(--text-muted)' }}
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>⑯ 仕掛品 (生産中)</span>
-                <input
-                  type="number"
-                  value={carryover.wipCount || ''}
-                  onChange={(e) => handleInputChange('wipCount', e.target.value)}
-                  placeholder="個数"
-                  className="form-input"
-                  style={{ padding: '8px' }}
-                />
-                <input
-                  type="number"
-                  value={carryover.wipValue || ''}
-                  onChange={(e) => handleInputChange('wipValue', e.target.value)}
-                  placeholder="金額(万)"
-                  className="form-input"
-                  style={{ padding: '8px' }}
-                />
+              <hr style={{ border: 'none', borderBottom: '1px solid var(--border-glass)' }} />
+
+              {/* 人員・組織 */}
+              <div>
+                <h4 style={{ fontSize: '0.85rem', color: '#00e676', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>人員・組織（従業員）</h4>
+                <div className="form-group">
+                  <label className="form-label">👤 社員数 (人)</label>
+                  <input
+                    type="number"
+                    value={carryover.workers !== undefined ? carryover.workers : 3}
+                    onChange={(e) => handleInputChange('workers', e.target.value)}
+                    placeholder="3"
+                    className="form-input"
+                    min="0"
+                  />
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                    ※研修の開始時は通常3名（自分＋社員2名）です。機械の運転に必要となります。
+                  </span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* 流動資産系 */}
+              <div>
+                <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-pink)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>流動資産項目</h4>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">⑬ 現金 (万)</label>
+                    <input
+                      type="number"
+                      value={carryover.cash || ''}
+                      onChange={(e) => handleInputChange('cash', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">⑱ 売掛金 (万)</label>
+                    <input
+                      type="number"
+                      value={carryover.receivables || ''}
+                      onChange={(e) => handleInputChange('receivables', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+
+                {/* 在庫（材料、仕掛品、製品） */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>⑧ 材料 (原料)</span>
+                    <input
+                      type="number"
+                      value={carryover.materialsCount || ''}
+                      onChange={(e) => handleInputChange('materialsCount', e.target.value)}
+                      placeholder="個数"
+                      className="form-input"
+                      style={{ padding: '8px' }}
+                    />
+                    <input
+                      type="number"
+                      value={carryover.materialsValue || ''}
+                      onChange={(e) => handleInputChange('materialsValue', e.target.value)}
+                      placeholder="金額(万)"
+                      className="form-input"
+                      style={{ padding: '8px' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>⑯ 仕掛品 (生産中)</span>
+                    <input
+                      type="number"
+                      value={carryover.wipCount || ''}
+                      onChange={(e) => handleInputChange('wipCount', e.target.value)}
+                      placeholder="個数"
+                      className="form-input"
+                      style={{ padding: '8px' }}
+                    />
+                    <input
+                      type="number"
+                      value={carryover.wipValue || ''}
+                      onChange={(e) => handleInputChange('wipValue', e.target.value)}
+                      placeholder="金額(万)"
+                      className="form-input"
+                      style={{ padding: '8px' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>⑧ 製品 (完成品)</span>
+                    <input
+                      type="number"
+                      value={carryover.productCount || ''}
+                      onChange={(e) => handleInputChange('productCount', e.target.value)}
+                      placeholder="個数"
+                      className="form-input"
+                      style={{ padding: '8px' }}
+                    />
+                    <input
+                      type="number"
+                      value={carryover.productValue || ''}
+                      onChange={(e) => handleInputChange('productValue', e.target.value)}
+                      placeholder="金額(万)"
+                      className="form-input"
+                      style={{ padding: '8px' }}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>⑧ 製品 (完成品)</span>
-                <input
-                  type="number"
-                  value={carryover.productCount || ''}
-                  onChange={(e) => handleInputChange('productCount', e.target.value)}
-                  placeholder="個数"
-                  className="form-input"
-                  style={{ padding: '8px' }}
-                />
-                <input
-                  type="number"
-                  value={carryover.productValue || ''}
-                  onChange={(e) => handleInputChange('productValue', e.target.value)}
-                  placeholder="金額(万)"
-                  className="form-input"
-                  style={{ padding: '8px' }}
-                />
-              </div>
-            </div>
-          </div>
+              <hr style={{ border: 'none', borderBottom: '1px solid var(--border-glass)' }} />
 
-          <hr style={{ border: 'none', borderBottom: '1px solid var(--border-glass)' }} />
+              {/* 固定資産（機械） */}
+              <div>
+                <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-purple)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>固定資産（⑭機械・設備）</h4>
+                <div className="grid-3" style={{ marginBottom: '8px' }}>
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: '0.65rem' }}>大型機械 (台)</label>
+                    <input
+                      type="number"
+                      value={carryover.largeMachines || ''}
+                      onChange={(e) => handleInputChange('largeMachines', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                      style={{ padding: '8px' }}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: '0.65rem' }}>小型機械 (台)</label>
+                    <input
+                      type="number"
+                      value={smallMachinesCount(carryover)}
+                      onChange={(e) => handleInputChange('smallMachines', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                      style={{ padding: '8px' }}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: '0.65rem' }}>アタッチ (個)</label>
+                    <input
+                      type="number"
+                      value={carryover.attachments || ''}
+                      onChange={(e) => handleInputChange('attachments', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                      style={{ padding: '8px' }}
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">⑭ 機械固定資産 簿価合計 (万)</label>
+                  <input
+                    type="number"
+                    value={carryover.machinesValue || ''}
+                    onChange={(e) => handleInputChange('machinesValue', e.target.value)}
+                    placeholder="0"
+                    className="form-input"
+                  />
+                </div>
+              </div>
 
-          {/* 固定資産（機械） */}
-          <div>
-            <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-purple)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>固定資産（⑭機械・設備）</h4>
-            <div className="grid-3" style={{ marginBottom: '8px' }}>
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.65rem' }}>大型機械 (台)</label>
-                <input
-                  type="number"
-                  value={carryover.largeMachines || ''}
-                  onChange={(e) => handleInputChange('largeMachines', e.target.value)}
-                  placeholder="0"
-                  className="form-input"
-                  style={{ padding: '8px' }}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.65rem' }}>小型機械 (台)</label>
-                <input
-                  type="number"
-                  value={smallMachinesCount(carryover)}
-                  onChange={(e) => handleInputChange('smallMachines', e.target.value)}
-                  placeholder="0"
-                  className="form-input"
-                  style={{ padding: '8px' }}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.65rem' }}>アタッチ (個)</label>
-                <input
-                  type="number"
-                  value={carryover.attachments || ''}
-                  onChange={(e) => handleInputChange('attachments', e.target.value)}
-                  placeholder="0"
-                  className="form-input"
-                  style={{ padding: '8px' }}
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">⑭ 機械固定資産 簿価合計 (万)</label>
-              <input
-                type="number"
-                value={carryover.machinesValue || ''}
-                onChange={(e) => handleInputChange('machinesValue', e.target.value)}
-                placeholder="0"
-                className="form-input"
-              />
-            </div>
-          </div>
+              <hr style={{ border: 'none', borderBottom: '1px solid var(--border-glass)' }} />
 
-          <hr style={{ border: 'none', borderBottom: '1px solid var(--border-glass)' }} />
+              {/* 負債・純資産系 */}
+              <div>
+                <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-yellow)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>負債・純資産項目</h4>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">⑰ 借入金 (万)</label>
+                    <input
+                      type="number"
+                      value={carryover.loan || ''}
+                      onChange={(e) => handleInputChange('loan', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">⑲ 買掛金 (万)</label>
+                    <input
+                      type="number"
+                      value={carryover.payables || ''}
+                      onChange={(e) => handleInputChange('payables', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+                <div className="grid-2" style={{ marginTop: '8px' }}>
+                  <div className="form-group">
+                    <label className="form-label">資本金 (万)</label>
+                    <input
+                      type="number"
+                      value={carryover.capital || ''}
+                      onChange={(e) => handleInputChange('capital', e.target.value)}
+                      placeholder="300"
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">繰越利益剰余金 (万)</label>
+                    <input
+                      type="number"
+                      value={carryover.retainedEarnings || ''}
+                      onChange={(e) => handleInputChange('retainedEarnings', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+              </div>
 
-          {/* 負債・純資産系 */}
-          <div>
-            <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-yellow)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>負債・純資産項目</h4>
-            <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label">⑰ 借入金 (万)</label>
-                <input
-                  type="number"
-                  value={carryover.loan || ''}
-                  onChange={(e) => handleInputChange('loan', e.target.value)}
-                  placeholder="0"
-                  className="form-input"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">⑲ 買掛金 (万)</label>
-                <input
-                  type="number"
-                  value={carryover.payables || ''}
-                  onChange={(e) => handleInputChange('payables', e.target.value)}
-                  placeholder="0"
-                  className="form-input"
-                />
-              </div>
-            </div>
-            <div className="grid-2" style={{ marginTop: '8px' }}>
-              <div className="form-group">
-                <label className="form-label">資本金 (万)</label>
-                <input
-                  type="number"
-                  value={carryover.capital || ''}
-                  onChange={(e) => handleInputChange('capital', e.target.value)}
-                  placeholder="300"
-                  className="form-input"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">繰越利益剰余金 (万)</label>
-                <input
-                  type="number"
-                  value={carryover.retainedEarnings || ''}
-                  onChange={(e) => handleInputChange('retainedEarnings', e.target.value)}
-                  placeholder="0"
-                  className="form-input"
-                />
-              </div>
-            </div>
-          </div>
+              <hr style={{ border: 'none', borderBottom: '1px solid var(--border-glass)' }} />
 
-          <hr style={{ border: 'none', borderBottom: '1px solid var(--border-glass)' }} />
-
-          {/* 人員・組織 */}
-          <div>
-            <h4 style={{ fontSize: '0.85rem', color: '#00e676', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>人員・組織（従業員）</h4>
-            <div className="form-group">
-              <label className="form-label">👤 社員数 (人)</label>
-              <input
-                type="number"
-                value={carryover.workers !== undefined ? carryover.workers : 3}
-                onChange={(e) => handleInputChange('workers', e.target.value)}
-                placeholder="3"
-                className="form-input"
-                min="0"
-              />
-              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                ※研修の開始時は通常3名（自分＋社員2名）です。機械の運転に必要となります。
-              </span>
-            </div>
-          </div>
+              {/* 人員・組織 */}
+              <div>
+                <h4 style={{ fontSize: '0.85rem', color: '#00e676', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>人員・組織（従業員）</h4>
+                <div className="form-group">
+                  <label className="form-label">👤 社員数 (人)</label>
+                  <input
+                    type="number"
+                    value={carryover.workers !== undefined ? carryover.workers : 3}
+                    onChange={(e) => handleInputChange('workers', e.target.value)}
+                    placeholder="3"
+                    className="form-input"
+                    min="0"
+                  />
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                    ※研修の開始時は通常3名（自分＋社員2名）です。機械の運転に必要となります。
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
