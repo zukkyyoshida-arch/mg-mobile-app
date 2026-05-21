@@ -53,12 +53,8 @@ function App() {
 
   // テーマ切り替え処理
   useEffect(() => {
-    const body = document.body;
-    if (theme === 'light') {
-      body.classList.add('light-theme');
-    } else {
-      body.classList.remove('light-theme');
-    }
+    // Apply theme via data-theme attribute on <html>
+    document.documentElement.dataset.theme = theme;
     localStorage.setItem('mg_theme', theme);
   }, [theme]);
 
@@ -158,7 +154,7 @@ function App() {
   return (
     <div className="phone-shell">
       {/* アプリ共通ヘッダー */}
-      <header className="app-header">
+      <header className="app-header glass-bg">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div className="badge badge-pink" style={{ fontSize: '0.8rem', padding: '4px 8px' }}>
             第{currentPeriod}期
@@ -242,7 +238,7 @@ function App() {
       </main>
 
       {/* スマホ用ボトムナビゲーション */}
-      <nav className="bottom-nav">
+      <nav className="bottom-nav glass-bg">
         <button 
           onClick={() => setActiveTab('ledger')} 
           className={`nav-item ${activeTab === 'ledger' ? 'active' : ''}`}
