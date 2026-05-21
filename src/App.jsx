@@ -186,6 +186,7 @@ function App() {
               ledger={currentData.ledger} 
               onUpdateLedger={(newLedger) => updatePeriodData('ledger', newLedger)}
               results={results}
+              currentPeriod={currentPeriod}
             />
           </div>
         )}

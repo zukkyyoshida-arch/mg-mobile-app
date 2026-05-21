@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CATEGORIES } from '../utils/calculations';
 import CompanyBoardMinimap from './CompanyBoardMinimap';
 
-function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
+function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [voucherNo, setVoucherNo] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('キ'); // Default to現金売上
@@ -23,7 +23,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
   const handleAddTransaction = (e) => {
     e.preventDefault();
     if (!selectedCategory) {
-      alert("勘定科目を選択してください");
+      alert("項目を選択してください");
       return;
     }
     
@@ -44,7 +44,30 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
       salesmenHired: selectedCategory === '採用' ? (Number(salesmenHired) || 0) : 0
     };
 
-    onUpdateLedger([...ledger, newEntry]);
+    let updatedLedger = [...ledger, newEntry];
+
+    // Q4. 借入時（オ）の自動利息（タ）計算と追加
+    if (selectedCategory === 'オ' && finalAmount > 0) {
+      const interestRate = (currentPeriod <= 3) ? 0.10 : 0.05;
+      const interestAmount = Math.floor(finalAmount * interestRate); // 通常MGでは小数点切り捨てまたはそのまま、ここでは単純に計算
+      if (interestAmount > 0) {
+        const interestEntry = {
+          id: (Date.now() + 1).toString(),
+          voucherNo: voucherNo || (ledger.length + 2).toString(),
+          category: 'タ',
+          quantity: 0,
+          price: 0,
+          amount: interestAmount,
+          workersHired: 0,
+          salesmenHired: 0
+        };
+        updatedLedger.push(interestEntry);
+        // 通知を出すかアラートを出すか
+        alert(`借入金 ¥${finalAmount}万に対し、${interestRate * 100}% の利息（¥${interestAmount}万）を自動で「営業外費用(タ)」として追加しました。`);
+      }
+    }
+
+    onUpdateLedger(updatedLedger);
     
     // フォームリセット
     setVoucherNo('');
@@ -69,7 +92,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
   const handleCategorySelect = (symbol) => {
     setSelectedCategory(symbol);
     // 数量が必要ない科目の場合は数量と単価をリセット
-    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ", "保険", "MD", "リサーチ", "PAC"].includes(symbol);
+    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ", "保険", "MD", "リサーチ", "PAC", "配置転換"].includes(symbol);
     if (!needsQty) {
       setQuantity('');
       setPrice('');
@@ -277,9 +300,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                 />
               </div>
 
-              {/* 勘定科目の選択グリッド (ルールA / ルールB分類) */}
+              {/* 項目の選択グリッド */}
               <div>
-                <label className="form-label" style={{ marginBottom: '12px', display: 'block', fontSize: '1rem', fontWeight: 'bold' }}>勘定科目を選択</label>
+                <label className="form-label" style={{ marginBottom: '12px', display: 'block', fontSize: '1rem', fontWeight: 'bold' }}>実行する項目を選択</label>
                 
                 {/* 🌟 ルールA (よく使う項目) */}
                 <div style={{ marginBottom: '20px', padding: '12px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
@@ -287,34 +310,27 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                     <span style={{ fontSize: '1.1rem' }}>⚡️</span> ルールA (メインの意思決定)
                   </h4>
                   
-                  {/* ルールA: 入金 */}
-                  <span style={{ fontSize: '0.68rem', color: 'var(--mg-pink)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>入金 (売上)</span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-                    {["キ", "ネ"].map(symbol => (
-                      <button
-                        type="button"
-                        key={symbol}
-                        onClick={() => handleCategorySelect(symbol)}
-                        className={`btn-premium ${selectedCategory === symbol ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ padding: '10px 14px', fontSize: '0.9rem', borderRadius: '10px', flexGrow: 1, textAlign: 'center' }}
-                      >
-                        <span style={{ fontWeight: '800', marginRight: '6px' }}>{symbol}</span> {CATEGORIES[symbol].label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* ルールA: 出金 */}
-                  <span style={{ fontSize: '0.68rem', color: 'var(--mg-green)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>出金 (材料・設備・活動費)</span>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
-                    {["ツ", "ノ", "ケ", "コ", "サ", "セ", "チ", "ソ", "採用"].map(symbol => (
+                    {[
+                      { action: "材料購入 (現金)", symbol: "ツ" },
+                      { action: "材料購入 (買掛)", symbol: "ノ" },
+                      { action: "設備投資", symbol: "ケ" },
+                      { action: "投入", symbol: "コ" },
+                      { action: "完成", symbol: "サ" },
+                      { action: "採用", symbol: "採用" },
+                      { action: "広告", symbol: "セ" },
+                      { action: "研究開発", symbol: "チ" },
+                      { action: "商品販売 (現金)", symbol: "キ" },
+                      { action: "商品販売 (売掛)", symbol: "ネ" }
+                    ].map(btn => (
                       <button
                         type="button"
-                        key={symbol}
-                        onClick={() => handleCategorySelect(symbol)}
-                        className={`btn-premium ${selectedCategory === symbol ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ padding: '10px 8px', fontSize: '0.85rem', borderRadius: '10px', borderColor: selectedCategory === symbol ? 'var(--color-accent)' : `rgba(var(--color-${CATEGORIES[symbol].color === 'blue' ? 'blue' : CATEGORIES[symbol].color === 'yellow' ? 'yellow' : 'green'}), 0.15)` }}
+                        key={btn.action}
+                        onClick={() => handleCategorySelect(btn.symbol)}
+                        className={`btn-premium ${selectedCategory === btn.symbol ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ padding: '10px 8px', fontSize: '0.85rem', borderRadius: '10px', borderColor: selectedCategory === btn.symbol ? 'var(--color-accent)' : `rgba(var(--color-${CATEGORIES[btn.symbol].color === 'blue' ? 'blue' : CATEGORIES[btn.symbol].color === 'yellow' ? 'yellow' : 'green'}), 0.15)` }}
                       >
-                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{symbol}</span> {CATEGORIES[symbol].label}
+                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{btn.symbol}</span> {btn.action}
                       </button>
                     ))}
                   </div>
@@ -326,34 +342,29 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                     <span style={{ fontSize: '1rem' }}>📌</span> ルールB・その他 (随時・決算処理)
                   </h4>
 
-                  {/* ルールB: 入金 */}
-                  <span style={{ fontSize: '0.65rem', color: 'var(--mg-pink)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px', opacity: 0.8 }}>入金 (借入・回収など)</span>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
-                    {["オ", "イ", "ア", "エ", "カ"].map(symbol => (
+                    {[
+                      { action: "保険", symbol: "保険" },
+                      { action: "PAC生産性", symbol: "PAC" },
+                      { action: "マーチャンダイザー", symbol: "MD" },
+                      { action: "マーケットリサーチ", symbol: "リサーチ" },
+                      { action: "配置転換", symbol: "配置転換" },
+                      { action: "機械売却", symbol: "イ" },
+                      { action: "銀行借入", symbol: "オ" },
+                      { action: "借入返済", symbol: "ナ" },
+                      { action: "買掛支払", symbol: "ヌ" },
+                      { action: "税金・配当", symbol: "ニ" },
+                      { action: "その他入金", symbol: "ア" },
+                      { action: "その他出金", symbol: "ス" }
+                    ].map(btn => (
                       <button
                         type="button"
-                        key={symbol}
-                        onClick={() => handleCategorySelect(symbol)}
-                        className={`btn-premium ${selectedCategory === symbol ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === symbol ? 1 : 0.8 }}
+                        key={btn.action}
+                        onClick={() => handleCategorySelect(btn.symbol)}
+                        className={`btn-premium ${selectedCategory === btn.symbol ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === btn.symbol ? 1 : 0.8 }}
                       >
-                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{symbol}</span> {CATEGORIES[symbol].label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* ルールB: 出金 */}
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>出金 (返済・支払・税など)</span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {["ナ", "タ", "ス", "ヌ", "ニ", "シ", "保険", "MD", "リサーチ", "PAC"].map(symbol => (
-                      <button
-                        type="button"
-                        key={symbol}
-                        onClick={() => handleCategorySelect(symbol)}
-                        className={`btn-premium ${selectedCategory === symbol ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === symbol ? 1 : 0.8, borderColor: selectedCategory === symbol ? 'var(--color-accent)' : `rgba(var(--color-${CATEGORIES[symbol].color === 'blue' ? 'blue' : CATEGORIES[symbol].color === 'yellow' ? 'yellow' : 'green'}), 0.15)` }}
-                      >
-                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{symbol}</span> {CATEGORIES[symbol].label}
+                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{btn.symbol}</span> {btn.action}
                       </button>
                     ))}
                   </div>
