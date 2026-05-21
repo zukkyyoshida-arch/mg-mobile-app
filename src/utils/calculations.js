@@ -6,7 +6,7 @@
 // 勘定科目の定義
 export const CATEGORIES = {
   // 入金系 (Inflow)
-  "ネ": { label: "売掛・売上", type: "inflow", color: "pink", symbol: "ネ" },
+  "ネ": { label: "売掛・売上", type: "inflow", color: "pink", symbol: "ネ", isCash: false },
   "ア": { label: "売掛金入金", type: "inflow", color: "pink", symbol: "ア" },
   "イ": { label: "機械売却", type: "inflow", color: "pink", symbol: "イ" },
   "エ": { label: "受取保険金", type: "inflow", color: "pink", symbol: "エ" },
@@ -24,7 +24,8 @@ export const CATEGORIES = {
   "ソ": { label: "一般管理費", type: "outflow", color: "blue", symbol: "ソ" },
   "タ": { label: "営業外費用", type: "outflow", color: "blue", symbol: "タ" },
   "チ": { label: "研究開発費", type: "outflow", color: "blue", symbol: "チ" },
-  "ツ": { label: "材料仕入", type: "outflow", color: "green", symbol: "ツ" },
+  "ツ": { label: "材料現金仕入", type: "outflow", color: "green", symbol: "ツ" },
+  "ノ": { label: "材料買掛仕入", type: "outflow", color: "green", symbol: "ノ", isCash: false },
   "ナ": { label: "借入金返済", type: "outflow", color: "yellow", symbol: "ナ" },
   "ニ": { label: "納税", type: "outflow", color: "yellow", symbol: "ニ" },
   "ヌ": { label: "買掛金支払", type: "outflow", color: "yellow", symbol: "ヌ" }
@@ -102,10 +103,13 @@ export function calculateFinancials(carryover, ledger, actuals) {
       ledgerTotals[cat].amount += amt;
       ledgerTotals[cat].quantity += qty;
       
-      if (CATEGORIES[cat].type === "inflow") {
-        cashInflow += amt;
-      } else {
-        cashOutflow += amt;
+      const isCashTransaction = CATEGORIES[cat].isCash !== false;
+      if (isCashTransaction) {
+        if (CATEGORIES[cat].type === "inflow") {
+          cashInflow += amt;
+        } else {
+          cashOutflow += amt;
+        }
       }
     }
   });
@@ -117,8 +121,8 @@ export function calculateFinancials(carryover, ledger, actuals) {
   // A. 材料 (Materials)
   const matBeginningCount = carryover.materialsCount || 0;
   const matBeginningValue = carryover.materialsValue || 0;
-  const matPurchaseCount = ledgerTotals["ツ"].quantity;
-  const matPurchaseValue = ledgerTotals["ツ"].amount;
+  const matPurchaseCount = ledgerTotals["ツ"].quantity + (ledgerTotals["ノ"]?.quantity || 0);
+  const matPurchaseValue = ledgerTotals["ツ"].amount + (ledgerTotals["ノ"]?.amount || 0);
   
   const matTotalCount = matBeginningCount + matPurchaseCount;
   const matTotalValue = matBeginningValue + matPurchaseValue;
@@ -255,8 +259,8 @@ export function calculateFinancials(carryover, ledger, actuals) {
   // 売掛金: 期首 + 新規売掛発生(ネ) - 回収(ア)
   const endingReceivables = Math.max(0, carryover.receivables + ledgerTotals["ネ"].amount - ledgerTotals["ア"].amount);
   
-  // 買掛金: 期首 + 新規材料仕入(ツ) - 支払(ヌ)
-  const endingPayables = Math.max(0, carryover.payables + ledgerTotals["ツ"].amount - ledgerTotals["ヌ"].amount);
+  // 買掛金: 期首 + 新規材料買掛仕入(ノ) - 支払(ヌ)
+  const endingPayables = Math.max(0, carryover.payables + (ledgerTotals["ノ"]?.amount || 0) - ledgerTotals["ヌ"].amount);
   
   // 借入金: 期首 + 新規借入(オ) - 返済(ナ)
   const endingLoans = Math.max(0, carryover.loan + ledgerTotals["オ"].amount - ledgerTotals["ナ"].amount);

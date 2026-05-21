@@ -59,7 +59,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
   const handleCategorySelect = (symbol) => {
     setSelectedCategory(symbol);
     // 数量が必要ない科目の場合は数量と単価をリセット
-    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ケ"].includes(symbol);
+    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ"].includes(symbol);
     if (!needsQty) {
       setQuantity('');
       setPrice('');
@@ -106,7 +106,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
 
   // カテゴリ別の電卓表示状態と数量必要チェック
   const currentCatMeta = CATEGORIES[selectedCategory] || {};
-  const isQtyNeeded = ["キ", "ネ", "コ", "サ", "ツ", "ケ"].includes(selectedCategory);
+  const isQtyNeeded = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ"].includes(selectedCategory);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -195,7 +195,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                       <span style={{ fontSize: '0.88rem', fontWeight: '700' }}>{catMeta.label}</span>
                       <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>#{entry.voucherNo}</span>
                     </div>
-                    {["キ", "ネ", "コ", "サ", "ツ", "ケ"].includes(entry.category) && (
+                    {["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ"].includes(entry.category) && (
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                         数量: {entry.quantity} 個 × 単価 ¥{entry.price} 万
                       </div>
@@ -287,7 +287,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                   {/* ルールA: 出金 */}
                   <span style={{ fontSize: '0.68rem', color: 'var(--mg-green)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>出金 (材料・設備・活動費)</span>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
-                    {["ツ", "ケ", "コ", "サ", "セ", "チ", "ソ"].map(symbol => (
+                    {["ツ", "ノ", "ケ", "コ", "サ", "セ", "チ", "ソ"].map(symbol => (
                       <button
                         type="button"
                         key={symbol}
