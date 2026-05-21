@@ -1,6 +1,22 @@
 import React, { useState } from 'react';
 
 function FinancialStatements({ results, carryover }) {
+  // Defensive defaults for possible undefined props
+  const safeCarry = carryover || {
+    materialsValue: 0,
+    wipValue: 0,
+    productValue: 0,
+    cash: 0,
+    receivables: 0,
+    payables: 0,
+    loans: 0,
+    unpaidTax: 0
+  };
+
+  // Debug log to trace rendering
+  React.useEffect(() => {
+    console.log('FinancialStatements rendered, statementTab:', statementTab);
+  });
   const cf = results.cf || {
     operatingCF: 0,
     investingCF: 0,
@@ -10,9 +26,43 @@ function FinancialStatements({ results, carryover }) {
   };
   const [statementTab, setStatementTab] = useState('pl'); // 'pl', 'bs', 'cf'
 
-  const pl = results.pl;
-  const bs = results.bs;
-  // cf is now defined with defaults above
+  const pl = results.pl || {
+    margin: 0,
+    marginRatio: 0,
+    operatingProfit: 0,
+    rank: 0,
+    variableCost: 0,
+    salesRevenue: 0,
+    fixedCost: 0,
+    fmRatio: 0,
+    laborCost: 0,
+    manufacturingFixed: 0,
+    rdCost: 0,
+    nonOperatingCost: 0,
+    extraordinaryProfit: 0,
+    profitBeforeTax: 0,
+    netProfit: 0
+  };
+  const bs = results.bs || {
+    cash: 0,
+    receivables: 0,
+    materialsValue: 0,
+    wipValue: 0,
+    productValue: 0,
+    totalCurrentAssets: 0,
+    fixedAssets: 0,
+    totalAssets: 0,
+    difference: 0,
+    payables: 0,
+    loans: 0,
+    unpaidTax: 0,
+    totalLiabilities: 0,
+    capital: 0,
+    retainedEarnings: 0,
+    totalNetAssets: 0,
+    totalLiabilitiesAndNetAssets: 0
+  };
+  // pl is now defined with defaults above
 
   return (
     <div style={{ padding: '0 0 24px 0' }}>
@@ -288,18 +338,18 @@ function FinancialStatements({ results, carryover }) {
                 </tr>
                 <tr>
                   <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 減価償却費 (非資金)</td>
-                  <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>+¥{pl.manufacturingFixed - results.ledger.filter(e => e.category === 'ス').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0)}万</td>
+                  <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>+¥{pl.manufacturingFixed - (results.ledger?.filter(e => e.category === 'ス').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0) || 0)}万</td>
                 </tr>
                 <tr>
                   <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 在庫増減 (材料・仕掛・製品)</td>
                   <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                    -¥{((bs.materialsValue + bs.wipValue + bs.productValue) - (carryover.materialsValue + carryover.wipValue + carryover.productValue)).toLocaleString()}万
+                    -¥{((bs.materialsValue + bs.wipValue + bs.productValue) - (safeCarry.materialsValue + safeCarry.wipValue + safeCarry.productValue)).toLocaleString()}万
                   </td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid var(--border-glass)' }}>
                   <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 売掛・買掛増減</td>
                   <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                    ¥{((bs.payables - carryover.payables) - (bs.receivables - carryover.receivables)).toLocaleString()}万
+                    ¥{((bs.payables - safeCarry.payables) - (bs.receivables - safeCarry.receivables)).toLocaleString()}万
                   </td>
                 </tr>
                 
