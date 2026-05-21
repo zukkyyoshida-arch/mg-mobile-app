@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
 
 function FinancialStatements({ results, carryover }) {
+  const cf = results.cf || {
+    operatingCF: 0,
+    investingCF: 0,
+    financingCF: 0,
+    freeCF: 0,
+    totalCF: 0,
+  };
   const [statementTab, setStatementTab] = useState('pl'); // 'pl', 'bs', 'cf'
 
   const pl = results.pl;
   const bs = results.bs;
-  const cf = results.cf;
+  // cf is now defined with defaults above
 
   return (
     <div style={{ padding: '0 0 24px 0' }}>
