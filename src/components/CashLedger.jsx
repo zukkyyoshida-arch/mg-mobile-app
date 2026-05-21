@@ -2,6 +2,16 @@ import React, { useState } from 'react';
 import { CATEGORIES } from '../utils/calculations';
 import CompanyBoardMinimap from './CompanyBoardMinimap';
 
+const MARKETS = [
+  { id: 'sapporo', name: '札幌', basePrice: 10 },
+  { id: 'sendai', name: '仙台', basePrice: 11 },
+  { id: 'tokyo', name: '東京', basePrice: 12 },
+  { id: 'nagoya', name: '名古屋', basePrice: 13 },
+  { id: 'osaka', name: '大阪', basePrice: 14 },
+  { id: 'fukuoka', name: '福岡', basePrice: 15 },
+  { id: 'stocker', name: 'ストッカー', basePrice: 16 }
+];
+
 function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [voucherNo, setVoucherNo] = useState('');
@@ -13,6 +23,11 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   // 採用用のステート
   const [workersHired, setWorkersHired] = useState('');
   const [salesmenHired, setSalesmenHired] = useState('');
+
+  // 複数市場購入用のステート
+  const [marketQuantities, setMarketQuantities] = useState({
+    sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0
+  });
   
   // 電卓の状態
   const [calcInput, setCalcInput] = useState('');
@@ -27,11 +42,39 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       return;
     }
     
-    const finalAmount = selectedCategory === '採用' 
-      ? (Number(workersHired) || 0) * 5 + (Number(salesmenHired) || 0) * 5 
-      : (amount === '' ? 0 : Number(amount));
-    const finalQuantity = quantity === '' ? 0 : Number(quantity);
-    const finalPrice = price === '' ? 0 : Number(price);
+    let finalAmount = 0;
+    let finalQuantity = 0;
+    let finalPrice = 0;
+
+    if (["ツ", "ノ"].includes(selectedCategory)) {
+      const hasMD = ledger.some(e => e.category === "MD");
+      let totalQty = 0;
+      let totalAmount = 0;
+      
+      MARKETS.forEach(m => {
+        const q = marketQuantities[m.id] || 0;
+        if (q > 0) {
+          totalQty += q;
+          const discountedPrice = (hasMD && m.id !== 'stocker') ? m.basePrice - 2 : m.basePrice;
+          totalAmount += q * discountedPrice;
+        }
+      });
+
+      if (totalQty === 0) {
+        alert("購入する数量を入力してください");
+        return;
+      }
+
+      finalQuantity = totalQty;
+      finalAmount = totalAmount;
+      finalPrice = 0; 
+    } else {
+      finalAmount = selectedCategory === '採用' 
+        ? (Number(workersHired) || 0) * 5 + (Number(salesmenHired) || 0) * 5 
+        : (amount === '' ? 0 : Number(amount));
+      finalQuantity = quantity === '' ? 0 : Number(quantity);
+      finalPrice = price === '' ? 0 : Number(price);
+    }
 
     const newEntry = {
       id: Date.now().toString(),
@@ -76,6 +119,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     setAmount('');
     setWorkersHired('');
     setSalesmenHired('');
+    setMarketQuantities({ sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0 });
     setCalcInput('');
     setShowAddModal(false);
   };
@@ -455,51 +499,53 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
               ) : ["ツ", "ノ"].includes(selectedCategory) ? (
                 (() => {
                   const hasMD = ledger.some(e => e.category === "MD");
-                  const MARKETS = [
-                    { id: 'sapporo', name: '札幌', basePrice: 10 },
-                    { id: 'sendai', name: '仙台', basePrice: 11 },
-                    { id: 'tokyo', name: '東京', basePrice: 12 },
-                    { id: 'nagoya', name: '名古屋', basePrice: 13 },
-                    { id: 'osaka', name: '大阪', basePrice: 14 },
-                    { id: 'fukuoka', name: '福岡', basePrice: 15 },
-                    { id: 'stocker', name: 'ストッカー', basePrice: 16 }
-                  ];
+                  
+                  let totalQty = 0;
+                  let totalAmount = 0;
+                  MARKETS.forEach(m => {
+                    const q = marketQuantities[m.id] || 0;
+                    totalQty += q;
+                    const discountedPrice = (hasMD && m.id !== 'stocker') ? m.basePrice - 2 : m.basePrice;
+                    totalAmount += q * discountedPrice;
+                  });
                   
                   return (
                     <div style={{ background: 'rgba(76, 175, 80, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(76, 175, 80, 0.3)' }}>
                       <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-green)', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                        <span>材料の仕入先を選択</span>
+                        <span>各市場の購入数量を入力</span>
                         {hasMD && <span className="badge badge-blue">MD割引適用中 (-2)</span>}
                       </h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '8px', marginBottom: '16px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginBottom: '16px' }}>
                         {MARKETS.map(m => {
                           const discountedPrice = (hasMD && m.id !== 'stocker') ? m.basePrice - 2 : m.basePrice;
-                          const isSelected = Number(price) === discountedPrice; // 簡易的に単価で選択状態を判定
+                          const qty = marketQuantities[m.id] || 0;
+                          
                           return (
-                            <button
-                              key={m.id}
-                              type="button"
-                              onClick={() => handleQtyPriceChange('price', discountedPrice.toString())}
-                              className={`btn-premium ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
-                              style={{ padding: '8px 4px', fontSize: '0.75rem', borderRadius: '8px', borderColor: isSelected ? 'var(--mg-green)' : undefined, flexDirection: 'column', gap: '4px' }}
-                            >
-                              <span style={{ fontWeight: '700' }}>{m.name}</span>
-                              <span className="electric-number" style={{ fontSize: '1rem', color: isSelected ? 'white' : 'var(--mg-green)' }}>
-                                {discountedPrice}
-                              </span>
-                            </button>
+                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--mg-green)' }}>単価: {discountedPrice}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <button 
+                                  type="button"
+                                  onClick={() => setMarketQuantities(prev => ({ ...prev, [m.id]: Math.max(0, qty - 1) }))}
+                                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >-</button>
+                                <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
+                                <button 
+                                  type="button"
+                                  onClick={() => setMarketQuantities(prev => ({ ...prev, [m.id]: qty + 1 }))}
+                                  style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >+</button>
+                              </div>
+                            </div>
                           );
                         })}
                       </div>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label">購入数量 (個)</label>
-                        <input 
-                          type="number" 
-                          value={quantity} 
-                          onChange={(e) => handleQtyPriceChange('qty', e.target.value)}
-                          placeholder="0"
-                          className="form-input"
-                        />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'white', fontSize: '1rem' }}>{totalQty}個</strong></span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計金額: <strong style={{ color: 'var(--mg-green)', fontSize: '1.1rem' }}>{totalAmount}万</strong></span>
                       </div>
                     </div>
                   );
