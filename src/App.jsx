@@ -125,8 +125,6 @@ function App() {
       attachments: prevMach.attachments,
       machinesCount: prevMach.large + prevMach.small,
       machinesValue: prevBS.fixedAssets,
-      workers: prevResults.workers,
-      salesmen: prevResults.salesmen,
       loan: prevBS.loans,
       receivables: prevBS.receivables,
       payables: prevBS.payables,

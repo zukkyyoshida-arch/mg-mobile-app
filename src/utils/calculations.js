@@ -21,8 +21,8 @@ export const CATEGORIES = {
   "シ": { label: "労務費", type: "outflow", color: "blue", symbol: "シ" },
   "ス": { label: "製造経費", type: "outflow", color: "blue", symbol: "ス" },
   "セ": { label: "販売費", type: "outflow", color: "blue", symbol: "セ" },
-  "ソ": { label: "一般管理費(その他)", type: "outflow", color: "blue", symbol: "ソ" },
-  "ソ雇": { label: "採用", type: "outflow", color: "blue", symbol: "ソ", isHiring: true },
+  "ソ": { label: "一般管理費", type: "outflow", color: "blue", symbol: "ソ" },
+  "採用": { label: "採用 (ワーカー・セールスマン)", type: "outflow", color: "blue", symbol: "採用", isCash: true },
   "タ": { label: "営業外費用", type: "outflow", color: "blue", symbol: "タ" },
   "チ": { label: "研究開発費", type: "outflow", color: "blue", symbol: "チ" },
   "ツ": { label: "材料現金仕入", type: "outflow", color: "green", symbol: "ツ" },
@@ -55,9 +55,7 @@ export const DEFAULT_PERIOD_DATA = {
     // 機械内訳
     largeMachines: 0,       // 大型機械台数
     smallMachines: 0,       // 小型機械台数
-    attachments: 0,         // アタッチメント数
-    workers: 0,             // ワーカー数 (初期値0)
-    salesmen: 0             // セールスマン数 (初期値0)
+    attachments: 0          // アタッチメント数
   },
   ledger: [],               // 現金出納帳
   actuals: {
@@ -90,9 +88,6 @@ export function calculateFinancials(carryover, ledger, actuals) {
   let cashInflow = 0;
   let cashOutflow = 0;
   
-  let hiredWorkers = 0;
-  let hiredSalesmen = 0;
-  
   // 出納帳カテゴリ別の集計
   const ledgerTotals = {};
   Object.keys(CATEGORIES).forEach(k => {
@@ -108,11 +103,6 @@ export function calculateFinancials(carryover, ledger, actuals) {
       ledgerTotals[cat].amount += amt;
       ledgerTotals[cat].quantity += qty;
       
-      if (cat === "ソ雇") {
-        hiredWorkers += (Number(entry.workerCount) || 0);
-        hiredSalesmen += (Number(entry.salesmanCount) || 0);
-      }
-      
       const isCashTransaction = CATEGORIES[cat].isCash !== false;
       if (isCashTransaction) {
         if (CATEGORIES[cat].type === "inflow") {
@@ -121,6 +111,16 @@ export function calculateFinancials(carryover, ledger, actuals) {
           cashOutflow += amt;
         }
       }
+    }
+  });
+
+  // 人員の集計（採用レコードから）
+  let totalWorkersHired = 0;
+  let totalSalesmenHired = 0;
+  ledger.forEach(entry => {
+    if (entry.category === "採用") {
+      totalWorkersHired += Number(entry.workersHired) || 0;
+      totalSalesmenHired += Number(entry.salesmenHired) || 0;
     }
   });
 
@@ -228,7 +228,8 @@ export function calculateFinancials(carryover, ledger, actuals) {
   const laborCost = ledgerTotals["シ"].amount; // 労務費
   const manufacturingFixed = ledgerTotals["ス"].amount + depreciation; // 製造固定費 (製造経費 + 減価償却)
   const salesCost = ledgerTotals["セ"].amount; // 販売費
-  const adminCost = ledgerTotals["ソ"].amount + (ledgerTotals["ソ雇"]?.amount || 0); // 一般管理費 (その他 + 採用)
+  // 一般管理費: 「ソ」の合計 + 「採用」の合計
+  const adminCost = ledgerTotals["ソ"].amount + (ledgerTotals["採用"] ? ledgerTotals["採用"].amount : 0);
   const rdCost = ledgerTotals["チ"].amount; // 研究開発費
   const nonOperatingCost = ledgerTotals["タ"].amount; // 営業外費用
   
@@ -305,6 +306,17 @@ export function calculateFinancials(carryover, ledger, actuals) {
     + (endingPayables - carryover.payables)
     - ledgerTotals["ニ"].amount; // 納税出金
   
+  // 投資キャッシュフロー
+  const investingCF = extraordinaryGain - purchasedMachineValue; // 売却/保険収入 - 新規購入
+  
+  // 財務キャッシュフロー
+  const financingCF = ledgerTotals["カ"].amount + ledgerTotals["オ"].amount - ledgerTotals["ナ"].amount; // 資本金増 + 新規借入 - 返済
+  
+  const freeCF = operatingCF + investingCF;
+  const totalCF = freeCF + financingCF;
+
+  // 評価ランク (経営戦略分析用)
+  let evaluationRank = "C";
   if (operatingProfit >= 500) evaluationRank = "S";
   else if (operatingProfit >= 200) evaluationRank = "A";
   else if (operatingProfit >= 50) evaluationRank = "B";
@@ -426,11 +438,18 @@ export function calculateFinancials(carryover, ledger, actuals) {
       freeCF,
       totalCF
     },
-
-    workers: (carryover.workers || 0) + hiredWorkers,
-    salesmen: (carryover.salesmen || 0) + hiredSalesmen,
-    hiredWorkers,
-    hiredSalesmen,
+    
+    endingReceivables,
+    endingPayables,
+    endingLoans,
+    totalCurrentAssets,
+    totalFixedAssets,
+    totalAssets,
+    totalLiabilities,
+    totalEquity: totalNetAssets,
+    bookEndingCash,
+    workers: totalWorkersHired, // 採用したワーカー数
+    salesmen: totalSalesmenHired, // 採用したセールスマン数
     rank: evaluationRank
   };
 }

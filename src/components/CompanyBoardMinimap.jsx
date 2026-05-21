@@ -1,10 +1,10 @@
 import React from 'react';
 
 function CompanyBoardMinimap({ results }) {
-  const { mat, wip, prod, machines, bookEndingCash, workers, salesmen: resultsSalesmen } = results;
+  const { mat, wip, prod, machines, bookEndingCash, workers, salesmen } = results;
 
-  const totalWorkers = workers !== undefined ? workers : 0;
-  const totalSalesmen = resultsSalesmen !== undefined ? resultsSalesmen : 0;
+  const totalWorkers = workers || 0;
+  const totalSalesmen = salesmen || 0;
   let remainingWorkers = totalWorkers;
 
   // 各種在庫の数に応じた配列を作成（レンダリング用）
@@ -41,7 +41,6 @@ function CompanyBoardMinimap({ results }) {
     }
   }
 
-  const salesmen = totalSalesmen;
   const requiredWorkers = (machines.large * 2) + machines.small;
   const isShortOfWorkers = totalWorkers < requiredWorkers;
 
@@ -275,13 +274,13 @@ function CompanyBoardMinimap({ results }) {
               }}>
                 <div style={{ fontSize: '0.62rem', fontWeight: '800', color: '#81c784', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>セールスマン</span>
-                  <span>{salesmen}名</span>
+                  <span>{totalSalesmen}名</span>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', minHeight: '18px', alignItems: 'center' }}>
-                  {Array.from({ length: salesmen }).map((_, i) => (
+                  {Array.from({ length: totalSalesmen }).map((_, i) => (
                     <span key={i} style={{ fontSize: '0.9rem', lineHeight: '1' }}>🧑‍💼</span>
                   ))}
-                  {salesmen === 0 && (
+                  {totalSalesmen === 0 && (
                     <span style={{ fontSize: '0.55rem', color: '#ff8a80', fontWeight: '700' }}>⚠️ 不在</span>
                   )}
                 </div>

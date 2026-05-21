@@ -10,8 +10,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
   const [price, setPrice] = useState('');
   const [amount, setAmount] = useState('');
   
-  const [workerCount, setWorkerCount] = useState('');
-  const [salesmanCount, setSalesmanCount] = useState('');
+  // 採用用のステート
+  const [workersHired, setWorkersHired] = useState('');
+  const [salesmenHired, setSalesmenHired] = useState('');
   
   // 電卓の状態
   const [calcInput, setCalcInput] = useState('');
@@ -26,7 +27,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
       return;
     }
     
-    const finalAmount = amount === '' ? 0 : Number(amount);
+    const finalAmount = selectedCategory === '採用' 
+      ? (Number(workersHired) || 0) * 5 + (Number(salesmenHired) || 0) * 5 
+      : (amount === '' ? 0 : Number(amount));
     const finalQuantity = quantity === '' ? 0 : Number(quantity);
     const finalPrice = price === '' ? 0 : Number(price);
 
@@ -37,8 +40,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
       quantity: finalQuantity,
       price: finalPrice,
       amount: finalAmount || (finalQuantity * finalPrice),
-      workerCount: workerCount === '' ? 0 : Number(workerCount),
-      salesmanCount: salesmanCount === '' ? 0 : Number(salesmanCount)
+      workersHired: selectedCategory === '採用' ? (Number(workersHired) || 0) : 0,
+      salesmenHired: selectedCategory === '採用' ? (Number(salesmenHired) || 0) : 0
     };
 
     onUpdateLedger([...ledger, newEntry]);
@@ -48,20 +51,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
     setQuantity('');
     setPrice('');
     setAmount('');
+    setWorkersHired('');
+    setSalesmenHired('');
     setCalcInput('');
-    setWorkerCount('');
-    setSalesmanCount('');
     setShowAddModal(false);
-  };
-
-  const handleHiringChange = (type, val) => {
-    const num = val === '' ? '' : Number(val);
-    if (type === 'worker') setWorkerCount(num);
-    if (type === 'salesman') setSalesmanCount(num);
-    
-    const w = type === 'worker' ? (Number(val) || 0) : (Number(workerCount) || 0);
-    const s = type === 'salesman' ? (Number(val) || 0) : (Number(salesmanCount) || 0);
-    setAmount((w + s) * 5);
   };
 
   // 取引の削除
@@ -80,11 +73,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
     if (!needsQty) {
       setQuantity('');
       setPrice('');
-      if (symbol !== "ソ雇") setAmount('');
-    }
-    if (symbol !== "ソ雇") {
-      setWorkerCount('');
-      setSalesmanCount('');
     }
   };
 
@@ -222,9 +210,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                         数量: {entry.quantity} 個 × 単価 ¥{entry.price} 万
                       </div>
                     )}
-                    {entry.category === "ソ雇" && (
+                    {entry.category === "採用" && (
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                        採用: ワーカー {entry.workerCount || 0}名, セールスマン {entry.salesmanCount || 0}名
+                        ワーカー: {entry.workersHired}名 / セールスマン: {entry.salesmenHired}名
                       </div>
                     )}
                   </div>
@@ -314,7 +302,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                   {/* ルールA: 出金 */}
                   <span style={{ fontSize: '0.68rem', color: 'var(--mg-green)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>出金 (材料・設備・活動費)</span>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
-                    {["ツ", "ノ", "ケ", "コ", "サ", "セ", "チ", "ソ雇"].map(symbol => (
+                    {["ツ", "ノ", "ケ", "コ", "サ", "セ", "チ", "ソ", "採用"].map(symbol => (
                       <button
                         type="button"
                         key={symbol}
@@ -378,6 +366,39 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                 </span>
               </div>
 
+              {/* 採用専用UI */}
+              {selectedCategory === '採用' ? (
+                <div style={{ background: 'rgba(15, 17, 26, 0.4)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-blue)' }}>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-blue)', marginBottom: '12px' }}>採用人数の入力</h4>
+                  <div className="grid-2">
+                    <div className="form-group">
+                      <label className="form-label">ワーカー採用数 (人)</label>
+                      <input 
+                        type="number" 
+                        value={workersHired} 
+                        onChange={(e) => setWorkersHired(e.target.value)}
+                        placeholder="0"
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">セールスマン採用数 (人)</label>
+                      <input 
+                        type="number" 
+                        value={salesmenHired} 
+                        onChange={(e) => setSalesmenHired(e.target.value)}
+                        placeholder="0"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '12px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    合計採用費: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((Number(workersHired) || 0) + (Number(salesmenHired) || 0)) * 5}</span> 万
+                  </div>
+                </div>
+              ) : (
+                <>
+
               {/* 数量・単価入力（対応する勘定科目のみ） */}
               {isQtyNeeded && (
                 <div className="grid-2">
@@ -399,34 +420,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                       onChange={(e) => handleQtyPriceChange('price', e.target.value)}
                       placeholder="0"
                       className="form-input"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* 採用人数の入力 */}
-              {selectedCategory === "ソ雇" && (
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">ワーカー採用 (人)</label>
-                    <input 
-                      type="number" 
-                      value={workerCount} 
-                      onChange={(e) => handleHiringChange('worker', e.target.value)}
-                      placeholder="0"
-                      className="form-input"
-                      min="0"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">セールスマン採用 (人)</label>
-                    <input 
-                      type="number" 
-                      value={salesmanCount} 
-                      onChange={(e) => handleHiringChange('salesman', e.target.value)}
-                      placeholder="0"
-                      className="form-input"
-                      min="0"
                     />
                   </div>
                 </div>
@@ -475,6 +468,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                   </div>
                 )}
               </div>
+              </>
+              )}
 
               {/* 決定ボタン */}
               <button 

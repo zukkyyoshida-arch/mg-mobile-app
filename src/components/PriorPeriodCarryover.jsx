@@ -111,7 +111,7 @@ function PriorPeriodCarryover({
                 />
               </div>
 
-              <hr style={{ border: 'none', borderBottom: '1px solid var(--border-glass)' }} />
+
             </>
           ) : (
             <>
