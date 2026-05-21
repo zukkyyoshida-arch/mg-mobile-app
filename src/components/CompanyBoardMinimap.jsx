@@ -1,9 +1,10 @@
 import React from 'react';
 
 function CompanyBoardMinimap({ results }) {
-  const { mat, wip, prod, machines, bookEndingCash, workers } = results;
+  const { mat, wip, prod, machines, bookEndingCash, workers, salesmen: resultsSalesmen } = results;
 
-  const totalWorkers = workers !== undefined ? workers : 3;
+  const totalWorkers = workers !== undefined ? workers : 0;
+  const totalSalesmen = resultsSalesmen !== undefined ? resultsSalesmen : 0;
   let remainingWorkers = totalWorkers;
 
   // 各種在庫の数に応じた配列を作成（レンダリング用）
@@ -40,7 +41,7 @@ function CompanyBoardMinimap({ results }) {
     }
   }
 
-  const salesmen = Math.max(0, remainingWorkers);
+  const salesmen = totalSalesmen;
   const requiredWorkers = (machines.large * 2) + machines.small;
   const isShortOfWorkers = totalWorkers < requiredWorkers;
 

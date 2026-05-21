@@ -10,6 +10,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
   const [price, setPrice] = useState('');
   const [amount, setAmount] = useState('');
   
+  const [workerCount, setWorkerCount] = useState('');
+  const [salesmanCount, setSalesmanCount] = useState('');
+  
   // 電卓の状態
   const [calcInput, setCalcInput] = useState('');
   const [showCalculator, setShowCalculator] = useState(false);
@@ -33,7 +36,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
       category: selectedCategory,
       quantity: finalQuantity,
       price: finalPrice,
-      amount: finalAmount || (finalQuantity * finalPrice)
+      amount: finalAmount || (finalQuantity * finalPrice),
+      workerCount: workerCount === '' ? 0 : Number(workerCount),
+      salesmanCount: salesmanCount === '' ? 0 : Number(salesmanCount)
     };
 
     onUpdateLedger([...ledger, newEntry]);
@@ -44,7 +49,19 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
     setPrice('');
     setAmount('');
     setCalcInput('');
+    setWorkerCount('');
+    setSalesmanCount('');
     setShowAddModal(false);
+  };
+
+  const handleHiringChange = (type, val) => {
+    const num = val === '' ? '' : Number(val);
+    if (type === 'worker') setWorkerCount(num);
+    if (type === 'salesman') setSalesmanCount(num);
+    
+    const w = type === 'worker' ? (Number(val) || 0) : (Number(workerCount) || 0);
+    const s = type === 'salesman' ? (Number(val) || 0) : (Number(salesmanCount) || 0);
+    setAmount((w + s) * 5);
   };
 
   // 取引の削除
@@ -63,6 +80,11 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
     if (!needsQty) {
       setQuantity('');
       setPrice('');
+      if (symbol !== "ソ雇") setAmount('');
+    }
+    if (symbol !== "ソ雇") {
+      setWorkerCount('');
+      setSalesmanCount('');
     }
   };
 
@@ -200,6 +222,11 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                         数量: {entry.quantity} 個 × 単価 ¥{entry.price} 万
                       </div>
                     )}
+                    {entry.category === "ソ雇" && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        採用: ワーカー {entry.workerCount || 0}名, セールスマン {entry.salesmanCount || 0}名
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -287,7 +314,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                   {/* ルールA: 出金 */}
                   <span style={{ fontSize: '0.68rem', color: 'var(--mg-green)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>出金 (材料・設備・活動費)</span>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
-                    {["ツ", "ノ", "ケ", "コ", "サ", "セ", "チ", "ソ"].map(symbol => (
+                    {["ツ", "ノ", "ケ", "コ", "サ", "セ", "チ", "ソ雇"].map(symbol => (
                       <button
                         type="button"
                         key={symbol}
@@ -372,6 +399,34 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                       onChange={(e) => handleQtyPriceChange('price', e.target.value)}
                       placeholder="0"
                       className="form-input"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 採用人数の入力 */}
+              {selectedCategory === "ソ雇" && (
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">ワーカー採用 (人)</label>
+                    <input 
+                      type="number" 
+                      value={workerCount} 
+                      onChange={(e) => handleHiringChange('worker', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                      min="0"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">セールスマン採用 (人)</label>
+                    <input 
+                      type="number" 
+                      value={salesmanCount} 
+                      onChange={(e) => handleHiringChange('salesman', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                      min="0"
                     />
                   </div>
                 </div>
