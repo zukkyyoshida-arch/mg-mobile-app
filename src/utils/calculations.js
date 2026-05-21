@@ -24,6 +24,9 @@ export const CATEGORIES = {
   "ソ": { label: "一般管理費", type: "outflow", color: "blue", symbol: "ソ" },
   "採用": { label: "採用 (ワーカー・セールスマン)", type: "outflow", color: "blue", symbol: "採用", isCash: true },
   "保険": { label: "保険", type: "outflow", color: "blue", symbol: "保険", isCash: true },
+  "MD": { label: "マーチャンダイザー", type: "outflow", color: "blue", symbol: "MD", isCash: true },
+  "リサーチ": { label: "マーケットリサーチ", type: "outflow", color: "blue", symbol: "リサーチ", isCash: true },
+  "PAC": { label: "PAC生産性", type: "outflow", color: "blue", symbol: "PAC", isCash: true },
   "火災": { label: "火災 (材料ロス)", type: "outflow", color: "red", symbol: "火災", isCash: false },
   "製造ミス": { label: "製造ミス (仕掛品ロス)", type: "outflow", color: "red", symbol: "ミス", isCash: false },
   "盗難": { label: "盗難 (製品ロス)", type: "outflow", color: "red", symbol: "盗難", isCash: false },
@@ -299,8 +302,13 @@ export function calculateFinancials(carryover, ledger, actuals) {
   const laborCost = ledgerTotals["シ"].amount; // 労務費
   const manufacturingFixed = ledgerTotals["ス"].amount + depreciation; // 製造固定費 (製造経費 + 減価償却)
   const salesCost = ledgerTotals["セ"].amount; // 販売費
-  // 一般管理費: 「ソ」の合計 + 「採用」の合計 + 「保険」の合計
-  const adminCost = ledgerTotals["ソ"].amount + (ledgerTotals["採用"] ? ledgerTotals["採用"].amount : 0) + (ledgerTotals["保険"] ? ledgerTotals["保険"].amount : 0);
+  // 一般管理費: 「ソ」の合計 + 「採用」+ 「保険」+ 「MD」+ 「リサーチ」+ 「PAC」
+  const adminCost = ledgerTotals["ソ"].amount 
+    + (ledgerTotals["採用"] ? ledgerTotals["採用"].amount : 0) 
+    + (ledgerTotals["保険"] ? ledgerTotals["保険"].amount : 0)
+    + (ledgerTotals["MD"] ? ledgerTotals["MD"].amount : 0)
+    + (ledgerTotals["リサーチ"] ? ledgerTotals["リサーチ"].amount : 0)
+    + (ledgerTotals["PAC"] ? ledgerTotals["PAC"].amount : 0);
   const rdCost = ledgerTotals["チ"].amount; // 研究開発費
   const nonOperatingCost = ledgerTotals["タ"].amount; // 営業外費用
   

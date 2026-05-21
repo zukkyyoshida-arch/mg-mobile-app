@@ -69,7 +69,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
   const handleCategorySelect = (symbol) => {
     setSelectedCategory(symbol);
     // 数量が必要ない科目の場合は数量と単価をリセット
-    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ", "保険"].includes(symbol);
+    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ", "保険", "MD", "リサーチ", "PAC"].includes(symbol);
     if (!needsQty) {
       setQuantity('');
       setPrice('');
@@ -345,7 +345,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                   {/* ルールB: 出金 */}
                   <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>出金 (返済・支払・税など)</span>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {["ナ", "タ", "ス", "ヌ", "ニ", "シ", "保険"].map(symbol => (
+                    {["ナ", "タ", "ス", "ヌ", "ニ", "シ", "保険", "MD", "リサーチ", "PAC"].map(symbol => (
                       <button
                         type="button"
                         key={symbol}
@@ -441,11 +441,63 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                     </div>
                   )}
                 </div>
+              ) : ["ツ", "ノ"].includes(selectedCategory) ? (
+                (() => {
+                  const hasMD = ledger.some(e => e.category === "MD");
+                  const MARKETS = [
+                    { id: 'sapporo', name: '札幌', basePrice: 10 },
+                    { id: 'sendai', name: '仙台', basePrice: 11 },
+                    { id: 'tokyo', name: '東京', basePrice: 12 },
+                    { id: 'nagoya', name: '名古屋', basePrice: 13 },
+                    { id: 'osaka', name: '大阪', basePrice: 14 },
+                    { id: 'fukuoka', name: '福岡', basePrice: 15 },
+                    { id: 'stocker', name: 'ストッカー', basePrice: 16 }
+                  ];
+                  
+                  return (
+                    <div style={{ background: 'rgba(76, 175, 80, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(76, 175, 80, 0.3)' }}>
+                      <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-green)', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>材料の仕入先を選択</span>
+                        {hasMD && <span className="badge badge-blue">MD割引適用中 (-2)</span>}
+                      </h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '8px', marginBottom: '16px' }}>
+                        {MARKETS.map(m => {
+                          const discountedPrice = (hasMD && m.id !== 'stocker') ? m.basePrice - 2 : m.basePrice;
+                          const isSelected = Number(price) === discountedPrice; // 簡易的に単価で選択状態を判定
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => handleQtyPriceChange('price', discountedPrice.toString())}
+                              className={`btn-premium ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                              style={{ padding: '8px 4px', fontSize: '0.75rem', borderRadius: '8px', borderColor: isSelected ? 'var(--mg-green)' : undefined, flexDirection: 'column', gap: '4px' }}
+                            >
+                              <span style={{ fontWeight: '700' }}>{m.name}</span>
+                              <span className="electric-number" style={{ fontSize: '1rem', color: isSelected ? 'white' : 'var(--mg-green)' }}>
+                                {discountedPrice}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">購入数量 (個)</label>
+                        <input 
+                          type="number" 
+                          value={quantity} 
+                          onChange={(e) => handleQtyPriceChange('qty', e.target.value)}
+                          placeholder="0"
+                          className="form-input"
+                        />
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 <>
 
               {/* 数量・単価入力（対応する勘定科目のみ） */}
-              {isQtyNeeded && (
+              {isQtyNeeded && !["ツ", "ノ"].includes(selectedCategory) && (
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">数量 (個数)</label>
