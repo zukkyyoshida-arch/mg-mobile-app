@@ -69,11 +69,15 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
   const handleCategorySelect = (symbol) => {
     setSelectedCategory(symbol);
     // 数量が必要ない科目の場合は数量と単価をリセット
-    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ"].includes(symbol);
+    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ", "保険"].includes(symbol);
     if (!needsQty) {
       setQuantity('');
       setPrice('');
     }
+    // 事故の場合は専用の初期値をセット
+    if (symbol === "製造ミス") setQuantity('1');
+    if (symbol === "盗難") setQuantity('2');
+    if (symbol === "火災") setQuantity('');
   };
 
   // 数量・単価変更時に金額を自動計算
@@ -341,13 +345,29 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                   {/* ルールB: 出金 */}
                   <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>出金 (返済・支払・税など)</span>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {["ナ", "タ", "ス", "ヌ", "ニ", "シ"].map(symbol => (
+                    {["ナ", "タ", "ス", "ヌ", "ニ", "シ", "保険"].map(symbol => (
                       <button
                         type="button"
                         key={symbol}
                         onClick={() => handleCategorySelect(symbol)}
                         className={`btn-premium ${selectedCategory === symbol ? 'btn-primary' : 'btn-secondary'}`}
                         style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === symbol ? 1 : 0.8, borderColor: selectedCategory === symbol ? 'var(--color-accent)' : `rgba(var(--color-${CATEGORIES[symbol].color === 'blue' ? 'blue' : CATEGORIES[symbol].color === 'yellow' ? 'yellow' : 'green'}), 0.15)` }}
+                      >
+                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{symbol}</span> {CATEGORIES[symbol].label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 事故・災害 */}
+                  <span style={{ fontSize: '0.65rem', color: '#ff5252', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginTop: '16px', marginBottom: '6px' }}>🚨 事故・災害メモ (在庫減少)</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {["火災", "製造ミス", "盗難"].map(symbol => (
+                      <button
+                        type="button"
+                        key={symbol}
+                        onClick={() => handleCategorySelect(symbol)}
+                        className={`btn-premium ${selectedCategory === symbol ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === symbol ? 1 : 0.8, borderColor: selectedCategory === symbol ? '#ff5252' : 'rgba(255, 82, 82, 0.15)', backgroundColor: selectedCategory === symbol ? 'rgba(255, 82, 82, 0.2)' : undefined }}
                       >
                         <span style={{ fontWeight: '800', marginRight: '4px' }}>{symbol}</span> {CATEGORIES[symbol].label}
                       </button>
@@ -395,6 +415,31 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results }) {
                   <div style={{ marginTop: '12px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     合計採用費: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((Number(workersHired) || 0) + (Number(salesmenHired) || 0)) * 5}</span> 万
                   </div>
+                </div>
+              ) : ["火災", "製造ミス", "盗難"].includes(selectedCategory) ? (
+                <div style={{ background: 'rgba(255, 82, 82, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed #ff5252' }}>
+                  <h4 style={{ fontSize: '0.85rem', color: '#ff5252', marginBottom: '12px' }}>⚠️ 事故・災害の記録</h4>
+                  {selectedCategory === '火災' ? (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                      材料倉庫にある全ての材料が失われます。（金額の入力は不要です）<br/>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>※保険チップを持っている場合は自動的に保険金が計算されます。</span>
+                    </div>
+                  ) : (
+                    <div className="form-group">
+                      <label className="form-label">{selectedCategory === '製造ミス' ? '仕掛品のロス数量 (個)' : '製品の盗難数量 (個)'}</label>
+                      <input 
+                        type="number" 
+                        value={quantity} 
+                        onChange={(e) => setQuantity(e.target.value)}
+                        placeholder={selectedCategory === '製造ミス' ? '1' : '2'}
+                        className="form-input"
+                      />
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', display: 'block', marginTop: '6px' }}>
+                        {selectedCategory === '盗難' && '※保険チップを持っている場合は自動的に保険金が計算されます。'}
+                        {selectedCategory === '製造ミス' && '※製造ミスのロスでは保険金は適用されません。'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>

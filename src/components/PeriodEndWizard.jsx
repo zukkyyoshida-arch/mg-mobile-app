@@ -28,14 +28,6 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, results 
     }
   };
 
-  const handleAccidentChange = (field, val) => {
-    const num = val === '' ? 0 : Number(val);
-    onUpdateActuals({
-      ...actuals,
-      [field]: num
-    });
-  };
-
   // 材料/仕掛品/製品の帳簿残高 (理論値)
   const matTheoretical = results.mat.endingCount;
   const wipTheoretical = results.wip.endingCount;
@@ -54,7 +46,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, results 
       {/* ステップインジケーター */}
       <div className="glass-card" style={{ padding: '14px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {[1, 2, 3].map((step) => (
+          {[1, 2].map((step) => (
             <button
               key={step}
               onClick={() => handleStepChange(step)}
@@ -77,7 +69,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, results 
               >
                 {step}
               </div>
-              {step === 1 ? '在庫棚卸' : step === 2 ? '事故損失' : '現金合わせ'}
+              {step === 1 ? '在庫棚卸' : '現金合わせ'}
             </button>
           ))}
         </div>
@@ -192,119 +184,19 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, results 
               className="btn-premium btn-primary"
               style={{ width: '100%', marginTop: '20px', padding: '12px' }}
             >
-              次へ：事故・災害損失の記録 👉
+              次へ：現金合わせ 👉
             </button>
           </div>
         </div>
       )}
 
-      {/* ステップ2: 事故災害メモ (火災・製造ミス・盗難) */}
+      {/* ステップ2: 現金合わせ (最終チェック) */}
       {currentStep === 2 && (
         <div className="tab-panel">
           <div className="glass-card">
             <div className="glass-card-header">
               <h3 className="glass-card-title">
-                🔥 ステップ2: 事故災害メモの入力
-              </h3>
-            </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              ゲーム中に発生した「火災」「製造ミス（WIP廃棄）」「盗難」の個数を入力してください。評価額を自動で特別損失に計上します。
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              
-              {/* 火災 (材料) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', alignItems: 'center' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">火災 (材料の焼失)</label>
-                  <input
-                    type="number"
-                    value={actuals.fireCount || ''}
-                    onChange={(e) => handleAccidentChange('fireCount', e.target.value)}
-                    placeholder="0"
-                    className="form-input"
-                    style={{ padding: '10px' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>評価額損失</span>
-                  <span className="electric-number" style={{ color: '#ef4444', fontSize: '0.9rem', fontWeight: '700' }}>
-                    -¥{results.mat.fireValue.toFixed(1)}万
-                  </span>
-                </div>
-              </div>
-
-              {/* 製造ミス (仕掛品) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', alignItems: 'center' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">製造ミス (仕掛品廃棄)</label>
-                  <input
-                    type="number"
-                    value={actuals.missCount || ''}
-                    onChange={(e) => handleAccidentChange('missCount', e.target.value)}
-                    placeholder="0"
-                    className="form-input"
-                    style={{ padding: '10px' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>評価額損失</span>
-                  <span className="electric-number" style={{ color: '#ef4444', fontSize: '0.9rem', fontWeight: '700' }}>
-                    -¥{results.wip.missValue.toFixed(1)}万
-                  </span>
-                </div>
-              </div>
-
-              {/* 盗難 (製品) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', alignItems: 'center' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">盗難 (製品の紛失)</label>
-                  <input
-                    type="number"
-                    value={actuals.theftCount || ''}
-                    onChange={(e) => handleAccidentChange('theftCount', e.target.value)}
-                    placeholder="0"
-                    className="form-input"
-                    style={{ padding: '10px' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>評価額損失</span>
-                  <span className="electric-number" style={{ color: '#ef4444', fontSize: '0.9rem', fontWeight: '700' }}>
-                    -¥{results.prod.theftValue.toFixed(1)}万
-                  </span>
-                </div>
-              </div>
-
-            </div>
-
-            {/* 事故災害総損失 */}
-            <div className="glass-card" style={{ margin: '20px 0 0 0', padding: '12px', background: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#ef4444' }}>事故災害 総損失(特別損失):</span>
-              <span className="electric-number" style={{ fontSize: '1.2rem', color: '#ef4444' }}>
-                -¥{(results.mat.fireValue + results.wip.missValue + results.prod.theftValue).toLocaleString()}万
-              </span>
-            </div>
-            
-            <div className="grid-2" style={{ marginTop: '20px' }}>
-              <button onClick={() => handleStepChange(1)} className="btn-premium btn-secondary" style={{ padding: '12px' }}>
-                ◀ 戻る
-              </button>
-              <button onClick={() => handleStepChange(3)} className="btn-premium btn-primary" style={{ padding: '12px' }}>
-                次へ：現金合わせ ▶
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ステップ3: 現金合わせ (最終チェック) */}
-      {currentStep === 3 && (
-        <div className="tab-panel">
-          <div className="glass-card">
-            <div className="glass-card-header">
-              <h3 className="glass-card-title">
-                💰 ステップ3: 最終現金合わせ
+                💰 ステップ2: 最終現金合わせ
               </h3>
             </div>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
@@ -361,7 +253,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, results 
             </div>
 
             <button
-              onClick={() => handleStepChange(2)}
+              onClick={() => handleStepChange(1)}
               className="btn-premium btn-secondary"
               style={{ width: '100%', marginTop: '20px', padding: '12px' }}
             >

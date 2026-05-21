@@ -23,6 +23,10 @@ export const CATEGORIES = {
   "セ": { label: "販売費", type: "outflow", color: "blue", symbol: "セ" },
   "ソ": { label: "一般管理費", type: "outflow", color: "blue", symbol: "ソ" },
   "採用": { label: "採用 (ワーカー・セールスマン)", type: "outflow", color: "blue", symbol: "採用", isCash: true },
+  "保険": { label: "保険", type: "outflow", color: "blue", symbol: "保険", isCash: true },
+  "火災": { label: "火災 (材料ロス)", type: "outflow", color: "red", symbol: "火災", isCash: false },
+  "製造ミス": { label: "製造ミス (仕掛品ロス)", type: "outflow", color: "red", symbol: "ミス", isCash: false },
+  "盗難": { label: "盗難 (製品ロス)", type: "outflow", color: "red", symbol: "盗難", isCash: false },
   "タ": { label: "営業外費用", type: "outflow", color: "blue", symbol: "タ" },
   "チ": { label: "研究開発費", type: "outflow", color: "blue", symbol: "チ" },
   "ツ": { label: "材料現金仕入", type: "outflow", color: "green", symbol: "ツ" },
@@ -94,11 +98,75 @@ export function calculateFinancials(carryover, ledger, actuals) {
     ledgerTotals[k] = { amount: 0, quantity: 0 };
   });
 
+  // 事故災害・保険の時系列シミュレーション用変数
+  let currentMatCount = carryover.materialsCount || 0;
+  let currentWipCount = carryover.wipCount || 0;
+  let currentProdCount = carryover.productCount || 0;
+  let insuranceChips = 0;
+  let totalFireCount = 0;
+  let totalMissCount = 0;
+  let totalTheftCount = 0;
+  let autoInsurancePayout = 0;
+
   ledger.forEach(entry => {
     const amt = Number(entry.amount) || 0;
     const qty = Number(entry.quantity) || 0;
     const cat = entry.category;
     
+    // 時系列の在庫・保険追跡
+    switch(cat) {
+      case "ツ":
+      case "ノ":
+        currentMatCount += qty;
+        break;
+      case "コ":
+        currentMatCount -= qty;
+        currentWipCount += qty;
+        break;
+      case "サ":
+        currentWipCount -= qty;
+        currentProdCount += qty;
+        break;
+      case "キ":
+      case "ネ":
+        currentProdCount -= qty;
+        break;
+      case "保険":
+        insuranceChips += qty;
+        break;
+      case "火災":
+        const lostMat = Math.max(0, currentMatCount);
+        if (lostMat > 0) {
+          totalFireCount += lostMat;
+          currentMatCount = 0;
+          if (insuranceChips > 0) {
+            autoInsurancePayout += lostMat * 8;
+            insuranceChips -= 1;
+          }
+        }
+        break;
+      case "製造ミス":
+        const missQty = qty > 0 ? qty : 1;
+        const lostWip = Math.min(Math.max(0, currentWipCount), missQty);
+        if (lostWip > 0) {
+          totalMissCount += lostWip;
+          currentWipCount -= lostWip;
+        }
+        break;
+      case "盗難":
+        const theftQty = qty > 0 ? qty : 2;
+        const lostProd = Math.min(Math.max(0, currentProdCount), theftQty);
+        if (lostProd > 0) {
+          totalTheftCount += lostProd;
+          currentProdCount -= lostProd;
+          if (insuranceChips > 0) {
+            autoInsurancePayout += lostProd * 10;
+            insuranceChips -= 1;
+          }
+        }
+        break;
+    }
+
     if (CATEGORIES[cat]) {
       ledgerTotals[cat].amount += amt;
       ledgerTotals[cat].quantity += qty;
@@ -113,6 +181,9 @@ export function calculateFinancials(carryover, ledger, actuals) {
       }
     }
   });
+
+  // 保険の自動支払いを現金流入に加算
+  cashInflow += autoInsurancePayout;
 
   // 人員の集計（採用レコードから）
   let totalWorkersHired = 0;
@@ -145,7 +216,7 @@ export function calculateFinancials(carryover, ledger, actuals) {
   const matInputValue = matInputCount * matUnitCost;
   
   // 事故災害：火災 (材料)
-  const fireCount = actuals.fireCount || 0;
+  const fireCount = totalFireCount;
   const matFireValue = fireCount * matUnitCost;
   
   // 材料の次期繰越 (理論値)
@@ -170,7 +241,7 @@ export function calculateFinancials(carryover, ledger, actuals) {
   const wipCompletedValue = wipCompletedCount * wipUnitCost;
   
   // 事故災害：製造ミス (仕掛品)
-  const missCount = actuals.missCount || 0;
+  const missCount = totalMissCount;
   const wipMissValue = missCount * wipUnitCost;
   
   // 仕掛品の次期繰越 (理論値)
@@ -193,7 +264,7 @@ export function calculateFinancials(carryover, ledger, actuals) {
   const cogsValue = salesCount * prodUnitCost; // 売上原価
   
   // 事故災害：盗難 (製品)
-  const theftCount = actuals.theftCount || 0;
+  const theftCount = totalTheftCount;
   const prodTheftValue = theftCount * prodUnitCost;
   
   // 製品の次期繰越 (理論値)
@@ -228,8 +299,8 @@ export function calculateFinancials(carryover, ledger, actuals) {
   const laborCost = ledgerTotals["シ"].amount; // 労務費
   const manufacturingFixed = ledgerTotals["ス"].amount + depreciation; // 製造固定費 (製造経費 + 減価償却)
   const salesCost = ledgerTotals["セ"].amount; // 販売費
-  // 一般管理費: 「ソ」の合計 + 「採用」の合計
-  const adminCost = ledgerTotals["ソ"].amount + (ledgerTotals["採用"] ? ledgerTotals["採用"].amount : 0);
+  // 一般管理費: 「ソ」の合計 + 「採用」の合計 + 「保険」の合計
+  const adminCost = ledgerTotals["ソ"].amount + (ledgerTotals["採用"] ? ledgerTotals["採用"].amount : 0) + (ledgerTotals["保険"] ? ledgerTotals["保険"].amount : 0);
   const rdCost = ledgerTotals["チ"].amount; // 研究開発費
   const nonOperatingCost = ledgerTotals["タ"].amount; // 営業外費用
   
@@ -242,7 +313,8 @@ export function calculateFinancials(carryover, ledger, actuals) {
   // 事故災害損失 = 火災金額 + 製造ミス金額 + 盗難金額
   const accidentLoss = matFireValue + wipMissValue + prodTheftValue;
   const extraordinaryLoss = accidentLoss;
-  const extraordinaryGain = ledgerTotals["エ"].amount + ledgerTotals["イ"].amount; // 保険金 + 機械売却収入
+  // 保険金(自動算出) + 保険金(エの手入力分) + 機械売却収入
+  const extraordinaryGain = autoInsurancePayout + ledgerTotals["エ"].amount + ledgerTotals["イ"].amount;
   const extraordinaryProfit = extraordinaryGain - extraordinaryLoss;
 
   const profitBeforeTax = operatingProfit + extraordinaryProfit; // 税引前当期純利益
