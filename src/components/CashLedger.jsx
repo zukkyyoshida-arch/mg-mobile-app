@@ -43,6 +43,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   const [transferW2S, setTransferW2S] = useState(0); // ワーカー → セールスマン
   const [transferS2W, setTransferS2W] = useState(0); // セールスマン → ワーカー
 
+  // 売掛割引と期首一括用のステート
+  const [factoringAmount, setFactoringAmount] = useState('');
+  const [repaymentAmount, setRepaymentAmount] = useState('');
+
   // 複数市場購入用のステート
   const [marketQuantities, setMarketQuantities] = useState({
     sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0
@@ -124,6 +128,65 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       finalQuantity = totalQty;
       finalAmount = totalAmount;
       finalPrice = 0;
+    } else if (selectedCategory === "売掛割引") {
+      const discountVal = Number(factoringAmount) || 0;
+      if (discountVal <= 0) {
+        alert("割引する売掛金の金額を入力してください");
+        return;
+      }
+      const fee = Math.round(discountVal * 0.05);
+      const newTransactions = [];
+      newTransactions.push({
+        id: Date.now().toString() + "-ar",
+        category: "ア",
+        quantity: 1,
+        amount: discountVal,
+        price: discountVal,
+        timestamp: new Date().toISOString()
+      });
+      if (fee > 0) {
+        newTransactions.push({
+          id: Date.now().toString() + "-fee",
+          category: "タ",
+          quantity: 1,
+          amount: fee,
+          price: fee,
+          timestamp: new Date().toISOString()
+        });
+      }
+      setLedger(prev => [...prev, ...newTransactions]);
+      resetForm();
+      return;
+    } else if (selectedCategory === "期首処理") {
+      const newTransactions = [];
+      const timestamp = new Date().toISOString();
+      const p = results?.carryover?.payables || 0;
+      if (p > 0) {
+        newTransactions.push({ id: Date.now().toString() + "-nu", category: "ヌ", quantity: 1, amount: p, price: p, timestamp });
+      }
+      const t = results?.carryover?.taxes || 0;
+      if (t > 0) {
+        newTransactions.push({ id: Date.now().toString() + "-ni", category: "ニ", quantity: 1, amount: t, price: t, timestamp });
+      }
+      const loan = results?.carryover?.loan || 0;
+      if (loan > 0) {
+        const rate = (currentPeriod >= 4) ? 0.05 : 0.10;
+        const interest = Math.round(loan * rate);
+        if (interest > 0) {
+          newTransactions.push({ id: Date.now().toString() + "-ta", category: "タ", quantity: 1, amount: interest, price: interest, timestamp });
+        }
+      }
+      const repay = Number(repaymentAmount) || 0;
+      if (repay > 0) {
+        newTransactions.push({ id: Date.now().toString() + "-na", category: "ナ", quantity: 1, amount: repay, price: repay, timestamp });
+      }
+      if (newTransactions.length === 0) {
+        alert("決済する期首支払いがありません。");
+        return;
+      }
+      setLedger(prev => [...prev, ...newTransactions]);
+      resetForm();
+      return;
     } else if (selectedCategory === "生産") {
       const koQty = Number(productionKo) || 0;
       const saQty = Number(productionSa) || 0;
@@ -391,6 +454,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     setWorkersHired('');
     setSalesmenHired('');
     setHirePrice(5);
+    setFactoringAmount('');
+    setRepaymentAmount('');
     setTransferW2S(0);
     setTransferS2W(0);
     setMarketQuantities({ sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0 });
@@ -686,6 +751,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                     {[
+                      { action: "🌅 期首一括処理", symbol: "期首処理" },
+                      { action: "売掛金入金", symbol: "ア" },
+                      { action: "期中 売掛割引(5%)", symbol: "売掛割引" },
                       { action: "保険", symbol: "保険" },
                       { action: "緑チップ購入", symbol: "緑チップ" },
                       { action: "配置転換", symbol: "配置転換" },
@@ -695,7 +763,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       { action: "借入返済", symbol: "ナ" },
                       { action: "買掛支払", symbol: "ヌ" },
                       { action: "税金・配当", symbol: "ニ" },
-                      { action: "その他入金", symbol: "ア" },
                       { action: "その他出金", symbol: "ス" }
                     ].map(btn => (
                       <button
@@ -802,6 +869,73 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                     <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>5万</span>
                   </div>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', marginBottom: 0 }}>火災や盗難が発生した場合、被害額が自動補填されます。（保険チップは事故の発生時に失われます）</p>
+                </div>
+              ) : selectedCategory === '期首処理' ? (
+                <div style={{ background: 'rgba(255, 193, 7, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-yellow)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-yellow)', margin: 0 }}>🌅 期首一括処理</h4>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>買掛金支払 (ヌ)</span>
+                      <span style={{ fontWeight: 'bold' }}>{results?.carryover?.payables || 0} 万</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>法人税等支払 (ニ)</span>
+                      <span style={{ fontWeight: 'bold' }}>{results?.carryover?.taxes || 0} 万</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>金利支払 (タ) <span style={{ fontSize: '0.7rem' }}>※借入残高 {results?.carryover?.loan || 0}万 の {(currentPeriod >= 4 ? 5 : 10)}%</span></span>
+                      <span style={{ fontWeight: 'bold' }}>{Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10))} 万</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                      <span style={{ color: 'var(--mg-yellow)' }}>[任意] 借入金返済 (ナ)</span>
+                      <input 
+                        type="number" 
+                        value={repaymentAmount} 
+                        onChange={(e) => setRepaymentAmount(Math.min(results?.carryover?.loan || 0, Math.max(0, Number(e.target.value) || 0)))}
+                        placeholder="0"
+                        className="form-input"
+                        style={{ width: '80px', textAlign: 'right' }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginTop: '16px', textAlign: 'right', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    合計出金: <span style={{ fontSize: '1.4rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                      {(results?.carryover?.payables || 0) + (results?.carryover?.taxes || 0) + Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10)) + (Number(repaymentAmount) || 0)}
+                    </span> 万
+                  </div>
+                </div>
+              ) : selectedCategory === '売掛割引' ? (
+                <div style={{ background: 'rgba(233, 30, 99, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-pink)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-pink)', margin: 0 }}>期中 売掛割引（手数料5%）</h4>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>売掛金残高: <strong style={{ color: 'white', fontSize: '1rem' }}>{Math.max(0, (results?.carryover?.receivables || 0) + (ledgerTotals["ネ"]?.amount || 0) - (ledgerTotals["ア"]?.amount || 0))}</strong>万</span>
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label className="form-label">回収する売掛金額 (万)</label>
+                    <input 
+                      type="number" 
+                      value={factoringAmount} 
+                      onChange={(e) => setFactoringAmount(Math.min(Math.max(0, (results?.carryover?.receivables || 0) + (ledgerTotals["ネ"]?.amount || 0) - (ledgerTotals["ア"]?.amount || 0)), Math.max(0, Number(e.target.value) || 0)))}
+                      placeholder="0"
+                      className="form-input"
+                    />
+                  </div>
+
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', fontSize: '0.8rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>割引手数料 (5%・タ):</span>
+                      <span style={{ color: '#ff5252', fontWeight: 'bold' }}>{Math.round((Number(factoringAmount) || 0) * 0.05)} 万</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>現金手取額 (95%):</span>
+                      <span style={{ color: 'var(--mg-pink)', fontWeight: 'bold', fontSize: '1.1rem' }}>{(Number(factoringAmount) || 0) - Math.round((Number(factoringAmount) || 0) * 0.05)} 万</span>
+                    </div>
+                  </div>
                 </div>
               ) : selectedCategory === '採用' ? (
                 <div style={{ background: 'rgba(15, 17, 26, 0.4)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-blue)' }}>
@@ -1235,7 +1369,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                 <>
 
               {/* 数量・単価入力（対応する勘定科目のみ） */}
-              {isQtyNeeded && !["キ", "ネ", "ツ", "ノ", "ケ", "セ", "緑チップ", "生産"].includes(selectedCategory) && (
+              {isQtyNeeded && !["キ", "ネ", "ツ", "ノ", "ケ", "セ", "緑チップ", "生産", "期首処理", "売掛割引"].includes(selectedCategory) && (
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">

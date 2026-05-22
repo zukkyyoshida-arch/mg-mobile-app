@@ -39,7 +39,9 @@ export const CATEGORIES = {
   "ノ": { label: "材料買掛仕入", type: "outflow", color: "green", symbol: "ノ", isCash: false },
   "ナ": { label: "借入金返済", type: "outflow", color: "yellow", symbol: "ナ" },
   "ニ": { label: "納税", type: "outflow", color: "yellow", symbol: "ニ" },
-  "ヌ": { label: "買掛金支払", type: "outflow", color: "yellow", symbol: "ヌ" }
+  "ヌ": { label: "買掛金支払", type: "outflow", color: "yellow", symbol: "ヌ" },
+  "期首処理": { label: "期首一括処理", type: "outflow", color: "yellow", symbol: "期首", isCash: true },
+  "売掛割引": { label: "売掛割引 (5%)", type: "inflow", color: "pink", symbol: "割引", isCash: true }
 };
 
 /**
