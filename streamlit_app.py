@@ -40,8 +40,11 @@ html_path = os.path.join(current_dir, "dist", "index.html")
 if os.path.exists(html_path):
     with open(html_path, "r", encoding="utf-8") as f:
         html_code = f.read()
-    
     # コンポーネントを埋め込み
-st.markdown(html_code, unsafe_allow_html=True)
+    components.html(html_code, height="100vh", scrolling=True)
+    st.success("React アプリが正常に読み込まれました！")
 else:
-    st.error(f"ビルド済みのHTMLファイルが見つかりません: {html_path}\n`npm run build` を実行してビルドを生成してください。")
+    st.error(
+        f"ビルド済みのHTMLファイルが見つかりません: {html_path}\n"
+        "`npm run build` を実行してビルドを生成してください。"
+    )
