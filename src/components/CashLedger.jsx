@@ -36,6 +36,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   const [workersHired, setWorkersHired] = useState('');
   const [salesmenHired, setSalesmenHired] = useState('');
   const [hirePrice, setHirePrice] = useState(5);
+  const [productionKo, setProductionKo] = useState('');
+  const [productionSa, setProductionSa] = useState('');
 
   // 配置転換用のステート
   const [transferW2S, setTransferW2S] = useState(0); // ワーカー → セールスマン
@@ -122,6 +124,40 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       finalQuantity = totalQty;
       finalAmount = totalAmount;
       finalPrice = 0;
+    } else if (selectedCategory === "生産") {
+      const koQty = Number(productionKo) || 0;
+      const saQty = Number(productionSa) || 0;
+      
+      if (koQty === 0 && saQty === 0) {
+        alert("投入または完成する数量を入力してください");
+        return;
+      }
+      
+      const newTransactions = [];
+      if (saQty > 0) {
+        newTransactions.push({
+          id: Date.now().toString() + "-sa",
+          category: "サ",
+          quantity: saQty,
+          amount: saQty * 1,
+          price: 1,
+          timestamp: new Date().toISOString()
+        });
+      }
+      if (koQty > 0) {
+        newTransactions.push({
+          id: Date.now().toString() + "-ko",
+          category: "コ",
+          quantity: koQty,
+          amount: koQty * 2,
+          price: 2,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      setLedger(prev => [...prev, ...newTransactions]);
+      resetForm();
+      return; // Skip normal add
     } else if (["ツ", "ノ"].includes(selectedCategory)) {
       const hasMD = ledger.some(e => e.category === "MD");
       let totalQty = 0;
@@ -381,6 +417,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     if (!needsQty) {
       setQuantity('');
       setPrice('');
+      setProductionKo('');
+      setProductionSa('');
     } else {
       if (symbol === "コ") setPrice('2');
       if (symbol === "サ") setPrice('1');
@@ -642,6 +680,24 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '1rem' }}>📌</span> ルールB・その他 (随時・決算処理)
                   </h4>
+                  <div className="category-group">
+                      <h4 style={{ fontSize: '0.8rem', color: 'var(--mg-green)', marginBottom: '8px' }}>工場・生産</h4>
+                      <div className="grid-2">
+                        {[
+                          { action: "生産", symbol: "生産" }
+                        ].map(({ action, symbol }) => (
+                          <button
+                            key={symbol}
+                            type="button"
+                            onClick={() => handleCategorySelect(symbol)}
+                            className={`btn-category category-green ${selectedCategory === symbol ? 'active' : ''}`}
+                            style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === symbol ? 1 : 0.8, borderColor: selectedCategory === symbol ? '#4caf50' : 'rgba(76, 175, 80, 0.15)', backgroundColor: selectedCategory === symbol ? 'rgba(76, 175, 80, 0.2)' : undefined }}
+                          >
+                            <span style={{ fontWeight: '800', marginRight: '4px' }}>{symbol}</span> {CATEGORIES[symbol].label}
+                          </button>
+                        ))}
+                      </div>
+                    </div> 
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                     {[
@@ -698,7 +754,63 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
               </div>
 
               {/* 採用専用UI */}
-              {selectedCategory === '採用' ? (
+              {selectedCategory === '生産' ? (
+                <div style={{ background: 'rgba(76, 175, 80, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-green)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-green)', margin: 0 }}>生産一括処理（サ・コ）</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const maxSa = Math.min(results?.currentWipCount || 0, results?.productionCapacity || 0);
+                        const maxKo = Math.min(results?.currentMatCount || 0, results?.productionCapacity || 0);
+                        setProductionSa(maxSa);
+                        setProductionKo(maxKo);
+                      }}
+                      style={{ padding: '6px 12px', fontSize: '0.75rem', background: 'var(--mg-green)', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}
+                    >
+                      MAXセット
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '12px', background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '6px' }}>
+                    <div>生産能力: <span style={{ color: 'white', fontWeight: 'bold' }}>{results?.productionCapacity || 0}</span></div>
+                    <div>材料在庫: <span style={{ color: 'white', fontWeight: 'bold' }}>{results?.currentMatCount || 0}</span></div>
+                    <div>仕掛在庫: <span style={{ color: 'white', fontWeight: 'bold' }}>{results?.currentWipCount || 0}</span></div>
+                  </div>
+
+                  <div className="grid-2">
+                    <div className="form-group">
+                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>完成 (サ)</span>
+                        <span style={{ fontSize: '0.7rem', color: '#ff5252' }}>単価: 1万</span>
+                      </label>
+                      <input 
+                        type="number" 
+                        value={productionSa} 
+                        onChange={(e) => setProductionSa(Math.min(Math.min(results?.currentWipCount || 0, results?.productionCapacity || 0), Math.max(0, Number(e.target.value) || 0)))}
+                        placeholder="0"
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>投入 (コ)</span>
+                        <span style={{ fontSize: '0.7rem', color: '#ff5252' }}>単価: 2万</span>
+                      </label>
+                      <input 
+                        type="number" 
+                        value={productionKo} 
+                        onChange={(e) => setProductionKo(Math.min(Math.min(results?.currentMatCount || 0, results?.productionCapacity || 0), Math.max(0, Number(e.target.value) || 0)))}
+                        placeholder="0"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '12px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    合計出金: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((Number(productionSa) || 0) * 1) + ((Number(productionKo) || 0) * 2)}</span> 万
+                  </div>
+                </div>
+              ) : selectedCategory === '採用' ? (
                 <div style={{ background: 'rgba(15, 17, 26, 0.4)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-blue)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-blue)', margin: 0 }}>採用情報の入力</h4>
@@ -1130,16 +1242,11 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                 <>
 
               {/* 数量・単価入力（対応する勘定科目のみ） */}
-              {isQtyNeeded && !["キ", "ネ", "ツ", "ノ", "ケ", "セ", "緑チップ"].includes(selectedCategory) && (
+              {isQtyNeeded && !["キ", "ネ", "ツ", "ノ", "ケ", "セ", "緑チップ", "生産"].includes(selectedCategory) && (
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">
                       数量 (個数)
-                      {["コ", "サ"].includes(selectedCategory) && (
-                        <span style={{ fontSize: '0.7rem', color: '#ff5252', marginLeft: '8px', fontWeight: 'bold' }}>
-                          (最大: {results?.productionCapacity || 0}個)
-                        </span>
-                      )}
                     </label>
                     <input 
                       type="number" 
