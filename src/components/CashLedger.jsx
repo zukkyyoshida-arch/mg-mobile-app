@@ -224,6 +224,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       finalQuantity = 1;
       finalAmount = rdPrice;
       finalPrice = rdPrice;
+    } else if (selectedCategory === "保険") {
+      finalQuantity = 1;
+      finalAmount = 5;
+      finalPrice = 5;
     } else if (selectedCategory === "緑チップ") {
       const pacQty = greenChips.pac || 0;
       const mdQty = greenChips.md || 0;
@@ -790,6 +794,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   <div style={{ marginTop: '12px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     合計出金: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((Number(productionSa) || 0) * 1) + ((Number(productionKo) || 0) * 2)}</span> 万
                   </div>
+                </div>
+              ) : selectedCategory === '保険' ? (
+                <div style={{ background: 'rgba(255, 235, 59, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-yellow)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-yellow)', margin: 0 }}>保険の購入</h4>
+                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>5万</span>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', marginBottom: 0 }}>火災や盗難が発生した場合、被害額が自動補填されます。（保険チップは事故の発生時に失われます）</p>
                 </div>
               ) : selectedCategory === '採用' ? (
                 <div style={{ background: 'rgba(15, 17, 26, 0.4)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-blue)' }}>

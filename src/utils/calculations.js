@@ -156,8 +156,10 @@ export function calculateFinancials(carryover, ledger, actuals) {
             currentMatCount = 0;
             if (insuranceChips > 0) {
               autoInsurancePayout += lostMat * 8;
-              insuranceChips -= 1;
             }
+          }
+          if (insuranceChips > 0) {
+            insuranceChips -= 1;
           }
           break;
         }
@@ -178,8 +180,10 @@ export function calculateFinancials(carryover, ledger, actuals) {
             currentProdCount -= lostProd;
             if (insuranceChips > 0) {
               autoInsurancePayout += lostProd * 10;
-              insuranceChips -= 1;
             }
+          }
+          if (insuranceChips > 0) {
+            insuranceChips -= 1;
           }
           break;
         }
