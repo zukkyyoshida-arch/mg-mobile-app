@@ -1,4 +1,4 @@
-import { CATEGORIES } from '../utils/calculations';
+import { CATEGORIES, SALARY_TABLE } from '../utils/calculations';
 import CompanyBoardMinimap from './CompanyBoardMinimap';
 import { useState } from 'react';
 
@@ -96,6 +96,11 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   const [calcInput, setCalcInput] = useState('');
   const [showCalculator, setShowCalculator] = useState(false);
   const [showMinimap, setShowMinimap] = useState(false);
+
+  // 期末処理モーダル用のステート
+  const [showPeriodEndModal, setShowPeriodEndModal] = useState(false);
+  const [periodEndWorkers, setPeriodEndWorkers] = useState('');
+  const [periodEndSalesmen, setPeriodEndSalesmen] = useState('');
 
   // フォームリセット関数
   const resetForm = () => {
@@ -571,39 +576,59 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     setShowAddModal(false);
   };
 
-  // 期末処理の実行
+  // 期末処理の実行 (モーダル表示)
   const handlePeriodEnd = () => {
+    // 現在の人数をデフォルトセット
+    setPeriodEndWorkers((results?.workers || 0).toString());
+    setPeriodEndSalesmen((results?.salesmen || 0).toString());
+    setShowPeriodEndModal(true);
+  };
+
+  // 期末処理の確定
+  const confirmPeriodEnd = () => {
     const newTransactions = [];
     const timestamp = new Date().toISOString();
     
-    // 1. 給与・社会保険料の引き落とし (自動計算された laborCost)
-    const laborCost = results?.pl?.laborCost || 0;
-    if (laborCost > 0) {
-      newTransactions.push({ 
-        id: Date.now().toString() + "-labor", 
-        category: "給与", 
-        quantity: 1, 
-        amount: laborCost, 
-        price: laborCost, 
-        timestamp 
-      });
+    const wCount = Number(periodEndWorkers) || 0;
+    const sCount = Number(periodEndSalesmen) || 0;
+    const totalStaff = wCount + sCount;
+    
+    // 現在の期の単価を取得
+    const periodKey = Math.min(5, Math.max(1, currentPeriod));
+    const salaryUnit = SALARY_TABLE.normal[periodKey];
+    const insuranceUnit = SALARY_TABLE.insurance[periodKey];
+    
+    const workerSal = wCount * salaryUnit;
+    const salesmanSal = sCount * salaryUnit;
+    const insurance = totalStaff * insuranceUnit;
+
+    if (workerSal > 0) {
+      newTransactions.push({ id: Date.now().toString() + "-w-sal", category: "シ", quantity: 1, amount: workerSal, price: workerSal, timestamp: new Date(Date.now() + 1).toISOString() });
+    }
+    if (salesmanSal > 0) {
+      newTransactions.push({ id: Date.now().toString() + "-s-sal", category: "セ", quantity: 1, amount: salesmanSal, price: salesmanSal, timestamp: new Date(Date.now() + 2).toISOString() });
+    }
+    if (insurance > 0) {
+      newTransactions.push({ id: Date.now().toString() + "-ins", category: "ソ", quantity: 1, amount: insurance, price: insurance, timestamp: new Date(Date.now() + 3).toISOString() });
     }
 
     const tax = results?.carryover?.taxes || 0;
     if (tax > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-ni", category: "ニ", quantity: 1, amount: tax, price: tax, timestamp: new Date(Date.now() + 1).toISOString() });
+      newTransactions.push({ id: Date.now().toString() + "-ni", category: "ニ", quantity: 1, amount: tax, price: tax, timestamp: new Date(Date.now() + 4).toISOString() });
     }
     const loan = results?.carryover?.loan || 0;
     if (loan > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-na", category: "ナ", quantity: 1, amount: loan, price: loan, timestamp: new Date(Date.now() + 2).toISOString() });
+      newTransactions.push({ id: Date.now().toString() + "-na", category: "ナ", quantity: 1, amount: loan, price: loan, timestamp: new Date(Date.now() + 5).toISOString() });
     }
+
     if (newTransactions.length === 0) {
       alert("期末に処理する項目がありません。");
+      setShowPeriodEndModal(false);
       return;
     }
-    if (window.confirm("期末処理を実行しますか？")) {
-      onUpdateLedger([...ledger, ...newTransactions]);
-    }
+    
+    onUpdateLedger([...ledger, ...newTransactions]);
+    setShowPeriodEndModal(false);
   };
 
   // 取引の削除
@@ -875,6 +900,71 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.5} d="M12 4v16m8-8H4" />
         </svg>
       </button>
+
+      {/* 期末処理モーダル */}
+      {showPeriodEndModal && (
+        <div className="modal-overlay" onClick={() => setShowPeriodEndModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">期末処理：人数の確定</h3>
+              <button onClick={() => setShowPeriodEndModal(false)} className="modal-close">×</button>
+            </div>
+            <div className="form-group">
+              <label className="form-label">期末のワーカー数</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                className="form-input"
+                value={periodEndWorkers}
+                onChange={(e) => setPeriodEndWorkers(e.target.value)}
+                min="0"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">期末のセールスマン数</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                className="form-input"
+                value={periodEndSalesmen}
+                onChange={(e) => setPeriodEndSalesmen(e.target.value)}
+                min="0"
+              />
+            </div>
+            
+            {(() => {
+              const wCount = Number(periodEndWorkers) || 0;
+              const sCount = Number(periodEndSalesmen) || 0;
+              const totalStaff = wCount + sCount;
+              const periodKey = Math.min(5, Math.max(1, currentPeriod));
+              const salaryUnit = SALARY_TABLE.normal[periodKey] || 0;
+              const insuranceUnit = SALARY_TABLE.insurance[periodKey] || 0;
+              const workerSal = wCount * salaryUnit;
+              const salesmanSal = sCount * salaryUnit;
+              const insurance = totalStaff * insuranceUnit;
+              const totalAmount = workerSal + salesmanSal + insurance;
+              
+              return (
+                <div style={{ background: 'rgba(0, 176, 255, 0.1)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    第{currentPeriod}期の給与単価: {salaryUnit}万 / 保険単価: {insuranceUnit}万
+                  </p>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem' }}>労務費(シ): ¥{workerSal}万</p>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem' }}>販売費(セ): ¥{salesmanSal}万</p>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>社会保険料(ソ): ¥{insurance}万</p>
+                  <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                    合計引落額: ¥{totalAmount}万
+                  </p>
+                </div>
+              );
+            })()}
+
+            <button onClick={confirmPeriodEnd} className="btn-primary" style={{ width: '100%' }}>
+              確定して処理を実行
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ワンタップ追加ボトムシート（モーダル） */}
       {showAddModal && (

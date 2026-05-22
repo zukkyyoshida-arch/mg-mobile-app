@@ -254,21 +254,19 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
   });
 
   // 人件費の自動計算（期末に現金で支払われる固定費）
-// 人件費の自動計算（期末に現金で支払われる固定費）
-  // 期中に新規採用した人員は次期の給与として計上するため、現在期の給与計算から除外
+  // 人件費の自動計算（期末に現金で支払われる固定費）は廃止し、期末処理モーダルでの手動確定（シ、セ、ソへの計上）に移行します
   const hiresWorkers = ledger.reduce((sum, e) => e.category === '採用' ? sum + (Number(e.workersHired) || 0) : sum, 0);
   const hiresSalesmen = ledger.reduce((sum, e) => e.category === '採用' ? sum + (Number(e.salesmenHired) || 0) : sum, 0);
   const staffForSalaryWorkers = Math.max(0, totalWorkersHired - hiresWorkers);
   const staffForSalarySalesmen = Math.max(0, totalSalesmenHired - hiresSalesmen);
-  const salaryUnit_early    = SALARY_TABLE.normal[periodKey];
-  const severanceUnit_early = SALARY_TABLE.severance[periodKey];
-  const insuranceUnit_early = SALARY_TABLE.insurance[periodKey];
-  const autoWorkerSalary    = staffForSalaryWorkers * salaryUnit_early;
-  const autoWorkerSeverance = totalSeveranceWorkers * severanceUnit_early;
-  const autoSalesmanSal     = staffForSalarySalesmen * salaryUnit_early;
-  const autoSalesmanSev     = totalSeveranceSalesmen * severanceUnit_early;
-  const autoInsuranceStaff  = maxTotalStaff * insuranceUnit_early;
-  const totalAutoStaffCost  = autoWorkerSalary + autoWorkerSeverance + autoSalesmanSal + autoSalesmanSev + autoInsuranceStaff;
+  
+  // 以降は期末処理で手動登録するため、自動PL計上は 0 にする
+  const autoWorkerSalary    = 0;
+  const autoWorkerSeverance = 0;
+  const autoSalesmanSal     = 0;
+  const autoSalesmanSev     = 0;
+  const autoInsuranceStaff  = 0;
+  const totalAutoStaffCost  = 0;
 
 // 現金残高 = 期首 + 入金 - 出金（人件費は現金流出に含めない。ただし損益計算書の費用としては計上）
 const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
