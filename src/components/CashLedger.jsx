@@ -65,6 +65,13 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   // 研究開発用のステート
   const [rdPrice, setRdPrice] = useState(20);
   
+  // 緑チップ用のステート
+  const [greenChips, setGreenChips] = useState({
+    pac: 0,
+    md: 0,
+    research: 0
+  });
+  
   // 電卓の状態
   const [calcInput, setCalcInput] = useState('');
   const [showCalculator, setShowCalculator] = useState(false);
@@ -177,6 +184,62 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       finalQuantity = 1;
       finalAmount = rdPrice;
       finalPrice = rdPrice;
+    } else if (selectedCategory === "緑チップ") {
+      const pacQty = greenChips.pac || 0;
+      const mdQty = greenChips.md || 0;
+      const researchQty = greenChips.research || 0;
+      
+      const totalAmount = (pacQty + mdQty + researchQty) * 10;
+      if (totalAmount === 0) {
+        alert("購入する緑チップの数量を入力してください");
+        return;
+      }
+      
+      let updatedLedger = [...ledger];
+      
+      for (let i = 0; i < pacQty; i++) {
+        updatedLedger.push({
+          id: Date.now().toString() + `-pac-${i}`,
+          voucherNo: voucherNo || (updatedLedger.length + 1).toString(),
+          category: 'PAC',
+          quantity: 1,
+          price: 10,
+          amount: 10,
+          workersHired: 0,
+          salesmenHired: 0
+        });
+      }
+      for (let i = 0; i < mdQty; i++) {
+        updatedLedger.push({
+          id: Date.now().toString() + `-md-${i}`,
+          voucherNo: voucherNo || (updatedLedger.length + 1).toString(),
+          category: 'MD',
+          quantity: 1,
+          price: 10,
+          amount: 10,
+          workersHired: 0,
+          salesmenHired: 0
+        });
+      }
+      for (let i = 0; i < researchQty; i++) {
+        updatedLedger.push({
+          id: Date.now().toString() + `-research-${i}`,
+          voucherNo: voucherNo || (updatedLedger.length + 1).toString(),
+          category: 'リサーチ',
+          quantity: 1,
+          price: 10,
+          amount: 10,
+          workersHired: 0,
+          salesmenHired: 0
+        });
+      }
+      
+      onUpdateLedger(updatedLedger);
+      
+      setVoucherNo('');
+      setGreenChips({ pac: 0, md: 0, research: 0 });
+      setSelectedCategory('キ');
+      return;
     } else {
       finalAmount = selectedCategory === '採用' 
         ? (Number(workersHired) || 0) * hirePrice + (Number(salesmenHired) || 0) * hirePrice 
@@ -191,6 +254,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
           return;
         }
       }
+    }
+
+    // 0円取引のブロック (非現金取引は除外)
+    const isCashTransaction = CATEGORIES[selectedCategory]?.isCash !== false;
+    const actualAmount = finalAmount || (finalQuantity * finalPrice);
+    if (isCashTransaction && actualAmount <= 0 && !["火災", "製造ミス", "盗難"].includes(selectedCategory)) {
+      alert("0万円の処理は登録できません。金額や数量を確認してください。");
+      return;
     }
 
     const newEntry = {
@@ -255,6 +326,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       sapporo: { qty: 0, price: '' }, sendai: { qty: 0, price: '' }, tokyo: { qty: 0, price: '' },
       nagoya: { qty: 0, price: '' }, osaka: { qty: 0, price: '' }, fukuoka: { qty: 0, price: '' }
     });
+    setGreenChips({ pac: 0, md: 0, research: 0 });
     setCalcInput('');
     setShowAddModal(false);
   };
@@ -539,9 +611,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                     {[
                       { action: "保険", symbol: "保険" },
-                      { action: "PAC生産性", symbol: "PAC" },
-                      { action: "マーチャンダイザー", symbol: "MD" },
-                      { action: "マーケットリサーチ", symbol: "リサーチ" },
+                      { action: "緑チップ購入", symbol: "緑チップ" },
                       { action: "配置転換", symbol: "配置転換" },
                       { action: "機械売却", symbol: "イ" },
                       { action: "銀行借入", symbol: "オ" },
@@ -744,6 +814,45 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                     </div>
                   );
                 })()
+              ) : selectedCategory === '緑チップ' ? (
+                <div style={{ background: 'rgba(76, 175, 80, 0.15)', padding: '16px', borderRadius: '12px', border: '1px dashed #4caf50' }}>
+                  <h4 style={{ fontSize: '0.85rem', color: '#81c784', marginBottom: '16px' }}>緑チップの購入 (各10万/枚)</h4>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {[
+                      { id: 'pac', name: 'PAC生産性', desc: '生産能力+1' },
+                      { id: 'md', name: 'マーチャンダイザー', desc: '材料仕入-2万' },
+                      { id: 'research', name: 'マーケットリサーチ', desc: '販売力アップ' }
+                    ].map(chip => {
+                      const qty = greenChips[chip.id] || 0;
+                      return (
+                        <div key={chip.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: '8px' }}>
+                          <div>
+                            <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{chip.name}</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{chip.desc}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <button 
+                              type="button"
+                              onClick={() => setGreenChips(prev => ({ ...prev, [chip.id]: Math.max(0, qty - 1) }))}
+                              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >-</button>
+                            <span style={{ fontSize: '1.1rem', fontWeight: 'bold', width: '24px', textAlign: 'center' }}>{qty}</span>
+                            <button 
+                              type="button"
+                              onClick={() => setGreenChips(prev => ({ ...prev, [chip.id]: qty + 1 }))}
+                              style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >+</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <div style={{ marginTop: '16px', textAlign: 'right', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    合計金額: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'white' }}>{((greenChips.pac + greenChips.md + greenChips.research) * 10)}</span> 万
+                  </div>
+                </div>
               ) : selectedCategory === "ケ" ? (
                 (() => {
                   let totalQty = 0;
@@ -906,7 +1015,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                 <>
 
               {/* 数量・単価入力（対応する勘定科目のみ） */}
-              {isQtyNeeded && !["キ", "ネ", "ツ", "ノ", "ケ", "セ"].includes(selectedCategory) && (
+              {isQtyNeeded && !["キ", "ネ", "ツ", "ノ", "ケ", "セ", "緑チップ"].includes(selectedCategory) && (
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">

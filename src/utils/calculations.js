@@ -27,6 +27,7 @@ export const CATEGORIES = {
   "MD": { label: "マーチャンダイザー", type: "outflow", color: "blue", symbol: "MD", isCash: true },
   "リサーチ": { label: "マーケットリサーチ", type: "outflow", color: "blue", symbol: "リサーチ", isCash: true },
   "PAC": { label: "PAC生産性", type: "outflow", color: "blue", symbol: "PAC", isCash: true },
+  "緑チップ": { label: "緑チップ購入 (PAC/MD/リサーチ)", type: "outflow", color: "blue", symbol: "緑チップ", isCash: true },
   "配置転換": { label: "配置転換", type: "outflow", color: "blue", symbol: "配置", isCash: true },
   "火災": { label: "火災 (材料ロス)", type: "outflow", color: "red", symbol: "火災", isCash: false },
   "製造ミス": { label: "製造ミス (仕掛品ロス)", type: "outflow", color: "red", symbol: "ミス", isCash: false },
