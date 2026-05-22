@@ -575,13 +575,27 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   const handlePeriodEnd = () => {
     const newTransactions = [];
     const timestamp = new Date().toISOString();
+    
+    // 1. 給与・社会保険料の引き落とし (自動計算された laborCost)
+    const laborCost = results?.pl?.laborCost || 0;
+    if (laborCost > 0) {
+      newTransactions.push({ 
+        id: Date.now().toString() + "-labor", 
+        category: "給与", 
+        quantity: 1, 
+        amount: laborCost, 
+        price: laborCost, 
+        timestamp 
+      });
+    }
+
     const tax = results?.carryover?.taxes || 0;
     if (tax > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-ni", category: "ニ", quantity: 1, amount: tax, price: tax, timestamp });
+      newTransactions.push({ id: Date.now().toString() + "-ni", category: "ニ", quantity: 1, amount: tax, price: tax, timestamp: new Date(Date.now() + 1).toISOString() });
     }
     const loan = results?.carryover?.loan || 0;
     if (loan > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-na", category: "ナ", quantity: 1, amount: loan, price: loan, timestamp });
+      newTransactions.push({ id: Date.now().toString() + "-na", category: "ナ", quantity: 1, amount: loan, price: loan, timestamp: new Date(Date.now() + 2).toISOString() });
     }
     if (newTransactions.length === 0) {
       alert("期末に処理する項目がありません。");

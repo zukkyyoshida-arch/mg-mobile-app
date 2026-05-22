@@ -23,6 +23,7 @@ export const CATEGORIES = {
   "ス": { label: "製造経費", type: "outflow", color: "blue", symbol: "ス" },
   "セ": { label: "販売費", type: "outflow", color: "blue", symbol: "セ" },
   "ソ": { label: "一般管理費", type: "outflow", color: "blue", symbol: "ソ" },
+  "給与": { label: "給与・保険料 (期末自動)", type: "outflow", color: "blue", symbol: "給与", isCash: true },
   "採用": { label: "採用 (ワーカー・セールスマン)", type: "outflow", color: "blue", symbol: "採用", isCash: true },
   "保険": { label: "保険", type: "outflow", color: "blue", symbol: "保険", isCash: true },
   "MD": { label: "マーチャンダイザー", type: "outflow", color: "blue", symbol: "MD", isCash: true },
