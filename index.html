@@ -9,5 +9,29 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      function initStreamlit() {
+        if (window.parent !== window) {
+          window.parent.postMessage({
+            isStreamlitMessage: true,
+            type: "streamlit:setComponentReady",
+            apiVersion: 1
+          }, "*");
+          window.parent.postMessage({
+            isStreamlitMessage: true,
+            type: "streamlit:setFrameHeight",
+            height: window.document.body.scrollHeight || 960
+          }, "*");
+          setInterval(() => {
+            window.parent.postMessage({
+              isStreamlitMessage: true,
+              type: "streamlit:setFrameHeight",
+              height: window.document.body.scrollHeight || 960
+            }, "*");
+          }, 500);
+        }
+      }
+      window.addEventListener("load", initStreamlit);
+    </script>
   </body>
 </html>

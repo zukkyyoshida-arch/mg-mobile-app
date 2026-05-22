@@ -39,11 +39,8 @@ build_dir = os.path.join(current_dir, "dist")
 html_path = os.path.join(build_dir, "index.html")
 
 if os.path.exists(html_path):
-    with open(html_path, "r", encoding="utf-8") as f:
-        html_code = f.read()
-    
-    # 組み込みのHTMLとして直接注入（Streamlitのコンポーネント通信を待機しない）
-    components.html(html_code, height=960, scrolling=True)
+    mg_app = components.declare_component("mg_app", path=build_dir)
+    mg_app(default=None)
 else:
     st.error(
         f"ビルド済みのHTMLファイルが見つかりません: {html_path}\n"
