@@ -35,14 +35,14 @@ st.markdown("""
 
 # ビルドされた単一HTMLファイル（inlined）を読み込んでiframeとして埋め込み
 current_dir = os.path.dirname(os.path.abspath(__file__))
-html_path = os.path.join(current_dir, "dist", "index.html")
+build_dir = os.path.join(current_dir, "dist")
+html_path = os.path.join(build_dir, "index.html")
 
 if os.path.exists(html_path):
-    with open(html_path, "r", encoding="utf-8") as f:
-        html_code = f.read()
-    # コンポーネントを埋め込み
-    components.html(html_code, height=960, scrolling=True)
-    st.success("React アプリが正常に読み込まれました！")
+    # Streamlit の公式機能でディレクトリ全体を静的ホスティングする
+    mg_app = components.declare_component("mg_app", path=build_dir)
+    # レンダリング（高さを指定しないと CSS の 100vh が効かない場合があるので明示的にも指定）
+    mg_app(default=None)
 else:
     st.error(
         f"ビルド済みのHTMLファイルが見つかりません: {html_path}\n"
