@@ -249,7 +249,19 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
     }
   });
 
-  const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
+  // 人件費の自動計算（期末に現金で支払われる固定費）
+  const salaryUnit_early    = SALARY_TABLE.normal[periodKey];
+  const severanceUnit_early = SALARY_TABLE.severance[periodKey];
+  const insuranceUnit_early = SALARY_TABLE.insurance[periodKey];
+  const autoWorkerSalary    = totalWorkersHired * salaryUnit_early;
+  const autoWorkerSeverance = totalSeveranceWorkers * severanceUnit_early;
+  const autoSalesmanSal     = totalSalesmenHired * salaryUnit_early;
+  const autoSalesmanSev     = totalSeveranceSalesmen * severanceUnit_early;
+  const autoInsuranceStaff  = maxTotalStaff * insuranceUnit_early;
+  const totalAutoStaffCost  = autoWorkerSalary + autoWorkerSeverance + autoSalesmanSal + autoSalesmanSev + autoInsuranceStaff;
+
+  // 現金残高 = 期首 + 入金 - 出金 - 人件費自動計算分（B/Sバランスのため）
+  const bookEndingCash = carryover.cash + cashInflow - cashOutflow - totalAutoStaffCost;
 
   // 2. 在庫・原価計算 (材料 -> 仕掛品 -> 製品)
   
@@ -386,27 +398,18 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
   // 固定費 F (シ, ス, セ, ソ, タ, チ + 減価償却)
   // 注: サ(完成費)、コ(投入費)、ツ(材料)、ケ(機械)、ナ(借入返済)、ニ(納税)、ヌ(買掛支払)は固定費ではない
 
-  // ── 人件費の自動計算 ──
-  const salaryUnit     = SALARY_TABLE.normal[periodKey];    // 通常給料単価
-  const severanceUnit  = SALARY_TABLE.severance[periodKey]; // 退職時給料単価
-  const insuranceUnit  = SALARY_TABLE.insurance[periodKey]; // 社会保険料単価
-
-  // 労務費(シ) = 現在のワーカー数 × 給料単価 + 退職ワーカー × 退職給料単価
-  const workerSalary    = totalWorkersHired * salaryUnit;
-  const workerSeverance = totalSeveranceWorkers * severanceUnit;
+  // ── 人件費の参照（上で計算済みの変数を再利用） ──
+  const workerSalary    = autoWorkerSalary;
+  const workerSeverance = autoWorkerSeverance;
   const autoLaborCost   = workerSalary + workerSeverance;
-
-  // 販売費(セ) 給料分 = 現在のセールスマン数 × 給料単価 + 退職セールスマン × 退職給料単価
-  const salesmanSalary    = totalSalesmenHired * salaryUnit;
-  const salesmanSeverance = totalSeveranceSalesmen * severanceUnit;
+  const salesmanSalary    = autoSalesmanSal;
+  const salesmanSeverance = autoSalesmanSev;
   const autoSalesmanCost  = salesmanSalary + salesmanSeverance;
-
-  // 社会保険料 = 期中の最大人数（ワーカー＋セールスマン） × 保険料単価
-  const autoInsuranceCost = maxTotalStaff * insuranceUnit;
+  const autoInsuranceCost = autoInsuranceStaff;
 
   // 労務費 = 自動計算分 + 手動入力分(シ)
   const laborCost = autoLaborCost + ledgerTotals["シ"].amount;
-  const manufacturingFixed = ledgerTotals["ス"].amount + depreciation + (ledgerTotals["PAC"] ? ledgerTotals["PAC"].amount : 0); // 製造固定費 (製造経費 + 減価償却 + PAC)
+  const manufacturingFixed = ledgerTotals["ス"].amount + depreciation + (ledgerTotals["PAC"] ? ledgerTotals["PAC"].amount : 0);
   // 販売費 = セールスマン給料(自動) + 広告チップ等(セ) + リサーチ
   const salesCost = autoSalesmanCost + ledgerTotals["セ"].amount + (ledgerTotals["リサーチ"] ? ledgerTotals["リサーチ"].amount : 0);
   // 一般管理費: 社会保険料(自動) + 「ソ」+ 「採用」+ 「保険チップ」+ 「MD」+ 「配置転換」
@@ -416,8 +419,8 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
     + (ledgerTotals["保険"] ? ledgerTotals["保険"].amount : 0)
     + (ledgerTotals["MD"] ? ledgerTotals["MD"].amount : 0)
     + (ledgerTotals["配置転換"] ? ledgerTotals["配置転換"].amount : 0);
-  const rdCost = ledgerTotals["チ"].amount; // 研究開発費
-  const nonOperatingCost = ledgerTotals["タ"].amount; // 営業外費用
+  const rdCost = ledgerTotals["チ"].amount;
+  const nonOperatingCost = ledgerTotals["タ"].amount;
   
   const fixedCost = laborCost + manufacturingFixed + salesCost + adminCost + rdCost + nonOperatingCost; // 固定費合計 F
   
