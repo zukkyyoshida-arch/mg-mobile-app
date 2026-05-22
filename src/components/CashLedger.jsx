@@ -42,6 +42,16 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0
   });
   
+  // 商品販売用のステート
+  const [salesData, setSalesData] = useState({
+    sapporo: { qty: 0, price: '' },
+    sendai: { qty: 0, price: '' },
+    tokyo: { qty: 0, price: '' },
+    nagoya: { qty: 0, price: '' },
+    osaka: { qty: 0, price: '' },
+    fukuoka: { qty: 0, price: '' }
+  });
+  
   // 機械購入用のステート
   const [machineQuantities, setMachineQuantities] = useState({
     large: 0, small: 0, attachment: 0
@@ -72,7 +82,36 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     let finalQuantity = 0;
     let finalPrice = 0;
 
-    if (["ツ", "ノ"].includes(selectedCategory)) {
+    if (["キ", "ネ"].includes(selectedCategory)) {
+      let totalQty = 0;
+      let totalAmount = 0;
+      let hasError = false;
+      
+      MARKETS.filter(m => m.id !== 'stocker').forEach(m => {
+        const qty = salesData[m.id]?.qty || 0;
+        const prc = Number(salesData[m.id]?.price) || 0;
+        if (qty > 0) {
+          if (prc <= 0) {
+            alert(`${m.name}の販売単価を入力してください`);
+            hasError = true;
+          } else {
+            totalQty += qty;
+            totalAmount += qty * prc;
+          }
+        }
+      });
+
+      if (hasError) return;
+
+      if (totalQty === 0) {
+        alert("販売する数量と単価を入力してください");
+        return;
+      }
+
+      finalQuantity = totalQty;
+      finalAmount = totalAmount;
+      finalPrice = 0;
+    } else if (["ツ", "ノ"].includes(selectedCategory)) {
       const hasMD = ledger.some(e => e.category === "MD");
       let totalQty = 0;
       let totalAmount = 0;
@@ -157,7 +196,16 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       salesmenHired: selectedCategory === '採用' ? (Number(salesmenHired) || 0) : 0,
       largeMachines: selectedCategory === 'ケ' ? (machineQuantities.large || 0) : 0,
       smallMachines: selectedCategory === 'ケ' ? (machineQuantities.small || 0) : 0,
-      attachments: selectedCategory === 'ケ' ? (machineQuantities.attachment || 0) : 0
+      attachments: selectedCategory === 'ケ' ? (machineQuantities.attachment || 0) : 0,
+      salesDetails: ["キ", "ネ"].includes(selectedCategory) ? (() => {
+        const details = {};
+        MARKETS.filter(m => m.id !== 'stocker').forEach(m => {
+          const qty = salesData[m.id]?.qty || 0;
+          const prc = Number(salesData[m.id]?.price) || 0;
+          if (qty > 0 && prc > 0) details[m.id] = { qty, price: prc, name: m.name };
+        });
+        return details;
+      })() : undefined
     };
 
     let updatedLedger = [...ledger, newEntry];
@@ -195,6 +243,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     setMarketQuantities({ sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0 });
     setMachineQuantities({ large: 0, small: 0, attachment: 0 });
     setAdQuantities({ ad5: 0, ad10: 0, ad20: 0 });
+    setSalesData({
+      sapporo: { qty: 0, price: '' }, sendai: { qty: 0, price: '' }, tokyo: { qty: 0, price: '' },
+      nagoya: { qty: 0, price: '' }, osaka: { qty: 0, price: '' }, fukuoka: { qty: 0, price: '' }
+    });
     setCalcInput('');
     setShowAddModal(false);
   };
@@ -354,9 +406,21 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       <span style={{ fontSize: '0.88rem', fontWeight: '700' }}>{catMeta.label}</span>
                       <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>#{entry.voucherNo}</span>
                     </div>
-                    {["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ"].includes(entry.category) && (
+                    {["コ", "サ", "ツ", "ノ", "ケ"].includes(entry.category) && (
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                         数量: {entry.quantity} 個 × 単価 ¥{entry.price} 万
+                      </div>
+                    )}
+                    {["キ", "ネ"].includes(entry.category) && entry.salesDetails && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px', display: 'flex', flexDirection: 'column' }}>
+                        {Object.values(entry.salesDetails).map((detail, i) => (
+                          <span key={i}>{detail.name}: {detail.qty}個 × @¥{detail.price}万</span>
+                        ))}
+                      </div>
+                    )}
+                    {["キ", "ネ"].includes(entry.category) && !entry.salesDetails && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        数量: {entry.quantity} 個
                       </div>
                     )}
                     {entry.category === "採用" && (
@@ -770,11 +834,71 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                     </div>
                   );
                 })()
+              ) : ["キ", "ネ"].includes(selectedCategory) ? (
+                (() => {
+                  let totalQty = 0;
+                  let totalAmount = 0;
+                  MARKETS.filter(m => m.id !== 'stocker').forEach(m => {
+                    const qty = salesData[m.id]?.qty || 0;
+                    const prc = Number(salesData[m.id]?.price) || 0;
+                    totalQty += qty;
+                    totalAmount += qty * prc;
+                  });
+                  
+                  return (
+                    <div style={{ background: 'rgba(233, 30, 99, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(233, 30, 99, 0.3)' }}>
+                      <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-pink)', marginBottom: '12px' }}>
+                        販売する市場・数量・単価を入力
+                      </h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginBottom: '16px' }}>
+                        {MARKETS.filter(m => m.id !== 'stocker').map(m => {
+                          const qty = salesData[m.id]?.qty || 0;
+                          const prc = salesData[m.id]?.price || '';
+                          
+                          return (
+                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>@</span>
+                                  <input 
+                                    type="number"
+                                    placeholder="単価"
+                                    value={prc}
+                                    onChange={(e) => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], price: e.target.value } }))}
+                                    style={{ width: '60px', padding: '4px 6px', fontSize: '0.8rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'white' }}
+                                  />
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <button 
+                                  type="button"
+                                  onClick={() => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: Math.max(0, qty - 1) } }))}
+                                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >-</button>
+                                <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
+                                <button 
+                                  type="button"
+                                  onClick={() => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: qty + 1 } }))}
+                                  style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >+</button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'white', fontSize: '1rem' }}>{totalQty}個</strong></span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計金額: <strong style={{ color: 'var(--mg-pink)', fontSize: '1.1rem' }}>{totalAmount}万</strong></span>
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 <>
 
               {/* 数量・単価入力（対応する勘定科目のみ） */}
-              {isQtyNeeded && !["ツ", "ノ", "ケ", "セ"].includes(selectedCategory) && (
+              {isQtyNeeded && !["キ", "ネ", "ツ", "ノ", "ケ", "セ"].includes(selectedCategory) && (
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">数量 (個数)</label>
