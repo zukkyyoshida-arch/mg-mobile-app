@@ -53,6 +53,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   const [riskQty, setRiskQty] = useState('');
   const [riskPrice, setRiskPrice] = useState('');
   const [riskMarket, setRiskMarket] = useState('sapporo');
+  const [riskMonopolyAdQtys, setRiskMonopolyAdQtys] = useState({
+    sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0
+  });
 
   // 複数市場購入用のステート
   const [marketQuantities, setMarketQuantities] = useState({
@@ -111,6 +114,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     setRiskQty('');
     setRiskPrice('');
     setRiskMarket('sapporo');
+    setRiskMonopolyAdQtys({ sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0 });
     setTransferW2S(0);
     setTransferS2W(0);
     setMarketQuantities({ sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0 });
@@ -202,7 +206,21 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       const p = Number(riskPrice) || 0;
       
       if (riskTab === 'positive') {
-        if (riskAction === 'monopoly_salesman' || riskAction === 'monopoly_ad' || riskAction === 'rd_success') {
+        if (riskAction === 'monopoly_ad') {
+          const adPrices = { sapporo: 40, sendai: 36, tokyo: 32, nagoya: 28, osaka: 24, fukuoka: 20 };
+          const cat = riskSaleType === 'credit' ? 'ネ' : 'キ';
+          let totalQ = 0;
+          Object.entries(riskMonopolyAdQtys).forEach(([market, qty]) => {
+            if (qty > 0) {
+              totalQ += qty;
+              newTransactions.push({ id: Date.now().toString() + "-sale-" + market, category: cat, quantity: qty, amount: qty * adPrices[market], price: adPrices[market], timestamp: new Date(Date.now() + Math.random()).toISOString() });
+            }
+          });
+          if (totalQ <= 0) {
+            alert("販売する数量を入力してください");
+            return;
+          }
+        } else if (riskAction === 'monopoly_salesman' || riskAction === 'rd_success') {
           if (q <= 0 || p <= 0) {
             alert("販売する数量と単価を入力してください");
             return;
@@ -1064,32 +1082,13 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         ))}
                       </div>
 
-                      {(riskAction === 'monopoly_salesman' || riskAction === 'monopoly_ad' || riskAction === 'rd_success') && (
+                      {(riskAction === 'monopoly_salesman' || riskAction === 'rd_success') && (
                         <div className="grid-2" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
-                          {riskAction === 'monopoly_ad' && (
-                            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                              <label className="form-label">販売先の市場</label>
-                              <select className="form-input" value={riskMarket} onChange={(e) => {
-                                const newMarket = e.target.value;
-                                setRiskMarket(newMarket);
-                                const maxPrices = { sapporo: 30, sendai: 32, tokyo: 38, nagoya: 36, osaka: 38, fukuoka: 34 };
-                                setRiskPrice(maxPrices[newMarket]);
-                              }}>
-                                <option value="sapporo">札幌 (最大30万)</option>
-                                <option value="sendai">仙台 (最大32万)</option>
-                                <option value="tokyo">東京 (最大38万)</option>
-                                <option value="nagoya">名古屋 (最大36万)</option>
-                                <option value="osaka">大阪 (最大38万)</option>
-                                <option value="fukuoka">福岡 (最大34万)</option>
-                              </select>
-                            </div>
-                          )}
                           <div className="form-group">
                             <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
                               <span>販売数量</span>
                               <button type="button" onClick={() => {
                                 const capacity = riskAction === 'monopoly_salesman' ? (results?.activeSalesmen || 0) * 2
-                                  : riskAction === 'monopoly_ad' ? (results?.activeAdChips || 0) * 2
                                   : (results?.activeRdChips || 0) * 2;
                                 setRiskQty(Math.min(capacity, results?.currentProductCount || 0));
                               }} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'black', fontWeight: 'bold' }}>MAX</button>
@@ -1106,6 +1105,48 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                               <option value="cash">現金 (キ)</option>
                               <option value="credit">売掛 (ネ)</option>
                             </select>
+                          </div>
+                        </div>
+                      )}
+
+                      {riskAction === 'monopoly_ad' && (
+                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                            <span>各市場の販売数量 (上限価格固定)</span>
+                            <span>販売可能: <strong style={{ color: 'white' }}>{Math.min((results?.activeAdChips || 0) * 2, results?.currentProductCount || 0)}個</strong></span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+                            {[
+                              { id: 'sapporo', name: '札幌', maxPrice: 40 },
+                              { id: 'sendai', name: '仙台', maxPrice: 36 },
+                              { id: 'tokyo', name: '東京', maxPrice: 32 },
+                              { id: 'nagoya', name: '名古屋', maxPrice: 28 },
+                              { id: 'osaka', name: '大阪', maxPrice: 24 },
+                              { id: 'fukuoka', name: '福岡', maxPrice: 20 }
+                            ].map(m => (
+                              <div key={m.id} className="form-group" style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '8px' }}>
+                                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                  <span>{m.name}</span>
+                                  <span style={{ color: 'var(--mg-pink)' }}>{m.maxPrice}万</span>
+                                </label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <button type="button" onClick={() => setRiskMonopolyAdQtys(prev => ({ ...prev, [m.id]: Math.max(0, (prev[m.id] || 0) - 1) }))} className="btn-secondary" style={{ padding: '6px 12px' }}>-</button>
+                                  <input type="number" className="form-input" style={{ textAlign: 'center' }} value={riskMonopolyAdQtys[m.id] || 0} onChange={e => setRiskMonopolyAdQtys(prev => ({ ...prev, [m.id]: Math.max(0, Number(e.target.value) || 0) }))} />
+                                  <button type="button" onClick={() => setRiskMonopolyAdQtys(prev => ({ ...prev, [m.id]: (prev[m.id] || 0) + 1 }))} className="btn-secondary" style={{ padding: '6px 12px' }}>+</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">売上計上先</label>
+                            <select className="form-input" value={riskSaleType} onChange={(e) => setRiskSaleType(e.target.value)}>
+                              <option value="cash">現金 (キ)</option>
+                              <option value="credit">売掛 (ネ)</option>
+                            </select>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.85rem' }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>合計数量: <strong style={{ color: 'white', fontSize: '1rem' }}>{Object.values(riskMonopolyAdQtys).reduce((a, b) => a + b, 0)} 個</strong></span>
+                            <span style={{ color: 'var(--text-secondary)' }}>合計金額: <strong style={{ color: 'var(--mg-pink)', fontSize: '1.1rem' }}>{Object.entries(riskMonopolyAdQtys).reduce((sum, [id, qty]) => sum + qty * { sapporo: 40, sendai: 36, tokyo: 32, nagoya: 28, osaka: 24, fukuoka: 20 }[id], 0)} 万</strong></span>
                           </div>
                         </div>
                       )}
