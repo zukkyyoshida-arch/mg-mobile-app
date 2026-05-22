@@ -934,8 +934,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                     <button
                       type="button"
                       onClick={() => {
-                        const maxSa = Math.min(results?.currentWipCount || 0, results?.productionCapacity || 0);
-                        const maxKo = Math.min(results?.currentMatCount || 0, results?.productionCapacity || 0);
+                        const maxSa = Math.min(results?.wip?.endingCount || 0, results?.productionCapacity || 0);
+                        const maxKo = Math.min(results?.mat?.endingCount || 0, results?.productionCapacity || 0);
                         setProductionSa(maxSa);
                         setProductionKo(maxKo);
                       }}
@@ -947,8 +947,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '12px', background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '6px' }}>
                     <div>生産能力: <span style={{ color: 'white', fontWeight: 'bold' }}>{results?.productionCapacity || 0}</span></div>
-                    <div>材料在庫: <span style={{ color: 'white', fontWeight: 'bold' }}>{results?.currentMatCount || 0}</span></div>
-                    <div>仕掛在庫: <span style={{ color: 'white', fontWeight: 'bold' }}>{results?.currentWipCount || 0}</span></div>
+                    <div>材料在庫: <span style={{ color: 'white', fontWeight: 'bold' }}>{results?.mat?.endingCount || 0}</span></div>
+                    <div>仕掛在庫: <span style={{ color: 'white', fontWeight: 'bold' }}>{results?.wip?.endingCount || 0}</span></div>
                   </div>
 
                   <div className="grid-2">
@@ -962,12 +962,12 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         <input 
                           type="number" 
                           value={productionKo} 
-                          onChange={(e) => setProductionKo(Math.min(Math.min(results?.currentMatCount || 0, results?.productionCapacity || 0), Math.max(0, Number(e.target.value) || 0)))}
+                          onChange={(e) => setProductionKo(Math.min(Math.min(results?.mat?.endingCount || 0, results?.productionCapacity || 0), Math.max(0, Number(e.target.value) || 0)))}
                           placeholder="0"
                           className="form-input"
                           style={{ textAlign: 'center' }}
                         />
-                        <button type="button" onClick={() => setProductionKo(Math.min(Math.min(results?.currentMatCount || 0, results?.productionCapacity || 0), (Number(productionKo) || 0) + 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>+</button>
+                        <button type="button" onClick={() => setProductionKo(Math.min(Math.min(results?.mat?.endingCount || 0, results?.productionCapacity || 0), (Number(productionKo) || 0) + 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>+</button>
                       </div>
                     </div>
                     <div className="form-group">
@@ -980,12 +980,12 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         <input 
                           type="number" 
                           value={productionSa} 
-                          onChange={(e) => setProductionSa(Math.min(Math.min(results?.currentWipCount || 0, results?.productionCapacity || 0), Math.max(0, Number(e.target.value) || 0)))}
+                          onChange={(e) => setProductionSa(Math.min(Math.min(results?.wip?.endingCount || 0, results?.productionCapacity || 0), Math.max(0, Number(e.target.value) || 0)))}
                           placeholder="0"
                           className="form-input"
                           style={{ textAlign: 'center' }}
                         />
-                        <button type="button" onClick={() => setProductionSa(Math.min(Math.min(results?.currentWipCount || 0, results?.productionCapacity || 0), (Number(productionSa) || 0) + 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>+</button>
+                        <button type="button" onClick={() => setProductionSa(Math.min(Math.min(results?.wip?.endingCount || 0, results?.productionCapacity || 0), (Number(productionSa) || 0) + 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>+</button>
                       </div>
                     </div>
                   </div>
@@ -1100,7 +1100,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                               <button type="button" onClick={() => {
                                 const capacity = riskAction === 'monopoly_salesman' ? (results?.activeSalesmen || 0) * 2
                                   : (results?.activeRdChips || 0) * 2;
-                                setRiskQty(Math.min(capacity, results?.currentProductCount || 0));
+                                setRiskQty(Math.min(capacity, results?.prod?.endingCount || 0));
                               }} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'black', fontWeight: 'bold' }}>MAX</button>
                             </label>
                             <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
@@ -1123,7 +1123,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                             <span>各市場の販売数量 (上限価格固定)</span>
-                            <span>販売可能: <strong style={{ color: 'white' }}>{Math.min((results?.activeAdChips || 0) * 2, results?.currentProductCount || 0)}個</strong></span>
+                            <span>販売可能: <strong style={{ color: 'white' }}>{Math.min((results?.activeAdChips || 0) * 2, results?.prod?.endingCount || 0)}個</strong></span>
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                             {[
