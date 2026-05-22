@@ -220,6 +220,8 @@ function App() {
               ledger={currentData.ledger}
               actuals={currentData.actuals}
               onUpdateActuals={(newActuals) => updatePeriodData('actuals', newActuals)}
+              onUpdateLedger={(newLedger) => updatePeriodData('ledger', newLedger)}
+              currentPeriod={currentPeriod}
               results={results}
             />
           </div>
