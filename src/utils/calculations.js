@@ -232,9 +232,9 @@ export function calculateFinancials(carryover, ledger, actuals) {
   const wipBeginningCount = carryover.wipCount || 0;
   const wipBeginningValue = carryover.wipValue || 0;
   
-  // WIPへのインプット：材料投入金額 + 完成費 (サ) の支払金額
+  // WIPへのインプット：材料投入金額 + 投入費(コ) + 完成費(サ) の支払金額
   const wipInputCount = matInputCount; 
-  const wipInputValue = matInputValue + ledgerTotals["サ"].amount; // 材料費 + 完成加工費
+  const wipInputValue = matInputValue + ledgerTotals["コ"].amount + ledgerTotals["サ"].amount; // 材料費 + 投入加工費 + 完成加工費
   
   const wipTotalCount = wipBeginningCount + wipInputCount;
   const wipTotalValue = wipBeginningValue + wipInputValue;
