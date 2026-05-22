@@ -41,7 +41,7 @@ if os.path.exists(html_path):
     with open(html_path, "r", encoding="utf-8") as f:
         html_code = f.read()
     # コンポーネントを埋め込み
-    components.html(html_code, height="100vh", scrolling=True)
+    components.html(html_code, height=960, scrolling=True)
     st.success("React アプリが正常に読み込まれました！")
 else:
     st.error(
