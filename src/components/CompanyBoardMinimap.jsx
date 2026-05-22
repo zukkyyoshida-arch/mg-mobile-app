@@ -72,8 +72,9 @@ function CompanyBoardMinimap({ results }) {
             justifyContent: 'space-between'
           }}>
             <div>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#ff9800', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>材料倉庫</div>
-              {/* チップの並び */}
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#ff9800', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>材料倉庫</div>
+              
+              <div style={{ fontSize: '0.62rem', color: '#ffb74d', fontWeight: '700', marginBottom: '4px' }}>材料チップ:</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                 {matChips.map((i) => (
                   <div 
@@ -93,12 +94,12 @@ function CompanyBoardMinimap({ results }) {
                   />
                 ))}
                 {mat.endingCount === 0 && (
-                  <div style={{ fontSize: '0.65rem', color: 'rgba(255, 152, 0, 0.5)', fontStyle: 'italic', marginTop: '12px' }}>倉庫空っぽ</div>
+                  <div style={{ fontSize: '0.65rem', color: 'rgba(255, 152, 0, 0.5)', fontStyle: 'italic' }}>倉庫空っぽ</div>
                 )}
               </div>
             </div>
-            <div style={{ textAlign: 'right', fontSize: '0.75rem', fontWeight: '800', color: '#ff9800' }}>
-              {mat.endingCount} 個
+            <div style={{ textAlign: 'right', fontSize: '0.75rem', fontWeight: '800', color: '#ff9800', marginTop: '16px', paddingTop: '8px', borderTop: '1px dashed rgba(255, 152, 0, 0.2)' }}>
+              材料: {mat.endingCount} 個
             </div>
           </div>
 
@@ -114,136 +115,132 @@ function CompanyBoardMinimap({ results }) {
             justifyContent: 'space-between'
           }}>
             <div>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#e040fb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>工場</div>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#e040fb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>工場ライン</div>
               
-              {/* 機械と人員の表示 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                
-                {/* 設備された機械のアイコン ＆ 人員配置 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {largeMachList.map((i) => {
-                    const assigned = largeMachWorkers[i] !== undefined ? largeMachWorkers[i] : 0;
-                    const workerIcons = "🧑‍🔧".repeat(assigned) + (assigned < 2 ? "💨".repeat(2 - assigned) : "");
-                    const isOperating = assigned === 2;
-                    return (
-                      <div 
-                        key={`l-${i}`} 
-                        style={{ 
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '3px 6px', 
-                          fontSize: '0.62rem', 
-                          fontWeight: '800', 
-                          color: 'white', 
-                          backgroundColor: isOperating ? '#8e24aa' : 'rgba(142, 36, 170, 0.4)', 
-                          borderRadius: '6px',
-                          border: isOperating ? '1.5px solid #d1c4e9' : '1px dashed rgba(209, 196, 233, 0.4)',
-                          boxShadow: isOperating ? '0 2px 4px rgba(142, 36, 170, 0.3)' : 'none'
-                        }}
-                      >
-                        <span>大型 ({assigned}/2人)</span>
-                        <span>{workerIcons}</span>
-                      </div>
-                    );
-                  })}
-                  {smallMachList.map((i) => {
-                    const assigned = smallMachWorkers[i] !== undefined ? smallMachWorkers[i] : 0;
-                    const workerIcons = assigned === 1 ? "🧑‍🔧" : "💨";
-                    const isOperating = assigned === 1;
-                    return (
-                      <div 
-                        key={`s-${i}`} 
-                        style={{ 
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '3px 6px', 
-                          fontSize: '0.62rem', 
-                          fontWeight: '800', 
-                          color: 'white', 
-                          backgroundColor: isOperating ? '#ab47bc' : 'rgba(186, 104, 200, 0.4)', 
-                          borderRadius: '6px',
-                          border: isOperating ? '1.5px solid #e1bee7' : '1px dashed rgba(225, 190, 231, 0.4)',
-                          boxShadow: isOperating ? '0 2px 4px rgba(186, 104, 200, 0.3)' : 'none'
-                        }}
-                      >
-                        <span>小型 ({assigned}/1人)</span>
-                        <span>{workerIcons}</span>
-                      </div>
-                    );
-                  })}
-                  {attachList.map((i) => (
+              <div style={{ fontSize: '0.62rem', color: '#ea80fc', fontWeight: '700', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>ワーカー配置:</span>
+                <span>全{totalWorkers}名</span>
+              </div>
+              
+              {/* 設備された機械のアイコン ＆ 人員配置 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {largeMachList.map((i) => {
+                  const assigned = largeMachWorkers[i] !== undefined ? largeMachWorkers[i] : 0;
+                  const workerIcons = "🧑‍🔧".repeat(assigned) + (assigned < 2 ? "💨".repeat(2 - assigned) : "");
+                  const isOperating = assigned === 2;
+                  return (
                     <div 
-                      key={`a-${i}`} 
+                      key={`l-${i}`} 
                       style={{ 
-                        padding: '2px 4px', 
-                        fontSize: '0.52rem', 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '3px 6px', 
+                        fontSize: '0.62rem', 
                         fontWeight: '800', 
-                        color: '#4a148c', 
-                        backgroundColor: '#ea80fc', 
-                        borderRadius: '4px',
-                        border: '1px solid #f3e5f5',
-                        alignSelf: 'flex-start',
-                        marginTop: '2px'
+                        color: 'white', 
+                        backgroundColor: isOperating ? '#8e24aa' : 'rgba(142, 36, 170, 0.4)', 
+                        borderRadius: '6px',
+                        border: isOperating ? '1.5px solid #d1c4e9' : '1px dashed rgba(209, 196, 233, 0.4)',
+                        boxShadow: isOperating ? '0 2px 4px rgba(142, 36, 170, 0.3)' : 'none'
                       }}
                     >
-                      アタッチメント ⚙️
+                      <span>大型 ({assigned}/2人)</span>
+                      <span>{workerIcons}</span>
                     </div>
-                  ))}
-                </div>
-
-                {/* 仕掛品の丸チップ */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px dashed rgba(224, 64, 251, 0.2)', paddingTop: '6px' }}>
-                  <div style={{ fontSize: '0.62rem', color: '#ea80fc', fontWeight: '700' }}>仕掛品:</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                    {wipChips.map((i) => (
-                      <div 
-                        key={i} 
-                        style={{ 
-                          width: '16px', 
-                          height: '16px', 
-                          borderRadius: '50%', 
-                          background: 'radial-gradient(circle, #4fc3f7 0%, #0288d1 100%)', 
-                          border: '1.5px solid #e0f7fa',
-                          boxShadow: '0 2px 4px rgba(2, 136, 209, 0.4)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      />
-                    ))}
-                    {wip.endingCount === 0 && (
-                      <div style={{ fontSize: '0.62rem', color: 'rgba(156, 39, 176, 0.5)', fontStyle: 'italic' }}>稼働ラインなし</div>
-                    )}
+                  );
+                })}
+                {smallMachList.map((i) => {
+                  const assigned = smallMachWorkers[i] !== undefined ? smallMachWorkers[i] : 0;
+                  const workerIcons = assigned === 1 ? "🧑‍🔧" : "💨";
+                  const isOperating = assigned === 1;
+                  return (
+                    <div 
+                      key={`s-${i}`} 
+                      style={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '3px 6px', 
+                        fontSize: '0.62rem', 
+                        fontWeight: '800', 
+                        color: 'white', 
+                        backgroundColor: isOperating ? '#ab47bc' : 'rgba(186, 104, 200, 0.4)', 
+                        borderRadius: '6px',
+                        border: isOperating ? '1.5px solid #e1bee7' : '1px dashed rgba(225, 190, 231, 0.4)',
+                        boxShadow: isOperating ? '0 2px 4px rgba(186, 104, 200, 0.3)' : 'none'
+                      }}
+                    >
+                      <span>小型 ({assigned}/1人)</span>
+                      <span>{workerIcons}</span>
+                    </div>
+                  );
+                })}
+                {attachList.map((i) => (
+                  <div 
+                    key={`a-${i}`} 
+                    style={{ 
+                      padding: '2px 4px', 
+                      fontSize: '0.52rem', 
+                      fontWeight: '800', 
+                      color: '#4a148c', 
+                      backgroundColor: '#ea80fc', 
+                      borderRadius: '4px',
+                      border: '1px solid #f3e5f5',
+                      alignSelf: 'flex-start',
+                      marginTop: '2px'
+                    }}
+                  >
+                    アタッチメント ⚙️
                   </div>
-                </div>
-
-                {/* 要員警告のみ工場に配置 */}
-                {isShortOfWorkers && (
-                  <div style={{ 
-                    borderTop: '1px dashed rgba(224, 64, 251, 0.2)', 
-                    paddingTop: '6px',
-                    marginTop: '6px', 
-                    padding: '4px 6px', 
-                    backgroundColor: 'rgba(239, 68, 68, 0.15)', 
-                    border: '1px solid rgba(239, 68, 68, 0.4)', 
-                    borderRadius: '6px', 
-                    color: '#ff8a80', 
-                    fontSize: '0.58rem', 
-                    fontWeight: '700',
-                    lineHeight: '1.25'
-                  }}>
-                    ⚠️ 人員不足！必要 {requiredWorkers}名 / 在籍 {totalWorkers}名。一部の機械が動きません。
-                  </div>
-                )}
-
+                ))}
               </div>
+
+              {/* 仕掛品の丸チップ */}
+              <div style={{ fontSize: '0.62rem', color: '#ea80fc', fontWeight: '700', marginTop: '12px', marginBottom: '4px' }}>仕掛品チップ:</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                {wipChips.map((i) => (
+                  <div 
+                    key={i} 
+                    style={{ 
+                      width: '16px', 
+                      height: '16px', 
+                      borderRadius: '50%', 
+                      background: 'radial-gradient(circle, #4fc3f7 0%, #0288d1 100%)', 
+                      border: '1.5px solid #e0f7fa',
+                      boxShadow: '0 2px 4px rgba(2, 136, 209, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  />
+                ))}
+                {wip.endingCount === 0 && (
+                  <div style={{ fontSize: '0.62rem', color: 'rgba(156, 39, 176, 0.5)', fontStyle: 'italic' }}>稼働ラインなし</div>
+                )}
+              </div>
+
+              {/* 要員警告のみ工場に配置 */}
+              {isShortOfWorkers && (
+                <div style={{ 
+                  marginTop: '12px', 
+                  padding: '4px 6px', 
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)', 
+                  border: '1px solid rgba(239, 68, 68, 0.4)', 
+                  borderRadius: '6px', 
+                  color: '#ff8a80', 
+                  fontSize: '0.58rem', 
+                  fontWeight: '700',
+                  lineHeight: '1.25'
+                }}>
+                  ⚠️ 人員不足！必要 {requiredWorkers}名 / 在籍 {totalWorkers}名。一部の機械が動きません。
+                </div>
+              )}
+
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.72rem', fontWeight: '800', color: '#e040fb', marginTop: '6px' }}>
-              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: '500' }}>ワーカー: {totalWorkers}名</span>
-              <span>仕掛: {wip.endingCount} 個</span>
+            <div style={{ textAlign: 'right', fontSize: '0.75rem', fontWeight: '800', color: '#e040fb', marginTop: '16px', paddingTop: '8px', borderTop: '1px dashed rgba(224, 64, 251, 0.2)' }}>
+              仕掛: {wip.endingCount} 個
             </div>
           </div>
 
@@ -259,33 +256,21 @@ function CompanyBoardMinimap({ results }) {
             justifyContent: 'space-between'
           }}>
             <div>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#4caf50', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>販売所</div>
-              
-              {/* セールスマン枠 */}
-              <div style={{ 
-                backgroundColor: 'rgba(76, 175, 80, 0.08)', 
-                border: '1px dashed rgba(76, 175, 80, 0.3)', 
-                borderRadius: '8px', 
-                padding: '6px', 
-                marginBottom: '10px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px'
-              }}>
-                <div style={{ fontSize: '0.62rem', fontWeight: '800', color: '#81c784', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>セールスマン</span>
-                  <span>{totalSalesmen}名</span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', minHeight: '18px', alignItems: 'center' }}>
-                  {totalSalesmen > 0 ? Array.from({ length: totalSalesmen }).map((_, i) => (
-                    <span key={i} style={{ fontSize: '0.9rem', lineHeight: '1' }}>🧑‍💼</span>
-                  )) : (
-                    <span style={{ fontSize: '0.65rem', color: 'rgba(76, 175, 80, 0.5)', fontStyle: 'italic' }}>不在</span>
-                  )}
-                </div>
-              </div>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#4caf50', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>販売所</div>
 
-              {/* チップの並び */}
+              <div style={{ fontSize: '0.62rem', color: '#81c784', fontWeight: '700', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>セールスマン:</span>
+                <span>全{totalSalesmen}名</span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', minHeight: '18px', alignItems: 'center' }}>
+                {totalSalesmen > 0 ? Array.from({ length: totalSalesmen }).map((_, i) => (
+                  <span key={i} style={{ fontSize: '0.9rem', lineHeight: '1' }}>🧑‍💼</span>
+                )) : (
+                  <span style={{ fontSize: '0.65rem', color: 'rgba(76, 175, 80, 0.5)', fontStyle: 'italic' }}>不在</span>
+                )}
+              </div>
+              
+              <div style={{ fontSize: '0.62rem', color: '#81c784', fontWeight: '700', marginTop: '12px', marginBottom: '4px' }}>製品チップ:</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                 {prodChips.map((i) => (
                   <div 
@@ -304,12 +289,12 @@ function CompanyBoardMinimap({ results }) {
                   />
                 ))}
                 {prod.endingCount === 0 && (
-                  <div style={{ fontSize: '0.65rem', color: 'rgba(76, 175, 80, 0.5)', fontStyle: 'italic', marginTop: '12px' }}>製品なし</div>
+                  <div style={{ fontSize: '0.65rem', color: 'rgba(76, 175, 80, 0.5)', fontStyle: 'italic' }}>製品なし</div>
                 )}
               </div>
             </div>
-            <div style={{ textAlign: 'right', fontSize: '0.75rem', fontWeight: '800', color: '#4caf50' }}>
-              {prod.endingCount} 個
+            <div style={{ textAlign: 'right', fontSize: '0.75rem', fontWeight: '800', color: '#4caf50', marginTop: '16px', paddingTop: '8px', borderTop: '1px dashed rgba(76, 175, 80, 0.2)' }}>
+              製品: {prod.endingCount} 個
             </div>
           </div>
 
