@@ -5,6 +5,7 @@ import FinancialStatements from './components/FinancialStatements';
 import PeriodEndWizard from './components/PeriodEndWizard';
 import ManagementPlan from './components/ManagementPlan';
 import PriorPeriodCarryover from './components/PriorPeriodCarryover';
+import AIAdvisor from './components/AIAdvisor';
 
 function App() {
   // テーマの状態 (ダーク / ライト)
@@ -291,6 +292,13 @@ function App() {
           設定
         </button>
       </nav>
+
+      {/* AIアドバイザー機能 */}
+      <AIAdvisor 
+        ledger={currentData.ledger} 
+        results={results} 
+        currentPeriod={currentPeriod} 
+      />
     </div>
   );
 }
