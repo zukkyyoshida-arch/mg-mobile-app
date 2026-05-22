@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 
-function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, results }) {
+function PeriodEndWizard({ carryover, ledger, actuals = {}, onUpdateActuals, results }) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [actualMaterials, setActualMaterials] = useState(actuals.actualMaterials || 0);
-  const [actualWip, setActualWip] = useState(actuals.actualWip || 0);
-  const [actualProduct, setActualProduct] = useState(actuals.actualProduct || 0);
-  const [actualCash, setActualCash] = useState(actuals.actualCash || 0);
+  const [actualMaterials, setActualMaterials] = useState(actuals?.actualMaterials ?? 0);
+  const [actualWip, setActualWip] = useState(actuals?.actualWip ?? 0);
+  const [actualProduct, setActualProduct] = useState(actuals?.actualProduct ?? 0);
+  const [actualCash, setActualCash] = useState(actuals?.actualCash ?? 0);
 
   const handleStepChange = (step) => {
     setCurrentStep(step);
@@ -102,9 +102,11 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, results 
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <input
                       type="number"
-                      value={actualMaterials || ''}
+                      value={actualMaterials ?? ''}
                       onChange={(e) => handleActualChange('mat', e.target.value)}
                       placeholder="盤の上の材料数"
+                      min="0"
+                      step="1"
                       className="form-input"
                       style={{ padding: '10px' }}
                     />
@@ -131,9 +133,11 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, results 
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <input
                       type="number"
-                      value={actualWip || ''}
+                      value={actualWip ?? ''}
                       onChange={(e) => handleActualChange('wip', e.target.value)}
                       placeholder="盤の上の仕掛品数"
+                      min="0"
+                      step="1"
                       className="form-input"
                       style={{ padding: '10px' }}
                     />
@@ -160,9 +164,11 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, results 
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <input
                       type="number"
-                      value={actualProduct || ''}
+                      value={actualProduct ?? ''}
                       onChange={(e) => handleActualChange('prod', e.target.value)}
                       placeholder="盤の上の製品数"
+                      min="0"
+                      step="1"
                       className="form-input"
                       style={{ padding: '10px' }}
                     />
@@ -215,9 +221,11 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, results 
                 <label className="form-label">実際のトレイ上の現金 (万)</label>
                 <input
                   type="number"
-                  value={actualCash || ''}
+                  value={actualCash ?? ''}
                   onChange={(e) => handleActualChange('cash', e.target.value)}
                   placeholder="0"
+                  min="0"
+                  step="1"
                   className="form-input"
                   style={{ fontSize: '1.3rem', fontWeight: '800', textAlign: 'center', padding: '12px' }}
                 />

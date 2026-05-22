@@ -1,16 +1,13 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { getRealtimeAdvice, generateReport } from '../utils/aiRules';
 
 export function useAI(results, currentPeriod) {
-  const [warnings, setWarnings] = useState([]);
   const [report, setReport] = useState(null);
 
-  // 財務データ(results)が変更されたら常にリアルタイムアラートを更新する
-  useEffect(() => {
-    if (results) {
-      const newWarnings = getRealtimeAdvice(results);
-      setWarnings(newWarnings);
-    }
+  // 財務データ(results)が変更されたらリアルタイムアラートを計算
+  const warnings = useMemo(() => {
+    if (!results) return [];
+    return getRealtimeAdvice(results);
   }, [results]);
 
   const handleGenerateReport = useCallback(() => {

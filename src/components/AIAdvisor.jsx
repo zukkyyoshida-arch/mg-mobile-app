@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAI } from '../hooks/useAI';
 
 export default function AIAdvisor({ results, currentPeriod }) {
@@ -117,6 +117,25 @@ export default function AIAdvisor({ results, currentPeriod }) {
             })}
           </div>
         </section>
+
+{/* 市場単価上限表示 */}
+<section style={{ marginTop: '12px' }}>
+  <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>🌐 市場単価上限</h4>
+  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+    {Object.entries({ 札幌: 40, 仙台: 36, 東京: 32, 名古屋: 28, 大阪: 24, 福岡: 20 }).map(([city, cap]) => (
+      <span key={city} style={{
+        background: 'rgba(0,198,255,0.15)',
+        color: '#fff',
+        padding: '4px 8px',
+        borderRadius: '12px',
+        fontSize: '0.75rem',
+        border: '1px solid rgba(255,255,255,0.2)'
+      }}>
+        {city}: {cap} 万円
+      </span>
+    ))}
+  </div>
+</section>
 
         {/* 決算レポートセクション */}
         <section style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>

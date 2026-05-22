@@ -44,9 +44,23 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
   };
 
   const handleSliderChange = (val) => {
-    handleInputChange('targetG', val);
-  };
+  handleInputChange('targetG', val);
+};
 
+// シンプルヒューリスティックで予算サジェストを生成し自動保存
+const suggestBudget = () => {
+  const suggestion = {
+    targetG: Math.ceil(activeBudget.targetG * 1.1), // 目標利益10%増
+    laborBudget: Math.ceil(activeBudget.laborBudget * 1.1), // 労務費10%増
+    manufacturingBudget: Math.ceil(activeBudget.manufacturingBudget * 1.1), // 製造経費10%増
+    salesBudget: Math.ceil(activeBudget.salesBudget * 1.1), // 販売費10%増
+    adminBudget: Math.ceil(activeBudget.adminBudget * 1.1), // 一般管理費10%増
+    nonOperatingBudget: Math.ceil(activeBudget.nonOperatingBudget * 1.05), // 営業外費5%増
+    rdBudget: Math.ceil(activeBudget.rdBudget * 1.05) // 研究開発費5%増
+  };
+  // 自動保存: onUpdateBudget が呼び出される
+  onUpdateBudget(suggestion);
+};
   // 各シナリオの計算結果を算出
   const calcResults = {
     A: calculateBudget(scenarios.A, carryover),
@@ -101,7 +115,7 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
             type="range"
             min="-100"
             max="500"
-            step="10"
+            step="1"
             value={activeBudget.targetG}
             onChange={(e) => handleSliderChange(e.target.value)}
             style={{
@@ -115,6 +129,11 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
             }}
           />
         </div>
+      </div>
+      <div className="suggest-button-container" style={{ marginTop: '12px', textAlign: 'center' }}>
+        <button className="suggest-button" onClick={suggestBudget} style={{ background: 'var(--mg-blue)', color: '#fff', border: 'none', borderRadius: '4px', padding: '8px 16px', cursor: 'pointer' }}>
+          予算をサジェスト
+        </button>
       </div>
 
       {/* 固定費予算の設定 */}

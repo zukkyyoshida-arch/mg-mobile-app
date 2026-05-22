@@ -124,57 +124,65 @@ export function calculateFinancials(carryover, ledger, actuals) {
     
     // 時系列の在庫・保険追跡
     switch(cat) {
-      case "ツ":
-      case "ノ":
-        currentMatCount += qty;
-        break;
-      case "コ":
-        currentMatCount -= qty;
-        currentWipCount += qty;
-        break;
-      case "サ":
-        currentWipCount -= qty;
-        currentProdCount += qty;
-        break;
-      case "キ":
-      case "ネ":
-        currentProdCount -= qty;
-        break;
-      case "保険":
-        insuranceChips += qty;
-        break;
-      case "火災":
-        const lostMat = Math.max(0, currentMatCount);
-        if (lostMat > 0) {
-          totalFireCount += lostMat;
-          currentMatCount = 0;
-          if (insuranceChips > 0) {
-            autoInsurancePayout += lostMat * 8;
-            insuranceChips -= 1;
+        case "ツ":
+        case "ノ": {
+          currentMatCount += qty;
+          break;
+        }
+        case "コ": {
+          currentMatCount -= qty;
+          currentWipCount += qty;
+          break;
+        }
+        case "サ": {
+          currentWipCount -= qty;
+          currentProdCount += qty;
+          break;
+        }
+        case "キ":
+        case "ネ": {
+          currentProdCount -= qty;
+          break;
+        }
+        case "保険": {
+          insuranceChips += qty;
+          break;
+        }
+        case "火災": {
+          const lostMat = Math.max(0, currentMatCount);
+          if (lostMat > 0) {
+            totalFireCount += lostMat;
+            currentMatCount = 0;
+            if (insuranceChips > 0) {
+              autoInsurancePayout += lostMat * 8;
+              insuranceChips -= 1;
+            }
           }
+          break;
         }
-        break;
-      case "製造ミス":
-        const missQty = qty > 0 ? qty : 1;
-        const lostWip = Math.min(Math.max(0, currentWipCount), missQty);
-        if (lostWip > 0) {
-          totalMissCount += lostWip;
-          currentWipCount -= lostWip;
-        }
-        break;
-      case "盗難":
-        const theftQty = qty > 0 ? qty : 2;
-        const lostProd = Math.min(Math.max(0, currentProdCount), theftQty);
-        if (lostProd > 0) {
-          totalTheftCount += lostProd;
-          currentProdCount -= lostProd;
-          if (insuranceChips > 0) {
-            autoInsurancePayout += lostProd * 10;
-            insuranceChips -= 1;
+        case "製造ミス": {
+          const missQty = qty > 0 ? qty : 1;
+          const lostWip = Math.min(Math.max(0, currentWipCount), missQty);
+          if (lostWip > 0) {
+            totalMissCount += lostWip;
+            currentWipCount -= lostWip;
           }
+          break;
         }
-        break;
-    }
+        case "盗難": {
+          const theftQty = qty > 0 ? qty : 2;
+          const lostProd = Math.min(Math.max(0, currentProdCount), theftQty);
+          if (lostProd > 0) {
+            totalTheftCount += lostProd;
+            currentProdCount -= lostProd;
+            if (insuranceChips > 0) {
+              autoInsurancePayout += lostProd * 10;
+              insuranceChips -= 1;
+            }
+          }
+          break;
+        }
+      }
 
     if (CATEGORIES[cat]) {
       ledgerTotals[cat].amount += amt;
@@ -567,7 +575,6 @@ export function calculateFinancials(carryover, ledger, actuals) {
     totalAssets,
     totalLiabilities,
     totalEquity: totalNetAssets,
-    bookEndingCash,
     workers: totalWorkersHired, // 採用したワーカー数
     salesmen: totalSalesmenHired, // 採用したセールスマン数
     productionCapacity: productionCapacity, // 現在の生産能力(PAC)

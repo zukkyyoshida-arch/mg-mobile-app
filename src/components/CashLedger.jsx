@@ -313,6 +313,15 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
     // Q4. 借入時（オ）的自動利息（タ）計算と追加
     if (selectedCategory === 'オ' && finalAmount > 0) {
+      // Determine max loan based on period and net assets
+      const maxLoan = (currentPeriod <= 1)
+        ? Number.MAX_SAFE_INTEGER
+        : (currentPeriod <= 3 ? 2 : 3) * results.totalNetAssets;
+      if (finalAmount > maxLoan) {
+        alert(`借入金は上限 ${maxLoan} 万までです。`);
+        return;
+      }
+
       const interestRate = (currentPeriod <= 3) ? 0.10 : 0.05;
       const interestAmount = Math.floor(finalAmount * interestRate); // 通常MGでは小数点切り捨てまたはそのまま、ここでは単純に計算
       if (interestAmount > 0) {
@@ -640,6 +649,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       { action: "配置転換", symbol: "配置転換" },
                       { action: "機械売却", symbol: "イ" },
                       { action: "銀行借入", symbol: "オ" },
+                      { action: "最大借入", symbol: "MAX_Loan", onClick: () => setAmount(((currentPeriod <= 1) ? 0 : (currentPeriod <= 3 ? 2 : 3) * results.totalNetAssets).toString()) },
                       { action: "借入返済", symbol: "ナ" },
                       { action: "買掛支払", symbol: "ヌ" },
                       { action: "税金・配当", symbol: "ニ" },
