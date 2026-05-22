@@ -47,12 +47,12 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   const [factoringAmount, setFactoringAmount] = useState('');
   const [repaymentAmount, setRepaymentAmount] = useState('');
 
-  // リスクカード用のステート
   const [riskTab, setRiskTab] = useState('positive'); // positive, negative
   const [riskAction, setRiskAction] = useState('special_sale'); 
   const [riskSaleType, setRiskSaleType] = useState('cash'); // cash(キ) or credit(ネ)
   const [riskQty, setRiskQty] = useState('');
   const [riskPrice, setRiskPrice] = useState('');
+  const [riskMarket, setRiskMarket] = useState('sapporo');
 
   // 複数市場購入用のステート
   const [marketQuantities, setMarketQuantities] = useState({
@@ -110,6 +110,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     setRiskSaleType('cash');
     setRiskQty('');
     setRiskPrice('');
+    setRiskMarket('sapporo');
     setTransferW2S(0);
     setTransferS2W(0);
     setMarketQuantities({ sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0 });
@@ -1051,19 +1052,38 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                             onClick={() => {
                               setRiskAction(btn.id);
                               setRiskQty('');
-                              setRiskPrice(btn.id === 'special_mat' ? 10 : btn.id === 'common_mat' ? 12 : btn.id === 'special_ad' ? 5 : (btn.id === 'monopoly_salesman' || btn.id === 'rd_success') ? 32 : '');
+                              const maxPrices = { sapporo: 30, sendai: 32, tokyo: 38, nagoya: 36, osaka: 38, fukuoka: 34 };
+                              setRiskPrice(btn.id === 'special_mat' ? 10 : btn.id === 'common_mat' ? 12 : btn.id === 'special_ad' ? 5 : (btn.id === 'monopoly_salesman' || btn.id === 'rd_success') ? 32 : btn.id === 'monopoly_ad' ? maxPrices[riskMarket] : '');
                             }}
                             className={`btn-premium ${riskAction === btn.id ? 'btn-primary' : 'btn-secondary'}`}
                             style={{ padding: '8px', fontSize: '0.75rem', borderRadius: '8px', opacity: riskAction === btn.id ? 1 : 0.7, textAlign: 'left', display: 'flex', flexDirection: 'column' }}
                           >
-                            <span style={{ fontWeight: 'bold', marginBottom: '4px' }}>{btn.label}</span>
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{btn.desc}</span>
+                            <span style={{ fontWeight: 'bold', marginBottom: '4px', color: 'white' }}>{btn.label}</span>
+                            <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)' }}>{btn.desc}</span>
                           </button>
                         ))}
                       </div>
 
                       {(riskAction === 'monopoly_salesman' || riskAction === 'monopoly_ad' || riskAction === 'rd_success') && (
                         <div className="grid-2" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
+                          {riskAction === 'monopoly_ad' && (
+                            <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                              <label className="form-label">販売先の市場</label>
+                              <select className="form-input" value={riskMarket} onChange={(e) => {
+                                const newMarket = e.target.value;
+                                setRiskMarket(newMarket);
+                                const maxPrices = { sapporo: 30, sendai: 32, tokyo: 38, nagoya: 36, osaka: 38, fukuoka: 34 };
+                                setRiskPrice(maxPrices[newMarket]);
+                              }}>
+                                <option value="sapporo">札幌 (最大30万)</option>
+                                <option value="sendai">仙台 (最大32万)</option>
+                                <option value="tokyo">東京 (最大38万)</option>
+                                <option value="nagoya">名古屋 (最大36万)</option>
+                                <option value="osaka">大阪 (最大38万)</option>
+                                <option value="fukuoka">福岡 (最大34万)</option>
+                              </select>
+                            </div>
+                          )}
                           <div className="form-group">
                             <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
                               <span>販売数量</span>
@@ -1078,7 +1098,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                           </div>
                           <div className="form-group">
                             <label className="form-label">販売単価</label>
-                            <input type="number" className="form-input" value={riskPrice} onChange={e => setRiskPrice(e.target.value)} disabled={riskAction === 'monopoly_salesman' || riskAction === 'rd_success'} />
+                            <input type="number" className="form-input" value={riskPrice} disabled />
                           </div>
                           <div className="form-group" style={{ gridColumn: 'span 2' }}>
                             <label className="form-label">売上計上先</label>
@@ -1090,18 +1110,30 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         </div>
                       )}
                       {(riskAction === 'special_mat' || riskAction === 'common_mat') && (
-                        <div className="form-group" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
-                          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>購入数量 (材料 ツ)</span>
-                            <button type="button" onClick={() => setRiskQty(riskAction === 'special_mat' ? 5 : 3)} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'black', fontWeight: 'bold' }}>MAX</button>
-                          </label>
-                          <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
+                        <div className="grid-2" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
+                          <div className="form-group">
+                            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span>購入数量 (材料 ツ)</span>
+                              <button type="button" onClick={() => setRiskQty(riskAction === 'special_mat' ? 5 : 3)} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'black', fontWeight: 'bold' }}>MAX</button>
+                            </label>
+                            <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(Math.min(riskAction === 'special_mat' ? 5 : 3, Math.max(0, Number(e.target.value) || 0)))} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">単価 (1個)</label>
+                            <input type="number" className="form-input" value={riskAction === 'special_mat' ? 10 : 12} disabled />
+                          </div>
                         </div>
                       )}
                       {(riskAction === 'special_ad') && (
-                        <div className="form-group" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
-                          <label className="form-label">購入口数 (広告 セ)</label>
-                          <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
+                        <div className="grid-2" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
+                          <div className="form-group">
+                            <label className="form-label">購入口数 (広告 セ)</label>
+                            <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">単価 (1口)</label>
+                            <input type="number" className="form-input" value={5} disabled />
+                          </div>
                         </div>
                       )}
                     </>
@@ -1126,8 +1158,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                             className={`btn-premium ${riskAction === btn.id ? 'btn-primary' : 'btn-secondary'}`}
                             style={{ padding: '8px', fontSize: '0.75rem', borderRadius: '8px', opacity: riskAction === btn.id ? 1 : 0.7, textAlign: 'left', display: 'flex', flexDirection: 'column' }}
                           >
-                            <span style={{ fontWeight: 'bold', marginBottom: '4px' }}>{btn.label}</span>
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{btn.desc}</span>
+                            <span style={{ fontWeight: 'bold', marginBottom: '4px', color: 'white' }}>{btn.label}</span>
+                            <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)' }}>{btn.desc}</span>
                           </button>
                         ))}
                       </div>
