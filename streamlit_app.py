@@ -39,10 +39,11 @@ build_dir = os.path.join(current_dir, "dist")
 html_path = os.path.join(build_dir, "index.html")
 
 if os.path.exists(html_path):
-    # Streamlit の公式機能でディレクトリ全体を静的ホスティングする
-    mg_app = components.declare_component("mg_app", path=build_dir)
-    # レンダリング（高さを指定しないと CSS の 100vh が効かない場合があるので明示的にも指定）
-    mg_app(default=None)
+    with open(html_path, "r", encoding="utf-8") as f:
+        html_code = f.read()
+    
+    # 組み込みのHTMLとして直接注入（Streamlitのコンポーネント通信を待機しない）
+    components.html(html_code, height=960, scrolling=True)
 else:
     st.error(
         f"ビルド済みのHTMLファイルが見つかりません: {html_path}\n"
