@@ -16,9 +16,9 @@ export const CATEGORIES = {
   
   // 出金系 (Outflow)
   "ケ": { label: "機械工具購入", type: "outflow", color: "purple", symbol: "ケ" },
-  "コ": { label: "材料投入費", type: "outflow", color: "green", symbol: "コ", isCash: false },
-  "サ": { label: "完成費", type: "outflow", color: "green", symbol: "サ", isCash: false },
-  "生産": { label: "投入・完成", type: "outflow", color: "green", symbol: "生産", isCash: false },
+  "コ": { label: "材料投入費", type: "outflow", color: "green", symbol: "コ" },
+  "サ": { label: "完成費", type: "outflow", color: "green", symbol: "サ" },
+  "生産": { label: "投入・完成", type: "outflow", color: "green", symbol: "生産", isCash: true },
   "シ": { label: "労務費", type: "outflow", color: "blue", symbol: "シ" },
   "ス": { label: "製造経費", type: "outflow", color: "blue", symbol: "ス" },
   "セ": { label: "販売費", type: "outflow", color: "blue", symbol: "セ" },
@@ -310,7 +310,7 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   
   // 材料の次期繰越 (理論値)
   const matEndingCount = matTotalCount - matInputCount - fireCount;
-  const matEndingValue = matEndingCount * matUnitCost;
+  const matEndingValue = Math.max(0, matTotalValue - matInputValue - matFireValue);
 
   // B. 仕掛品 (Work-in-Progress)
   const wipBeginningCount = carryover.wipCount || 0;
@@ -335,7 +335,7 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   
   // 仕掛品の次期繰越 (理論値)
   const wipEndingCount = wipTotalCount - wipCompletedCount - missCount;
-  const wipEndingValue = wipEndingCount * wipUnitCost;
+  const wipEndingValue = Math.max(0, wipTotalValue - wipCompletedValue - wipMissValue);
 
   // C. 製品 (Finished Goods)
   const prodBeginningCount = carryover.productCount || 0;
@@ -358,7 +358,7 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   
   // 製品の次期繰越 (理論値)
   const prodEndingCount = prodTotalCount - salesCount - theftCount;
-  const prodEndingValue = prodEndingCount * prodUnitCost;
+  const prodEndingValue = Math.max(0, prodTotalValue - cogsValue - prodTheftValue);
 
   // 3. 機械資産の計算
   // 減価償却費の決定 (大型機械・小型機械・アタッチメントの台数に基づく固定費)
