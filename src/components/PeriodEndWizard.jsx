@@ -207,10 +207,17 @@ function PeriodEndWizard({ carryover, ledger, actuals = {}, onUpdateActuals, onU
                 
                 <button 
                   onClick={() => setCurrentStep(2)} 
-                  className="btn-primary" 
-                  style={{ width: '100%', marginTop: '16px' }}
+                  className="btn-premium" 
+                  style={{ 
+                    width: '100%', 
+                    marginTop: '16px',
+                    background: 'linear-gradient(135deg, rgba(0, 176, 255, 0.2) 0%, rgba(0, 119, 255, 0.2) 100%)',
+                    border: '1px solid rgba(0, 176, 255, 0.4)',
+                    color: '#40c4ff',
+                    boxShadow: '0 4px 16px rgba(0, 176, 255, 0.15)'
+                  }}
                 >
-                  次へ：人数の確定と給与支払
+                  次へ：人数の確定と給与支払 →
                 </button>
 
             </div>
@@ -279,12 +286,31 @@ function PeriodEndWizard({ carryover, ledger, actuals = {}, onUpdateActuals, onU
               );
             })()}
 
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => setCurrentStep(1)} className="btn-secondary" style={{ flex: 1 }}>
-                戻る
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+              <button 
+                onClick={() => setCurrentStep(1)} 
+                className="btn-premium" 
+                style={{ 
+                  flex: 1,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: 'var(--text-secondary)'
+                }}
+              >
+                ← 戻る
               </button>
-              <button onClick={confirmPeriodEnd} className="btn-primary" style={{ flex: 2 }}>
-                給与を確定して登録
+              <button 
+                onClick={confirmPeriodEnd} 
+                className="btn-premium" 
+                style={{ 
+                  flex: 2,
+                  background: 'linear-gradient(135deg, var(--mg-pink) 0%, #ff80b0 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  boxShadow: '0 4px 16px rgba(255, 46, 147, 0.3)'
+                }}
+              >
+                🏁 給与を確定して登録
               </button>
             </div>
             
