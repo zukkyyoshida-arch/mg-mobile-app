@@ -819,34 +819,49 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   <h4 style={{ fontSize: '0.85rem', color: '#81c784', marginBottom: '16px' }}>緑チップの購入 (各10万/枚)</h4>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {[
-                      { id: 'pac', name: 'PAC生産性', desc: '生産能力+1' },
-                      { id: 'md', name: 'マーチャンダイザー', desc: '材料仕入-2万' },
-                      { id: 'research', name: 'マーケットリサーチ', desc: '販売力アップ' }
-                    ].map(chip => {
-                      const qty = greenChips[chip.id] || 0;
-                      return (
-                        <div key={chip.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: '8px' }}>
-                          <div>
-                            <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{chip.name}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{chip.desc}</div>
+                    {(() => {
+                      const alreadyBought = {
+                        pac: ledger.some(e => e.category === 'PAC'),
+                        md: ledger.some(e => e.category === 'MD'),
+                        research: ledger.some(e => e.category === 'リサーチ')
+                      };
+                      
+                      return [
+                        { id: 'pac', name: 'PAC生産性', desc: '生産能力+1' },
+                        { id: 'md', name: 'マーチャンダイザー', desc: '材料仕入-2万' },
+                        { id: 'research', name: 'マーケットリサーチ', desc: '販売力アップ' }
+                      ].map(chip => {
+                        const isBought = alreadyBought[chip.id];
+                        const qty = isBought ? 0 : (greenChips[chip.id] || 0);
+                        
+                        return (
+                          <div key={chip.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: '8px', opacity: isBought ? 0.6 : 1 }}>
+                            <div>
+                              <div style={{ fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                {chip.name}
+                                {isBought && <span style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(255,255,255,0.2)', borderRadius: '4px' }}>購入済</span>}
+                              </div>
+                              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{chip.desc}</div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <button 
+                                type="button"
+                                disabled={isBought}
+                                onClick={() => setGreenChips(prev => ({ ...prev, [chip.id]: Math.max(0, qty - 1) }))}
+                                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isBought ? 0.5 : 1 }}
+                              >-</button>
+                              <span style={{ fontSize: '1.1rem', fontWeight: 'bold', width: '24px', textAlign: 'center' }}>{qty}</span>
+                              <button 
+                                type="button"
+                                disabled={isBought || qty >= 1}
+                                onClick={() => setGreenChips(prev => ({ ...prev, [chip.id]: Math.min(1, qty + 1) }))}
+                                style={{ background: isBought || qty >= 1 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isBought || qty >= 1 ? 0.5 : 1 }}
+                              >+</button>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <button 
-                              type="button"
-                              onClick={() => setGreenChips(prev => ({ ...prev, [chip.id]: Math.max(0, qty - 1) }))}
-                              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            >-</button>
-                            <span style={{ fontSize: '1.1rem', fontWeight: 'bold', width: '24px', textAlign: 'center' }}>{qty}</span>
-                            <button 
-                              type="button"
-                              onClick={() => setGreenChips(prev => ({ ...prev, [chip.id]: qty + 1 }))}
-                              style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            >+</button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </div>
                   
                   <div style={{ marginTop: '16px', textAlign: 'right', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
