@@ -195,7 +195,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
           timestamp: new Date().toISOString()
         });
       }
-      setLedger(prev => [...prev, ...newTransactions]);
+      onUpdateLedger([...ledger, ...newTransactions]);
       resetForm();
       setShowAddModal(false);
       return;
@@ -263,7 +263,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
         }
       }
       
-      setLedger(prev => [...prev, ...newTransactions]);
+      onUpdateLedger([...ledger, ...newTransactions]);
       resetForm();
       setShowAddModal(false);
       return;
@@ -298,7 +298,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
         alert("決済する期首支払いがありません。");
         return;
       }
-      setLedger(prev => [...prev, ...newTransactions]);
+      onUpdateLedger([...ledger, ...newTransactions]);
       resetForm();
       return;
     } else if (selectedCategory === "生産") {
@@ -332,7 +332,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
         });
       }
       
-      setLedger(prev => [...prev, ...newTransactions]);
+      onUpdateLedger([...ledger, ...newTransactions]);
       resetForm();
       return; // Skip normal add
     } else if (["ツ", "ノ"].includes(selectedCategory)) {
