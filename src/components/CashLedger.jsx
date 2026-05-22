@@ -106,6 +106,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     setWorkersHired('');
     setSalesmenHired('');
     setHirePrice(5);
+    setProductionKo('');
+    setProductionSa('');
     setFactoringAmount('');
     setRepaymentAmount('');
     setRiskTab('positive');
