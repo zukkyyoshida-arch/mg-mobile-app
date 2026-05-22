@@ -1369,7 +1369,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                                     placeholder="単価"
                                     value={prc}
                                     onChange={(e) => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], price: e.target.value } }))}
-                                    style={{ width: '60px', padding: '4px 6px', fontSize: '0.8rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'white' }}
+                                    style={{ width: '80px', padding: '8px 8px', fontSize: '1.1rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', color: 'white', textAlign: 'center' }}
                                   />
                                 </div>
                               </div>
