@@ -253,20 +253,36 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
     }
   });
 
-  // 人件費の自動計算（期末に現金で支払われる固定費）
-  // 人件費の自動計算（期末に現金で支払われる固定費）は廃止し、期末処理モーダルでの手動確定（シ、セ、ソへの計上）に移行します
+  // --- 期中予測（ハイブリッド）給与・保険料計算 ---
+  // 期末処理を行う前でも「給与を払ったら経常利益がいくらになるか」をPLに反映するための予測計算
   const hiresWorkers = ledger.reduce((sum, e) => e.category === '採用' ? sum + (Number(e.workersHired) || 0) : sum, 0);
   const hiresSalesmen = ledger.reduce((sum, e) => e.category === '採用' ? sum + (Number(e.salesmenHired) || 0) : sum, 0);
   const staffForSalaryWorkers = Math.max(0, totalWorkersHired - hiresWorkers);
   const staffForSalarySalesmen = Math.max(0, totalSalesmenHired - hiresSalesmen);
   
-  // 以降は期末処理で手動登録するため、自動PL計上は 0 にする
-  const autoWorkerSalary    = 0;
-  const autoWorkerSeverance = 0;
-  const autoSalesmanSal     = 0;
-  const autoSalesmanSev     = 0;
-  const autoInsuranceStaff  = 0;
-  const totalAutoStaffCost  = 0;
+  const salaryUnit_early    = SALARY_TABLE.normal[periodKey] || 0;
+  const severanceUnit_early = SALARY_TABLE.severance[periodKey] || 0;
+  const insuranceUnit_early = SALARY_TABLE.insurance[periodKey] || 0;
+  
+  const estimatedWorkerSalary = staffForSalaryWorkers * salaryUnit_early;
+  const estimatedWorkerSeverance = totalSeveranceWorkers * severanceUnit_early;
+  const estimatedSalesmanSal = staffForSalarySalesmen * salaryUnit_early;
+  const estimatedSalesmanSev = totalSeveranceSalesmen * severanceUnit_early;
+  const estimatedInsurance = maxTotalStaff * insuranceUnit_early;
+
+  // 出納帳に「シ」「セ」「ソ」が1件でもあれば、期末処理済み（または個別支払い済み）とみなす
+  const actualWorkerSalary = ledgerTotals["シ"]?.amount || 0;
+  const actualSalesmanSal = ledgerTotals["セ"]?.amount || 0;
+  const actualInsurance = ledgerTotals["ソ"]?.amount || 0;
+
+  const hasProcessedPeriodEnd = actualWorkerSalary > 0 || actualSalesmanSal > 0 || actualInsurance > 0;
+
+  // PL用の最終的な給与・保険料
+  // 期末処理前：推定値を使う
+  // 期末処理後：出納帳の実績値を使う（二重計上を防ぐ）
+  const plWorkerSalary    = hasProcessedPeriodEnd ? actualWorkerSalary : (estimatedWorkerSalary + estimatedWorkerSeverance);
+  const plSalesmanSalary  = hasProcessedPeriodEnd ? actualSalesmanSal  : (estimatedSalesmanSal + estimatedSalesmanSev);
+  const plInsurance       = hasProcessedPeriodEnd ? actualInsurance    : estimatedInsurance;
 
 // 現金残高 = 期首 + 入金 - 出金（人件費は現金流出に含めない。ただし損益計算書の費用としては計上）
 const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
@@ -407,26 +423,20 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   // 注: サ(完成費)、コ(投入費)、ツ(材料)、ケ(機械)、ナ(借入返済)、ニ(納税)、ヌ(買掛支払)は固定費ではない
 
   // ── 人件費の参照（上で計算済みの変数を再利用） ──
-  const workerSalary    = autoWorkerSalary;
-  const workerSeverance = autoWorkerSeverance;
-  const autoLaborCost   = workerSalary + workerSeverance;
-  const salesmanSalary    = autoSalesmanSal;
-  const salesmanSeverance = autoSalesmanSev;
-  const autoSalesmanCost  = salesmanSalary + salesmanSeverance;
-  const autoInsuranceCost = autoInsuranceStaff;
-
-  // 労務費 = 自動計算分 + 手動入力分(シ)
-  const laborCost = autoLaborCost + autoInsuranceStaff + ledgerTotals["シ"].amount;
+  // 労務費 = 期中推定 or 出納帳実績 (シ)
+  const laborCost = plWorkerSalary;
   const manufacturingFixed = ledgerTotals["ス"].amount + depreciation + (ledgerTotals["PAC"] ? ledgerTotals["PAC"].amount : 0);
-  // 販売費 = セールスマン給料(自動) + 広告チップ等(セ) + リサーチ
-  const salesCost = autoSalesmanCost + ledgerTotals["セ"].amount + (ledgerTotals["リサーチ"] ? ledgerTotals["リサーチ"].amount : 0);
-  // 一般管理費: 社会保険料(自動) + 「ソ」+ 「採用」+ 「保険チップ」+ 「MD」+ 「配置転換」
-  const adminCost = 0
-    + ledgerTotals["ソ"].amount 
+  
+  // 販売費 = 期中推定 or 出納帳実績 (セ) + リサーチ
+  const salesCost = plSalesmanSalary + (ledgerTotals["リサーチ"] ? ledgerTotals["リサーチ"].amount : 0);
+  
+  // 一般管理費: 期中推定 or 出納帳実績 (ソ) + 「採用」+ 「保険チップ」+ 「MD」+ 「配置転換」
+  const adminCost = plInsurance 
     + (ledgerTotals["採用"] ? ledgerTotals["採用"].amount : 0) 
     + (ledgerTotals["保険"] ? ledgerTotals["保険"].amount : 0)
     + (ledgerTotals["MD"] ? ledgerTotals["MD"].amount : 0)
     + (ledgerTotals["配置転換"] ? ledgerTotals["配置転換"].amount : 0);
+    
   const rdCost = ledgerTotals["チ"].amount;
   const nonOperatingCost = ledgerTotals["タ"].amount;
   
