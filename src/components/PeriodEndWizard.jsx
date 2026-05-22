@@ -236,27 +236,71 @@ function PeriodEndWizard({ carryover, ledger, actuals = {}, onUpdateActuals, onU
               期末に残っているワーカー数とセールスマン数を確認・修正してください。人数に基づいて給与が計算され、出納帳に反映されます。
             </p>
 
-            <div className="form-group">
-              <label className="form-label">期末のワーカー数</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                className="form-input"
-                value={periodEndWorkers}
-                onChange={(e) => setPeriodEndWorkers(e.target.value)}
-                min="0"
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">期末のセールスマン数</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                className="form-input"
-                value={periodEndSalesmen}
-                onChange={(e) => setPeriodEndSalesmen(e.target.value)}
-                min="0"
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* ワーカー数の確認 */}
+              <div style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', paddingBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>1. ワーカー数</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    帳簿上の理論値: <span className="electric-number" style={{ color: 'var(--text-primary)' }}>{results?.workers || 0} 人</span>
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', alignItems: 'center' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={periodEndWorkers}
+                      onChange={(e) => setPeriodEndWorkers(e.target.value)}
+                      placeholder="実際の人数"
+                      min="0"
+                      step="1"
+                      className="form-input"
+                      style={{ padding: '10px' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    {periodEndWorkers !== '' && Number(periodEndWorkers) === (results?.workers || 0) ? (
+                      <span className="badge badge-green" style={{ width: '100%', padding: '8px 0' }}>✅ 一致 (OK)</span>
+                    ) : (
+                      <span className="badge badge-pink" style={{ width: '100%', padding: '8px 0' }}>⚠️ ズレあり</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* セールスマン数の確認 */}
+              <div style={{ paddingBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>2. セールスマン数</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    帳簿上の理論値: <span className="electric-number" style={{ color: 'var(--text-primary)' }}>{results?.salesmen || 0} 人</span>
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', alignItems: 'center' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={periodEndSalesmen}
+                      onChange={(e) => setPeriodEndSalesmen(e.target.value)}
+                      placeholder="実際の人数"
+                      min="0"
+                      step="1"
+                      className="form-input"
+                      style={{ padding: '10px' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    {periodEndSalesmen !== '' && Number(periodEndSalesmen) === (results?.salesmen || 0) ? (
+                      <span className="badge badge-green" style={{ width: '100%', padding: '8px 0' }}>✅ 一致 (OK)</span>
+                    ) : (
+                      <span className="badge badge-pink" style={{ width: '100%', padding: '8px 0' }}>⚠️ ズレあり</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
             
             {(() => {
