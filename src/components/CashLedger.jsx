@@ -384,6 +384,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     } else {
       if (symbol === "コ") setPrice('2');
       if (symbol === "サ") setPrice('1');
+      if (symbol === "保険") setPrice('5');
     }
     // 事故の場合は専用の初期値をセット
     if (symbol === "製造ミス") setQuantity('1');
@@ -1156,6 +1157,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       onChange={(e) => handleQtyPriceChange('price', e.target.value)}
                       placeholder="0"
                       className="form-input"
+                      disabled={["保険", "コ", "サ"].includes(selectedCategory)}
                     />
                   </div>
                 </div>
@@ -1181,7 +1183,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   placeholder="金額を入力"
                   className="form-input"
                   style={{ fontSize: '1.25rem', fontWeight: '700' }}
-                  disabled={showCalculator}
+                  disabled={showCalculator || ["保険", "コ", "サ"].includes(selectedCategory)}
                 />
 
                 {/* 電卓ポップアップ */}
