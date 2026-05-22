@@ -287,6 +287,12 @@ function FinancialStatements({ results, carryover }) {
                       <td>未払法人税等</td>
                       <td style={{ textAlign: 'right' }}>¥{bs.unpaidTax.toLocaleString()}万</td>
                     </tr>
+                    {bs.accruedLaborCost > 0 && (
+                      <tr style={{ color: 'var(--mg-pink)' }}>
+                        <td>未払費用 (給与・保険料)</td>
+                        <td style={{ textAlign: 'right' }}>¥{bs.accruedLaborCost.toLocaleString()}万</td>
+                      </tr>
+                    )}
                     <tr style={{ fontWeight: '700', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
                       <td>負債合計</td>
                       <td style={{ textAlign: 'right' }}>¥{bs.totalLiabilities.toLocaleString()}万</td>

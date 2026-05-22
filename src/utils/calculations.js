@@ -504,7 +504,12 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
 
   // 負債合計
   const unpaidTax = corporateTax; // 未払法人税
-  const totalLiabilities = endingPayables + endingLoans + unpaidTax;
+  
+  // ハイブリッドPL予測による未払給与・社会保険料の計上
+  // 期末処理前の場合、予想利益としてすでにPLから引かれているため、同額を未払金として負債に計上しB/Sを一致させる
+  const accruedLaborCost = hasProcessedPeriodEnd ? 0 : (estimatedWorkerSalary + estimatedWorkerSeverance + estimatedSalesmanSal + estimatedSalesmanSev + estimatedInsurance);
+  
+  const totalLiabilities = endingPayables + endingLoans + unpaidTax + accruedLaborCost;
 
   // 純資産合計
   const endingCapital = carryover.capital + ledgerTotals["カ"].amount; // 資本金
@@ -658,7 +663,8 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
       
       payables: endingPayables,
       loans: endingLoans,
-      unpaidTax,
+      unpaidTax: unpaidTax,
+      accruedLaborCost: accruedLaborCost,
       totalLiabilities,
       
       capital: endingCapital,
