@@ -400,7 +400,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       { action: "設備投資", symbol: "ケ" },
                       { action: "投入", symbol: "コ" },
                       { action: "完成", symbol: "サ" },
-                      { action: "採用", symbol: "採用" },
+                      { action: "採用", symbol: "採用", displaySymbol: "ソ" },
                       { action: "広告", symbol: "セ" },
                       { action: "研究開発", symbol: "チ" },
                       { action: "商品販売 (現金)", symbol: "キ" },
@@ -413,7 +413,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         className={`btn-premium ${selectedCategory === btn.symbol ? 'btn-primary' : 'btn-secondary'}`}
                         style={{ padding: '10px 8px', fontSize: '0.85rem', borderRadius: '10px', borderColor: selectedCategory === btn.symbol ? 'var(--color-accent)' : `rgba(var(--color-${CATEGORIES[btn.symbol].color === 'blue' ? 'blue' : CATEGORIES[btn.symbol].color === 'yellow' ? 'yellow' : 'green'}), 0.15)` }}
                       >
-                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{btn.symbol}</span> {btn.action}
+                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{btn.displaySymbol || btn.symbol}</span> {btn.action}
                       </button>
                     ))}
                   </div>
@@ -447,7 +447,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         className={`btn-premium ${selectedCategory === btn.symbol ? 'btn-primary' : 'btn-secondary'}`}
                         style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === btn.symbol ? 1 : 0.8 }}
                       >
-                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{btn.symbol}</span> {btn.action}
+                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{btn.displaySymbol || btn.symbol}</span> {btn.action}
                       </button>
                     ))}
                   </div>
