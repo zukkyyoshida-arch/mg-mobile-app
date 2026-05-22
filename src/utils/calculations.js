@@ -423,6 +423,15 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   // 注: サ(完成費)、コ(投入費)、ツ(材料)、ケ(機械)、ナ(借入返済)、ニ(納税)、ヌ(買掛支払)は固定費ではない
 
   // ── 人件費の参照（上で計算済みの変数を再利用） ──
+  // 以前の変数を後方互換性のため維持
+  const workerSalary    = estimatedWorkerSalary;
+  const workerSeverance = estimatedWorkerSeverance;
+  const autoLaborCost   = plWorkerSalary;
+  const salesmanSalary    = estimatedSalesmanSal;
+  const salesmanSeverance = estimatedSalesmanSev;
+  const autoSalesmanCost  = plSalesmanSalary;
+  const autoInsuranceCost = plInsurance;
+
   // 労務費 = 期中推定 or 出納帳実績 (シ)
   const laborCost = plWorkerSalary;
   const manufacturingFixed = ledgerTotals["ス"].amount + depreciation + (ledgerTotals["PAC"] ? ledgerTotals["PAC"].amount : 0);
