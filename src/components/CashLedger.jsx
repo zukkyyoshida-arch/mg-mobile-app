@@ -52,6 +52,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     ad5: 0, ad10: 0, ad20: 0
   });
   
+  // 研究開発用のステート
+  const [rdPrice, setRdPrice] = useState(20);
+  
   // 電卓の状態
   const [calcInput, setCalcInput] = useState('');
   const [showCalculator, setShowCalculator] = useState(false);
@@ -131,6 +134,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       finalQuantity = totalQty;
       finalAmount = totalAmount;
       finalPrice = 0;
+    } else if (selectedCategory === "チ") {
+      finalQuantity = 1;
+      finalAmount = rdPrice;
+      finalPrice = rdPrice;
     } else {
       finalAmount = selectedCategory === '採用' 
         ? (Number(workersHired) || 0) * hirePrice + (Number(salesmenHired) || 0) * hirePrice 
@@ -204,7 +211,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   const handleCategorySelect = (symbol) => {
     setSelectedCategory(symbol);
     // 数量が必要ない科目の場合は数量と単価をリセット
-    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ", "セ", "保険", "MD", "リサーチ", "PAC", "配置転換"].includes(symbol);
+    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ", "セ", "チ", "保険", "MD", "リサーチ", "PAC", "配置転換"].includes(symbol);
     if (!needsQty) {
       setQuantity('');
       setPrice('');
@@ -561,6 +568,29 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   </div>
                   <div style={{ marginTop: '12px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     合計採用費: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((Number(workersHired) || 0) + (Number(salesmenHired) || 0)) * hirePrice}</span> 万
+                  </div>
+                </div>
+              ) : selectedCategory === 'チ' ? (
+                <div style={{ background: 'rgba(33, 150, 243, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-blue)' }}>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-blue)', marginBottom: '16px' }}>研究開発費の選択</h4>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setRdPrice(20)}
+                      style={{ flex: 1, padding: '12px', fontSize: '1rem', fontWeight: 'bold', border: 'none', borderRadius: '8px', background: rdPrice === 20 ? 'var(--mg-blue)' : 'rgba(255,255,255,0.05)', color: rdPrice === 20 ? 'white' : 'var(--text-secondary)' }}
+                    >
+                      20万 (チップ1枚)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRdPrice(40)}
+                      style={{ flex: 1, padding: '12px', fontSize: '1rem', fontWeight: 'bold', border: 'none', borderRadius: '8px', background: rdPrice === 40 ? 'var(--mg-blue)' : 'rgba(255,255,255,0.05)', color: rdPrice === 40 ? 'white' : 'var(--text-secondary)' }}
+                    >
+                      40万 (チップ2枚)
+                    </button>
+                  </div>
+                  <div style={{ marginTop: '16px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    合計研究開発費: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{rdPrice}</span> 万
                   </div>
                 </div>
               ) : ["火災", "製造ミス", "盗難"].includes(selectedCategory) ? (
