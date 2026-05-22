@@ -234,12 +234,9 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
 
   ledger.forEach(entry => {
     if (entry.category === "採用" || entry.category === "配置転換") {
-      if (entry.category !== '採用') {
-        totalWorkersHired += Number(entry.workersHired) || 0;
-        totalSalesmenHired += Number(entry.salesmenHired) || 0;
-        // 採用・配置転換後の合計人数で最大値を更新
-        // The maxTotalStaff update is handled only for non‑採用 entries above.
-      }
+      totalWorkersHired += Number(entry.workersHired) || 0;
+      totalSalesmenHired += Number(entry.salesmenHired) || 0;
+      
       const currentTotal = totalWorkersHired + totalSalesmenHired;
       if (currentTotal > maxTotalStaff) maxTotalStaff = currentTotal;
     }
