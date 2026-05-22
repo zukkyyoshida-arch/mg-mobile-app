@@ -654,8 +654,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       { action: "材料購入 (現金)", symbol: "ツ" },
                       { action: "材料購入 (買掛)", symbol: "ノ" },
                       { action: "設備投資", symbol: "ケ" },
-                      { action: "投入", symbol: "コ" },
-                      { action: "完成", symbol: "サ" },
+                      { action: "生産 (コ・サ)", symbol: "生産" },
                       { action: "採用", symbol: "採用", displaySymbol: "ソ" },
                       { action: "広告", symbol: "セ" },
                       { action: "研究開発", symbol: "チ" },
@@ -680,24 +679,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '1rem' }}>📌</span> ルールB・その他 (随時・決算処理)
                   </h4>
-                  <div className="category-group">
-                      <h4 style={{ fontSize: '0.8rem', color: 'var(--mg-green)', marginBottom: '8px' }}>工場・生産</h4>
-                      <div className="grid-2">
-                        {[
-                          { action: "生産", symbol: "生産" }
-                        ].map(({ action, symbol }) => (
-                          <button
-                            key={symbol}
-                            type="button"
-                            onClick={() => handleCategorySelect(symbol)}
-                            className={`btn-category category-green ${selectedCategory === symbol ? 'active' : ''}`}
-                            style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === symbol ? 1 : 0.8, borderColor: selectedCategory === symbol ? '#4caf50' : 'rgba(76, 175, 80, 0.15)', backgroundColor: selectedCategory === symbol ? 'rgba(76, 175, 80, 0.2)' : undefined }}
-                          >
-                            <span style={{ fontWeight: '800', marginRight: '4px' }}>{symbol}</span> {CATEGORIES[symbol].label}
-                          </button>
-                        ))}
-                      </div>
-                    </div> 
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                     {[
