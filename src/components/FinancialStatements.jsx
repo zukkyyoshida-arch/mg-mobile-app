@@ -193,7 +193,7 @@ function FinancialStatements({ results, carryover }) {
                   <td style={{ textAlign: 'right', fontWeight: '800' }}>¥{pl.profitBeforeTax.toLocaleString()}万</td>
                 </tr>
                 <tr>
-                  <td style={{ color: 'var(--text-secondary)' }}>未払法人税等 (50%)</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>未払法人税等 (30%)</td>
                   <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>-¥{pl.corporateTax.toLocaleString()}万</td>
                 </tr>
                 <tr style={{ borderTop: '2px double var(--border-glass-focused)', fontWeight: '800', fontSize: '1rem' }}>

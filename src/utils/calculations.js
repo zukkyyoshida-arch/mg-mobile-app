@@ -225,8 +225,8 @@ export function calculateFinancials(carryover, ledger, actuals) {
   const matTotalCount = matBeginningCount + matPurchaseCount;
   const matTotalValue = matBeginningValue + matPurchaseValue;
   
-  // 平均単価の算出
-  const matUnitCost = matTotalCount > 0 ? (matTotalValue / matTotalCount) : 0;
+  // 平均単価の算出 (四捨五入)
+  const matUnitCost = matTotalCount > 0 ? Math.round(matTotalValue / matTotalCount) : 0;
   
   // 投入 (コ)
   const matInputCount = ledgerTotals["コ"].quantity;
@@ -251,7 +251,7 @@ export function calculateFinancials(carryover, ledger, actuals) {
   const wipTotalCount = wipBeginningCount + wipInputCount;
   const wipTotalValue = wipBeginningValue + wipInputValue;
   
-  const wipUnitCost = wipTotalCount > 0 ? (wipTotalValue / wipTotalCount) : 0;
+  const wipUnitCost = wipTotalCount > 0 ? Math.round(wipTotalValue / wipTotalCount) : 0;
   
   // 完成 (サ の生産個数)
   const wipCompletedCount = ledgerTotals["サ"].quantity;
@@ -274,7 +274,7 @@ export function calculateFinancials(carryover, ledger, actuals) {
   const prodTotalCount = prodBeginningCount + prodCompletedCount;
   const prodTotalValue = prodBeginningValue + prodCompletedValue;
   
-  const prodUnitCost = prodTotalCount > 0 ? (prodTotalValue / prodTotalCount) : 0;
+  const prodUnitCost = prodTotalCount > 0 ? Math.round(prodTotalValue / prodTotalCount) : 0;
   
   // 売上個数 (キ + ネ の合計個数)
   const salesCount = ledgerTotals["キ"].quantity + ledgerTotals["ネ"].quantity;
@@ -384,10 +384,15 @@ export function calculateFinancials(carryover, ledger, actuals) {
   
   if (profitBeforeTax > 0) {
     if (priorRetained < 0) {
-      corporateTax = totalTaxBase > 0 ? Math.round(totalTaxBase * 0.5) : 0;
+      corporateTax = totalTaxBase > 0 ? Math.round(totalTaxBase * 0.3) : 0;
     } else {
-      corporateTax = Math.round(profitBeforeTax * 0.5);
+      corporateTax = Math.round(profitBeforeTax * 0.3);
     }
+  }
+
+  // 支払いが7万円以下になる場合や赤字の場合は一律で7万円
+  if (corporateTax <= 7) {
+    corporateTax = 7;
   }
 
   const netProfit = profitBeforeTax - corporateTax; // 当期純利益
