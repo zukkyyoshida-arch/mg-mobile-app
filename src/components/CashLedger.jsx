@@ -47,6 +47,13 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   const [factoringAmount, setFactoringAmount] = useState('');
   const [repaymentAmount, setRepaymentAmount] = useState('');
 
+  // リスクカード用のステート
+  const [riskTab, setRiskTab] = useState('positive'); // positive, negative
+  const [riskAction, setRiskAction] = useState('special_sale'); 
+  const [riskSaleType, setRiskSaleType] = useState('cash'); // cash(キ) or credit(ネ)
+  const [riskQty, setRiskQty] = useState('');
+  const [riskPrice, setRiskPrice] = useState('');
+
   // 複数市場購入用のステート
   const [marketQuantities, setMarketQuantities] = useState({
     sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0
@@ -86,6 +93,35 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   const [calcInput, setCalcInput] = useState('');
   const [showCalculator, setShowCalculator] = useState(false);
   const [showMinimap, setShowMinimap] = useState(false);
+
+  // フォームリセット関数
+  const resetForm = () => {
+    setVoucherNo('');
+    setQuantity('');
+    setPrice('');
+    setAmount('');
+    setWorkersHired('');
+    setSalesmenHired('');
+    setHirePrice(5);
+    setFactoringAmount('');
+    setRepaymentAmount('');
+    setRiskTab('positive');
+    setRiskAction('special_sale');
+    setRiskSaleType('cash');
+    setRiskQty('');
+    setRiskPrice('');
+    setTransferW2S(0);
+    setTransferS2W(0);
+    setMarketQuantities({ sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0 });
+    setMachineQuantities({ large: 0, small: 0, attachment: 0 });
+    setAdQuantities({ ad5: 0, ad10: 0, ad20: 0 });
+    setSalesData({
+      sapporo: { qty: 0, price: '' }, sendai: { qty: 0, price: '' }, tokyo: { qty: 0, price: '' },
+      nagoya: { qty: 0, price: '' }, osaka: { qty: 0, price: '' }, fukuoka: { qty: 0, price: '' }
+    });
+    setGreenChips({ pac: 0, md: 0, research: 0 });
+    setCalcInput('');
+  };
 
   // 新規取引の追加
   const handleAddTransaction = (e) => {
@@ -156,6 +192,61 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       }
       setLedger(prev => [...prev, ...newTransactions]);
       resetForm();
+      setShowAddModal(false);
+      return;
+    } else if (selectedCategory === "リスクカード") {
+      const newTransactions = [];
+      const timestamp = new Date().toISOString();
+      const q = Number(riskQty) || 0;
+      const p = Number(riskPrice) || 0;
+      
+      if (riskTab === 'positive') {
+        if (riskAction === 'special_sale' || riskAction === 'rd_success') {
+          if (q <= 0 || p <= 0) {
+            alert("販売する数量と単価を入力してください");
+            return;
+          }
+          const cat = riskSaleType === 'credit' ? 'ネ' : 'キ';
+          newTransactions.push({ id: Date.now().toString() + "-sale", category: cat, quantity: q, amount: q * p, price: p, timestamp });
+        } else if (riskAction === 'special_mat' || riskAction === 'common_mat') {
+          if (q <= 0) {
+            alert("購入する数量を入力してください");
+            return;
+          }
+          const price = riskAction === 'special_mat' ? 10 : 12;
+          newTransactions.push({ id: Date.now().toString() + "-mat", category: "ツ", quantity: q, amount: q * price, price: price, timestamp });
+        } else if (riskAction === 'special_ad') {
+          if (q <= 0) {
+            alert("購入する口数を入力してください");
+            return;
+          }
+          newTransactions.push({ id: Date.now().toString() + "-ad", category: "セ", quantity: q, amount: q * 5, price: 5, timestamp });
+        }
+      } else {
+        if (riskAction === 'retire_worker') {
+          newTransactions.push({ id: Date.now().toString() + "-resw", category: "退職", workersResigned: 1, salesmenResigned: 0, amount: 0, quantity: 1, price: 0, timestamp });
+          newTransactions.push({ id: Date.now().toString() + "-reswp", category: "ソ", amount: 5, quantity: 1, price: 5, timestamp: new Date(Date.now() + 1).toISOString() });
+        } else if (riskAction === 'retire_salesman') {
+          newTransactions.push({ id: Date.now().toString() + "-ress", category: "退職", workersResigned: 0, salesmenResigned: 1, amount: 0, quantity: 1, price: 0, timestamp });
+          newTransactions.push({ id: Date.now().toString() + "-ressp", category: "ソ", amount: 5, quantity: 1, price: 5, timestamp: new Date(Date.now() + 1).toISOString() });
+        } else if (riskAction === 'claim') {
+          newTransactions.push({ id: Date.now().toString() + "-claim", category: "セ", amount: 5, quantity: 1, price: 5, timestamp });
+        } else if (riskAction === 'machine_break' || riskAction === 'design_trouble') {
+          newTransactions.push({ id: Date.now().toString() + "-trouble", category: "ス", amount: 5, quantity: 1, price: 5, timestamp });
+        } else if (riskAction === 'rd_fail') {
+          newTransactions.push({ id: Date.now().toString() + "-rdfail", category: "研究開発失敗", amount: 0, quantity: 1, price: 0, timestamp });
+        } else if (riskAction === 'theft') {
+          newTransactions.push({ id: Date.now().toString() + "-theft", category: "盗難", quantity: 1, amount: 0, price: 0, timestamp });
+        } else if (riskAction === 'miss') {
+          newTransactions.push({ id: Date.now().toString() + "-miss", category: "製造ミス", quantity: 1, amount: 0, price: 0, timestamp });
+        } else if (riskAction === 'fire') {
+          newTransactions.push({ id: Date.now().toString() + "-fire", category: "火災", quantity: 1, amount: 0, price: 0, timestamp });
+        }
+      }
+      
+      setLedger(prev => [...prev, ...newTransactions]);
+      resetForm();
+      setShowAddModal(false);
       return;
     } else if (selectedCategory === "期首処理") {
       const newTransactions = [];
@@ -347,9 +438,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       
       onUpdateLedger(updatedLedger);
       
-      setVoucherNo('');
-      setGreenChips({ pac: 0, md: 0, research: 0 });
-      setSelectedCategory('キ');
+      resetForm();
       return;
     } else if (selectedCategory === '配置転換') {
       const w2s = Number(transferW2S) || 0;
@@ -451,24 +540,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     onUpdateLedger(updatedLedger);
     
     // フォームリセット
-    setVoucherNo('');
-    setQuantity('');
-    setPrice('');
-    setAmount('');
-    setWorkersHired('');
-    setSalesmenHired('');
-    setHirePrice(5);
-    setFactoringAmount('');
-    setRepaymentAmount('');
-    setTransferW2S(0);
-    setTransferS2W(0);
-    setMarketQuantities({ sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0 });
-    setMachineQuantities({ large: 0, small: 0, attachment: 0 });
-    setAdQuantities({ ad5: 0, ad10: 0, ad20: 0 });
-    setSalesData({
-      sapporo: { qty: 0, price: '' }, sendai: { qty: 0, price: '' }, tokyo: { qty: 0, price: '' },
-      nagoya: { qty: 0, price: '' }, osaka: { qty: 0, price: '' }, fukuoka: { qty: 0, price: '' }
-    });
+    resetForm();
     setGreenChips({ pac: 0, md: 0, research: 0 });
     setCalcInput('');
     setShowAddModal(false);
@@ -807,20 +879,17 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                     ))}
                   </div>
 
-                  {/* 事故・災害 */}
-                  <span style={{ fontSize: '0.65rem', color: '#ff5252', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginTop: '16px', marginBottom: '6px' }}>🚨 事故・災害メモ (在庫減少)</span>
+                  {/* リスクカード */}
+                  <span style={{ fontSize: '0.65rem', color: '#9c27b0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginTop: '16px', marginBottom: '6px' }}>🃏 リスクカード</span>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {["火災", "製造ミス", "盗難"].map(symbol => (
-                      <button
-                        type="button"
-                        key={symbol}
-                        onClick={() => handleCategorySelect(symbol)}
-                        className={`btn-premium ${selectedCategory === symbol ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === symbol ? 1 : 0.8, borderColor: selectedCategory === symbol ? '#ff5252' : 'rgba(255, 82, 82, 0.15)', backgroundColor: selectedCategory === symbol ? 'rgba(255, 82, 82, 0.2)' : undefined }}
-                      >
-                        {CATEGORIES[symbol].label}
-                      </button>
-                    ))}
+                    <button
+                      type="button"
+                      onClick={() => handleCategorySelect("リスクカード")}
+                      className={`btn-premium ${selectedCategory === "リスクカード" ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === "リスクカード" ? 1 : 0.8, borderColor: selectedCategory === "リスクカード" ? '#9c27b0' : 'rgba(156, 39, 176, 0.15)', backgroundColor: selectedCategory === "リスクカード" ? 'rgba(156, 39, 176, 0.2)' : undefined }}
+                    >
+                      🃏 リスクカード処理
+                    </button>
                   </div>
                 </div>
               </div>
@@ -953,6 +1022,85 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       {((results?.carryover?.receivables || 0) - ((results?.carryover?.payables || 0) + (currentPeriod > 1 ? (results?.carryover?.taxes || 0) : 0) + Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10)) + (Number(repaymentAmount) || 0))) > 0 ? '+' : ''}{((results?.carryover?.receivables || 0) - ((results?.carryover?.payables || 0) + (currentPeriod > 1 ? (results?.carryover?.taxes || 0) : 0) + Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10)) + (Number(repaymentAmount) || 0)))}
                     </span> 万
                   </div>
+
+                </div>
+              ) : selectedCategory === 'リスクカード' ? (
+                <div style={{ background: 'rgba(156, 39, 176, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-purple)' }}>
+                  <h4 style={{ fontSize: '0.9rem', color: 'var(--mg-purple)', marginBottom: '16px' }}>🃏 リスクカード</h4>
+                  
+                  {/* Tabs */}
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                    <button type="button" onClick={() => setRiskTab('positive')} className="btn-secondary" style={{ flex: 1, padding: '8px', borderRadius: '8px', background: riskTab === 'positive' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(255,255,255,0.05)', color: riskTab === 'positive' ? '#4caf50' : 'white', border: riskTab === 'positive' ? '1px solid #4caf50' : 'none' }}>ポジティブ</button>
+                    <button type="button" onClick={() => setRiskTab('negative')} className="btn-secondary" style={{ flex: 1, padding: '8px', borderRadius: '8px', background: riskTab === 'negative' ? 'rgba(255, 82, 82, 0.3)' : 'rgba(255,255,255,0.05)', color: riskTab === 'negative' ? '#ff5252' : 'white', border: riskTab === 'negative' ? '1px solid #ff5252' : 'none' }}>ネガティブ</button>
+                  </div>
+
+                  {riskTab === 'positive' ? (
+                    <>
+                      <select className="form-input" value={riskAction} onChange={(e) => setRiskAction(e.target.value)} style={{ marginBottom: '12px' }}>
+                        <option value="special_sale">特別サービス（材料） / 商品の独占販売 / 研究開発成功</option>
+                        <option value="rd_success">研究開発成功 (販売)</option>
+                        <option value="special_mat">特別サービス (材料購入 1個10万)</option>
+                        <option value="special_ad">特別サービス (広告購入 1口5万)</option>
+                        <option value="common_mat">各社共通 (材料購入 1個12万)</option>
+                      </select>
+                      {(riskAction === 'special_sale' || riskAction === 'rd_success') && (
+                        <div className="grid-2">
+                          <div className="form-group">
+                            <label className="form-label">販売数量</label>
+                            <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">販売単価</label>
+                            <input type="number" className="form-input" value={riskPrice} onChange={e => setRiskPrice(e.target.value)} />
+                          </div>
+                          <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                            <label className="form-label">売上計上先</label>
+                            <select className="form-input" value={riskSaleType} onChange={(e) => setRiskSaleType(e.target.value)}>
+                              <option value="cash">現金 (キ)</option>
+                              <option value="credit">売掛 (ネ)</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                      {(riskAction === 'special_mat' || riskAction === 'common_mat') && (
+                        <div className="form-group">
+                          <label className="form-label">購入数量 (材料 ツ)</label>
+                          <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
+                        </div>
+                      )}
+                      {(riskAction === 'special_ad') && (
+                        <div className="form-group">
+                          <label className="form-label">購入口数 (広告 セ)</label>
+                          <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <select className="form-input" value={riskAction} onChange={(e) => setRiskAction(e.target.value)} style={{ marginBottom: '12px' }}>
+                        <option value="retire_worker">ワーカー退職</option>
+                        <option value="retire_salesman">セールスマン退職</option>
+                        <option value="claim">クレーム発生</option>
+                        <option value="machine_break">機械故障</option>
+                        <option value="design_trouble">設計トラブル発生</option>
+                        <option value="rd_fail">研究開発失敗</option>
+                        <option value="theft">盗難発見 (商品2個減)</option>
+                        <option value="miss">製造ミス発見 (仕掛品1個減)</option>
+                        <option value="fire">倉庫火災 (材料全減)</option>
+                      </select>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {riskAction === 'retire_worker' && 'ワーカーが1人減少し、退職金5万を「一般管理費(ソ)」として支払います。'}
+                        {riskAction === 'retire_salesman' && 'セールスマンが1人減少し、退職金5万を「一般管理費(ソ)」として支払います。'}
+                        {riskAction === 'claim' && 'クレーム処理費として5万を「販売費(セ)」として支払います。'}
+                        {riskAction === 'machine_break' && '修理費として5万を「製造経費(ス)」として支払います。'}
+                        {riskAction === 'design_trouble' && '改修費として5万を「製造経費(ス)」として支払います。'}
+                        {riskAction === 'rd_fail' && '所持している研究開発(青)チップの効果が1つ失われます。'}
+                        {riskAction === 'theft' && '商品が2個失われます。(保険があれば後ほど現金受取処理が行われます)'}
+                        {riskAction === 'miss' && '仕掛品が1個失われます。'}
+                        {riskAction === 'fire' && '材料がすべて失われます。(保険があれば後ほど現金受取処理が行われます)'}
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : selectedCategory === '売掛割引' ? (
                 <div style={{ background: 'rgba(233, 30, 99, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-pink)' }}>

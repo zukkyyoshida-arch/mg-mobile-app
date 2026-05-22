@@ -41,7 +41,10 @@ export const CATEGORIES = {
   "ニ": { label: "納税", type: "outflow", color: "yellow", symbol: "ニ" },
   "ヌ": { label: "買掛金支払", type: "outflow", color: "yellow", symbol: "ヌ" },
   "期首処理": { label: "期首一括処理", type: "outflow", color: "yellow", symbol: "期首", isCash: true },
-  "売掛割引": { label: "売掛割引 (5%)", type: "inflow", color: "pink", symbol: "割引", isCash: true }
+  "売掛割引": { label: "売掛割引 (5%)", type: "inflow", color: "pink", symbol: "割引", isCash: true },
+  "リスクカード": { label: "リスクカード", type: "outflow", color: "purple", symbol: "リスク", isCash: false },
+  "退職": { label: "退職", type: "outflow", color: "red", symbol: "退職", isCash: false },
+  "研究開発失敗": { label: "研究開発失敗", type: "outflow", color: "red", symbol: "失敗", isCash: false }
 };
 
 /**
@@ -216,6 +219,10 @@ export function calculateFinancials(carryover, ledger, actuals) {
     if (entry.category === "採用" || entry.category === "配置転換") {
       totalWorkersHired += Number(entry.workersHired) || 0;
       totalSalesmenHired += Number(entry.salesmenHired) || 0;
+    }
+    if (entry.category === "退職") {
+      totalWorkersHired -= Number(entry.workersResigned) || 0;
+      totalSalesmenHired -= Number(entry.salesmenResigned) || 0;
     }
   });
 
@@ -428,6 +435,12 @@ export function calculateFinancials(carryover, ledger, actuals) {
   // 純資産合計
   const endingCapital = carryover.capital + ledgerTotals["カ"].amount; // 資本金
   const totalNetAssets = endingCapital + endingRetained;
+
+  // 各種チップと人員の実効数
+  const activeRdChips = Math.max(0, Math.floor(ledgerTotals["チ"].amount / 20) - (ledgerTotals["研究開発失敗"]?.quantity || 0));
+  const activeAdChips = Math.floor(ledgerTotals["セ"].amount / 5);
+  const activeSalesmen = totalSalesmenHired;
+  const activeWorkers = totalWorkersHired;
   
   const totalLiabilitiesAndNetAssets = totalLiabilities + totalNetAssets;
 
@@ -579,6 +592,11 @@ export function calculateFinancials(carryover, ledger, actuals) {
       totalCF
     },
     
+    activeRdChips,
+    activeAdChips,
+    activeWorkers,
+    activeSalesmen,
+    
     endingReceivables,
     endingPayables,
     endingLoans,
@@ -587,9 +605,9 @@ export function calculateFinancials(carryover, ledger, actuals) {
     totalAssets,
     totalLiabilities,
     totalEquity: totalNetAssets,
-    workers: totalWorkersHired, // 採用したワーカー数
-    salesmen: totalSalesmenHired, // 採用したセールスマン数
-    productionCapacity: productionCapacity, // 現在の生産能力(PAC)
+    workers: activeWorkers,
+    salesmen: activeSalesmen,
+    productionCapacity: productionCapacity,
     rank: evaluationRank
   };
 }
