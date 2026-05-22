@@ -29,6 +29,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   // 採用用のステート
   const [workersHired, setWorkersHired] = useState('');
   const [salesmenHired, setSalesmenHired] = useState('');
+  const [hirePrice, setHirePrice] = useState(5);
 
   // 複数市場購入用のステート
   const [marketQuantities, setMarketQuantities] = useState({
@@ -101,7 +102,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       finalPrice = 0;
     } else {
       finalAmount = selectedCategory === '採用' 
-        ? (Number(workersHired) || 0) * 5 + (Number(salesmenHired) || 0) * 5 
+        ? (Number(workersHired) || 0) * hirePrice + (Number(salesmenHired) || 0) * hirePrice 
         : (amount === '' ? 0 : Number(amount));
       finalQuantity = quantity === '' ? 0 : Number(quantity);
       finalPrice = price === '' ? 0 : Number(price);
@@ -482,7 +483,28 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
               {/* 採用専用UI */}
               {selectedCategory === '採用' ? (
                 <div style={{ background: 'rgba(15, 17, 26, 0.4)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-blue)' }}>
-                  <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-blue)', marginBottom: '12px' }}>採用人数の入力</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-blue)', margin: 0 }}>採用情報の入力</h4>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>採用単価:</span>
+                      <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
+                        <button
+                          type="button"
+                          onClick={() => setHirePrice(5)}
+                          style={{ padding: '4px 12px', fontSize: '0.8rem', border: 'none', background: hirePrice === 5 ? 'var(--mg-blue)' : 'transparent', color: hirePrice === 5 ? 'white' : 'var(--text-secondary)' }}
+                        >
+                          5万
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setHirePrice(10)}
+                          style={{ padding: '4px 12px', fontSize: '0.8rem', border: 'none', background: hirePrice === 10 ? 'var(--mg-blue)' : 'transparent', color: hirePrice === 10 ? 'white' : 'var(--text-secondary)' }}
+                        >
+                          10万
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                   <div className="grid-2">
                     <div className="form-group">
                       <label className="form-label">ワーカー採用数 (人)</label>
@@ -506,7 +528,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                     </div>
                   </div>
                   <div style={{ marginTop: '12px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    合計採用費: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((Number(workersHired) || 0) + (Number(salesmenHired) || 0)) * 5}</span> 万
+                    合計採用費: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((Number(workersHired) || 0) + (Number(salesmenHired) || 0)) * hirePrice}</span> 万
                   </div>
                 </div>
               ) : ["火災", "製造ミス", "盗難"].includes(selectedCategory) ? (
