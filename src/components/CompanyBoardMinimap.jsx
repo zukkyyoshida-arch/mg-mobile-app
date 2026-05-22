@@ -242,7 +242,7 @@ function CompanyBoardMinimap({ results }) {
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.72rem', fontWeight: '800', color: '#e040fb', marginTop: '6px' }}>
-              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: '500' }}>在籍社員: {totalWorkers}名</span>
+              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: '500' }}>ワーカー: {totalWorkers}名</span>
               <span>仕掛: {wip.endingCount} 個</span>
             </div>
           </div>
@@ -277,11 +277,10 @@ function CompanyBoardMinimap({ results }) {
                   <span>{totalSalesmen}名</span>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', minHeight: '18px', alignItems: 'center' }}>
-                  {Array.from({ length: totalSalesmen }).map((_, i) => (
+                  {totalSalesmen > 0 ? Array.from({ length: totalSalesmen }).map((_, i) => (
                     <span key={i} style={{ fontSize: '0.9rem', lineHeight: '1' }}>🧑‍💼</span>
-                  ))}
-                  {totalSalesmen === 0 && (
-                    <span style={{ fontSize: '0.55rem', color: '#ff8a80', fontWeight: '700' }}>⚠️ 不在</span>
+                  )) : (
+                    <span style={{ fontSize: '0.65rem', color: 'rgba(76, 175, 80, 0.5)', fontStyle: 'italic' }}>不在</span>
                   )}
                 </div>
               </div>
@@ -314,29 +313,6 @@ function CompanyBoardMinimap({ results }) {
             </div>
           </div>
 
-        </div>
-
-        {/* 下段: 金庫（現金トレイ） */}
-        <div style={{ 
-          background: 'linear-gradient(135deg, rgba(0, 230, 118, 0.08) 0%, rgba(15, 17, 26, 0.6) 100%)', 
-          border: '1px solid rgba(0, 230, 118, 0.3)', 
-          borderRadius: '12px', 
-          padding: '12px 16px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div>
-            <div style={{ fontSize: '0.68rem', fontWeight: '800', color: '#00e676', textTransform: 'uppercase', letterSpacing: '0.5px' }}>現金</div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '2px' }}>帳簿上 現金総資産</div>
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.2rem' }}>💵</span>
-            <span className="electric-number" style={{ fontSize: '1.5rem', color: bookEndingCash < 0 ? '#ef4444' : 'var(--text-primary)' }}>
-              ¥ {bookEndingCash.toLocaleString()} <span style={{ fontSize: '0.8rem', fontWeight: '500' }}>万</span>
-            </span>
-          </div>
         </div>
 
       </div>
