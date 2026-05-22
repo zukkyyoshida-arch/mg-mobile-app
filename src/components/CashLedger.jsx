@@ -201,7 +201,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       const p = Number(riskPrice) || 0;
       
       if (riskTab === 'positive') {
-        if (riskAction === 'special_sale' || riskAction === 'rd_success') {
+        if (riskAction === 'monopoly_salesman' || riskAction === 'monopoly_ad' || riskAction === 'rd_success') {
           if (q <= 0 || p <= 0) {
             alert("販売する数量と単価を入力してください");
             return;
@@ -1036,22 +1036,49 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
                   {riskTab === 'positive' ? (
                     <>
-                      <select className="form-input" value={riskAction} onChange={(e) => setRiskAction(e.target.value)} style={{ marginBottom: '12px' }}>
-                        <option value="special_sale">特別サービス（材料） / 商品の独占販売 / 研究開発成功</option>
-                        <option value="rd_success">研究開発成功 (販売)</option>
-                        <option value="special_mat">特別サービス (材料購入 1個10万)</option>
-                        <option value="special_ad">特別サービス (広告購入 1口5万)</option>
-                        <option value="common_mat">各社共通 (材料購入 1個12万)</option>
-                      </select>
-                      {(riskAction === 'special_sale' || riskAction === 'rd_success') && (
-                        <div className="grid-2">
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '16px' }}>
+                        {[
+                          { id: 'special_mat', label: '特別サービス (材料)', desc: '材料購入 1個10万 5個まで' },
+                          { id: 'special_ad', label: '特別サービス (広告)', desc: '広告購入 1口5万' },
+                          { id: 'monopoly_salesman', label: '商品の独占販売 (Sマン)', desc: 'Sマン1名につき2個(32万)' },
+                          { id: 'monopoly_ad', label: '商品の独占販売 (広告)', desc: '広告1枚につき2個(上限価格)' },
+                          { id: 'rd_success', label: '研究開発成功', desc: '青チップ1枚につき2個(32万)' },
+                          { id: 'common_mat', label: '各社共通', desc: '材料購入 1個12万 3個まで' }
+                        ].map(btn => (
+                          <button
+                            key={btn.id}
+                            type="button"
+                            onClick={() => {
+                              setRiskAction(btn.id);
+                              setRiskQty('');
+                              setRiskPrice(btn.id === 'special_mat' ? 10 : btn.id === 'common_mat' ? 12 : btn.id === 'special_ad' ? 5 : (btn.id === 'monopoly_salesman' || btn.id === 'rd_success') ? 32 : '');
+                            }}
+                            className={`btn-premium ${riskAction === btn.id ? 'btn-primary' : 'btn-secondary'}`}
+                            style={{ padding: '8px', fontSize: '0.75rem', borderRadius: '8px', opacity: riskAction === btn.id ? 1 : 0.7, textAlign: 'left', display: 'flex', flexDirection: 'column' }}
+                          >
+                            <span style={{ fontWeight: 'bold', marginBottom: '4px' }}>{btn.label}</span>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{btn.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      {(riskAction === 'monopoly_salesman' || riskAction === 'monopoly_ad' || riskAction === 'rd_success') && (
+                        <div className="grid-2" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
                           <div className="form-group">
-                            <label className="form-label">販売数量</label>
+                            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span>販売数量</span>
+                              <button type="button" onClick={() => {
+                                const capacity = riskAction === 'monopoly_salesman' ? (results?.activeSalesmen || 0) * 2
+                                  : riskAction === 'monopoly_ad' ? (results?.activeAdChips || 0) * 2
+                                  : (results?.activeRdChips || 0) * 2;
+                                setRiskQty(Math.min(capacity, results?.currentProductCount || 0));
+                              }} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'black', fontWeight: 'bold' }}>MAX</button>
+                            </label>
                             <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
                           </div>
                           <div className="form-group">
                             <label className="form-label">販売単価</label>
-                            <input type="number" className="form-input" value={riskPrice} onChange={e => setRiskPrice(e.target.value)} />
+                            <input type="number" className="form-input" value={riskPrice} onChange={e => setRiskPrice(e.target.value)} disabled={riskAction === 'monopoly_salesman' || riskAction === 'rd_success'} />
                           </div>
                           <div className="form-group" style={{ gridColumn: 'span 2' }}>
                             <label className="form-label">売上計上先</label>
@@ -1063,13 +1090,16 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         </div>
                       )}
                       {(riskAction === 'special_mat' || riskAction === 'common_mat') && (
-                        <div className="form-group">
-                          <label className="form-label">購入数量 (材料 ツ)</label>
+                        <div className="form-group" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
+                          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>購入数量 (材料 ツ)</span>
+                            <button type="button" onClick={() => setRiskQty(riskAction === 'special_mat' ? 5 : 3)} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'black', fontWeight: 'bold' }}>MAX</button>
+                          </label>
                           <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
                         </div>
                       )}
                       {(riskAction === 'special_ad') && (
-                        <div className="form-group">
+                        <div className="form-group" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
                           <label className="form-label">購入口数 (広告 セ)</label>
                           <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
                         </div>
@@ -1077,27 +1107,29 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                     </>
                   ) : (
                     <>
-                      <select className="form-input" value={riskAction} onChange={(e) => setRiskAction(e.target.value)} style={{ marginBottom: '12px' }}>
-                        <option value="retire_worker">ワーカー退職</option>
-                        <option value="retire_salesman">セールスマン退職</option>
-                        <option value="claim">クレーム発生</option>
-                        <option value="machine_break">機械故障</option>
-                        <option value="design_trouble">設計トラブル発生</option>
-                        <option value="rd_fail">研究開発失敗</option>
-                        <option value="theft">盗難発見 (商品2個減)</option>
-                        <option value="miss">製造ミス発見 (仕掛品1個減)</option>
-                        <option value="fire">倉庫火災 (材料全減)</option>
-                      </select>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        {riskAction === 'retire_worker' && 'ワーカーが1人減少し、退職金5万を「一般管理費(ソ)」として支払います。'}
-                        {riskAction === 'retire_salesman' && 'セールスマンが1人減少し、退職金5万を「一般管理費(ソ)」として支払います。'}
-                        {riskAction === 'claim' && 'クレーム処理費として5万を「販売費(セ)」として支払います。'}
-                        {riskAction === 'machine_break' && '修理費として5万を「製造経費(ス)」として支払います。'}
-                        {riskAction === 'design_trouble' && '改修費として5万を「製造経費(ス)」として支払います。'}
-                        {riskAction === 'rd_fail' && '所持している研究開発(青)チップの効果が1つ失われます。'}
-                        {riskAction === 'theft' && '商品が2個失われます。(保険があれば後ほど現金受取処理が行われます)'}
-                        {riskAction === 'miss' && '仕掛品が1個失われます。'}
-                        {riskAction === 'fire' && '材料がすべて失われます。(保険があれば後ほど現金受取処理が行われます)'}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '16px' }}>
+                        {[
+                          { id: 'retire_worker', label: 'ワーカー退職', desc: '退職金5(ソ) 1名減' },
+                          { id: 'retire_salesman', label: 'セールスマン退職', desc: '退職金5(ソ) 1名減' },
+                          { id: 'claim', label: 'クレーム発生', desc: '処理費5(セ)' },
+                          { id: 'machine_break', label: '機械故障', desc: '修理費5(ス)' },
+                          { id: 'design_trouble', label: '設計トラブル', desc: '改修費5(ス)' },
+                          { id: 'rd_fail', label: '研究開発失敗', desc: '青チップ1枚喪失' },
+                          { id: 'theft', label: '盗難発見', desc: '商品2個喪失' },
+                          { id: 'miss', label: '製造ミス発見', desc: '仕掛品1個喪失' },
+                          { id: 'fire', label: '倉庫火災', desc: '材料全喪失' }
+                        ].map(btn => (
+                          <button
+                            key={btn.id}
+                            type="button"
+                            onClick={() => setRiskAction(btn.id)}
+                            className={`btn-premium ${riskAction === btn.id ? 'btn-primary' : 'btn-secondary'}`}
+                            style={{ padding: '8px', fontSize: '0.75rem', borderRadius: '8px', opacity: riskAction === btn.id ? 1 : 0.7, textAlign: 'left', display: 'flex', flexDirection: 'column' }}
+                          >
+                            <span style={{ fontWeight: 'bold', marginBottom: '4px' }}>{btn.label}</span>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{btn.desc}</span>
+                          </button>
+                        ))}
                       </div>
                     </>
                   )}
