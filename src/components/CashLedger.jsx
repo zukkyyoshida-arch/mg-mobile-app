@@ -721,14 +721,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       onClick={() => setRdPrice(20)}
                       style={{ flex: 1, padding: '12px', fontSize: '1rem', fontWeight: 'bold', border: 'none', borderRadius: '8px', background: rdPrice === 20 ? 'var(--mg-blue)' : 'rgba(255,255,255,0.05)', color: rdPrice === 20 ? 'white' : 'var(--text-secondary)' }}
                     >
-                      20万 (チップ1枚)
+                      20万
                     </button>
                     <button
                       type="button"
                       onClick={() => setRdPrice(40)}
                       style={{ flex: 1, padding: '12px', fontSize: '1rem', fontWeight: 'bold', border: 'none', borderRadius: '8px', background: rdPrice === 40 ? 'var(--mg-blue)' : 'rgba(255,255,255,0.05)', color: rdPrice === 40 ? 'white' : 'var(--text-secondary)' }}
                     >
-                      40万 (チップ2枚)
+                      40万
                     </button>
                   </div>
                   <div style={{ marginTop: '16px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
