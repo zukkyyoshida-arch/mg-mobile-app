@@ -953,30 +953,40 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
                   <div className="grid-2">
                     <div className="form-group">
-                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>完成 (サ)</span>
-                        <span style={{ fontSize: '0.7rem', color: '#ff5252' }}>単価: 1万</span>
-                      </label>
-                      <input 
-                        type="number" 
-                        value={productionSa} 
-                        onChange={(e) => setProductionSa(Math.min(Math.min(results?.currentWipCount || 0, results?.productionCapacity || 0), Math.max(0, Number(e.target.value) || 0)))}
-                        placeholder="0"
-                        className="form-input"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <span>投入 (コ)</span>
                         <span style={{ fontSize: '0.7rem', color: '#ff5252' }}>単価: 2万</span>
                       </label>
-                      <input 
-                        type="number" 
-                        value={productionKo} 
-                        onChange={(e) => setProductionKo(Math.min(Math.min(results?.currentMatCount || 0, results?.productionCapacity || 0), Math.max(0, Number(e.target.value) || 0)))}
-                        placeholder="0"
-                        className="form-input"
-                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button type="button" onClick={() => setProductionKo(Math.max(0, (Number(productionKo) || 0) - 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>-</button>
+                        <input 
+                          type="number" 
+                          value={productionKo} 
+                          onChange={(e) => setProductionKo(Math.min(Math.min(results?.currentMatCount || 0, results?.productionCapacity || 0), Math.max(0, Number(e.target.value) || 0)))}
+                          placeholder="0"
+                          className="form-input"
+                          style={{ textAlign: 'center' }}
+                        />
+                        <button type="button" onClick={() => setProductionKo(Math.min(Math.min(results?.currentMatCount || 0, results?.productionCapacity || 0), (Number(productionKo) || 0) + 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>+</button>
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span>完成 (サ)</span>
+                        <span style={{ fontSize: '0.7rem', color: '#ff5252' }}>単価: 1万</span>
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button type="button" onClick={() => setProductionSa(Math.max(0, (Number(productionSa) || 0) - 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>-</button>
+                        <input 
+                          type="number" 
+                          value={productionSa} 
+                          onChange={(e) => setProductionSa(Math.min(Math.min(results?.currentWipCount || 0, results?.productionCapacity || 0), Math.max(0, Number(e.target.value) || 0)))}
+                          placeholder="0"
+                          className="form-input"
+                          style={{ textAlign: 'center' }}
+                        />
+                        <button type="button" onClick={() => setProductionSa(Math.min(Math.min(results?.currentWipCount || 0, results?.productionCapacity || 0), (Number(productionSa) || 0) + 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>+</button>
+                      </div>
                     </div>
                   </div>
                   <div style={{ marginTop: '12px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
