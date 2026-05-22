@@ -41,23 +41,8 @@ html_path = os.path.join(build_dir, "index.html")
 if os.path.exists(html_path):
     with open(html_path, "r", encoding="utf-8") as f:
         html_code = f.read()
-    
-    # エラーを画面に表示するためのスクリプトを注入
-    error_handler = """
-    <script>
-      window.onerror = function(msg, url, line, col, error) {
-        document.body.innerHTML = '<div style="color: red; padding: 20px; font-size: 16px; background: white; z-index: 9999; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;">' + 
-          '<h3>React Crash Log:</h3>' + msg + '<br><pre>' + (error && error.stack ? error.stack : '') + '</pre></div>';
-      };
-      window.onunhandledrejection = function(e) {
-        document.body.innerHTML = '<div style="color: red; padding: 20px; font-size: 16px; background: white; z-index: 9999; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;">' + 
-          '<h3>Promise Rejection:</h3>' + (e.reason ? e.reason : e) + '</div>';
-      };
-    </script>
-    """
-    html_code = html_code.replace("<head>", "<head>" + error_handler)
 
-    # 組み込みのHTMLとして直接注入（Streamlitのコンポーネント通信を待機しない）
+    # 組み込みのHTMLとして直接注入
     components.html(html_code, height=960, scrolling=True)
 else:
     st.error(
