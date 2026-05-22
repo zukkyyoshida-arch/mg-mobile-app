@@ -215,7 +215,7 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
       if (isCashTransaction) {
         if (CATEGORIES[cat].type === "inflow") {
           cashInflow += Math.abs(amt);
-        } else if (cat !== "シ") { // 労務費は期末処理まで現金から除外
+        } else {
           cashOutflow += Math.abs(amt);
         }
       }
