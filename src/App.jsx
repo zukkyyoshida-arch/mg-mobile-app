@@ -77,7 +77,7 @@ function App() {
   const currentData = periods[currentPeriod] || JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA));
 
   // リアルタイム財務計算を実行
-  const results = calculateFinancials(currentData.carryover, currentData.ledger, currentData.actuals);
+  const results = calculateFinancials(currentData.carryover, currentData.ledger, currentData.actuals, currentPeriod);
 
   // データの更新関数群
   const updatePeriodData = (field, newData) => {
@@ -114,7 +114,7 @@ function App() {
     if (!prevData) return;
 
     // 前期の決算計算結果を取得
-    const prevResults = calculateFinancials(prevData.carryover, prevData.ledger, prevData.actuals);
+    const prevResults = calculateFinancials(prevData.carryover, prevData.ledger, prevData.actuals, prevPeriod);
 
     const prevBS = prevResults.bs;
     const prevMat = prevResults.mat;

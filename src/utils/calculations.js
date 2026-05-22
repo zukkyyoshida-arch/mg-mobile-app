@@ -47,6 +47,16 @@ export const CATEGORIES = {
   "研究開発失敗": { label: "研究開発失敗", type: "outflow", color: "red", symbol: "失敗", isCash: false }
 };
 
+// 期別の給料・社会保険料テーブル (period は 1〜5)
+export const SALARY_TABLE = {
+  // 通常給料 (1人あたり、ワーカー・セールスマン共通)
+  normal:    { 1: 18, 2: 20, 3: 23, 4: 25, 5: 28 },
+  // 退職時給料 (1人あたり、退職費5万とは別)
+  severance: { 1: 12, 2: 14, 3: 17, 4: 19, 5: 22 },
+  // 社会保険料 (1人あたり、期中最大人数 × この単価)
+  insurance: { 1: 12, 2: 13, 3: 14, 4: 16, 5: 17 }
+};
+
 /**
  * 初期状態（第1期のデフォルト値など）
  */
@@ -102,7 +112,9 @@ export const DEFAULT_PERIOD_DATA = {
 /**
  * 帳簿データを元にすべての数値を再計算するメイン関数
  */
-export function calculateFinancials(carryover, ledger, actuals) {
+export function calculateFinancials(carryover, ledger, actuals, period = 1) {
+  // 期番号を1〜5にクランプ
+  const periodKey = Math.min(5, Math.max(1, Number(period) || 1));
   // 1. 現金の出入金集計
   let cashInflow = 0;
   let cashOutflow = 0;
@@ -212,17 +224,28 @@ export function calculateFinancials(carryover, ledger, actuals) {
   // 保険の自動支払いを現金流入に加算
   cashInflow += autoInsurancePayout;
 
-  // 人員の集計（期首 + 採用 + 配置転換）
+  // 人員の集計（期首 + 採用 + 配置転換）と最大人数追跡（社会保険料用）
   let totalWorkersHired = carryover.workers || 0;
   let totalSalesmenHired = carryover.salesmen || 0;
+  let maxTotalStaff = totalWorkersHired + totalSalesmenHired; // 期中最大人数
+  let totalSeveranceWorkers = 0;  // 退職ワーカー合計
+  let totalSeveranceSalesmen = 0; // 退職セールスマン合計
+
   ledger.forEach(entry => {
     if (entry.category === "採用" || entry.category === "配置転換") {
       totalWorkersHired += Number(entry.workersHired) || 0;
       totalSalesmenHired += Number(entry.salesmenHired) || 0;
+      // 採用・配置転換後の合計人数で最大値を更新
+      const currentTotal = totalWorkersHired + totalSalesmenHired;
+      if (currentTotal > maxTotalStaff) maxTotalStaff = currentTotal;
     }
     if (entry.category === "退職") {
-      totalWorkersHired -= Number(entry.workersResigned) || 0;
-      totalSalesmenHired -= Number(entry.salesmenResigned) || 0;
+      const resignedWorkers = Number(entry.workersResigned) || 0;
+      const resignedSalesmen = Number(entry.salesmenResigned) || 0;
+      totalWorkersHired -= resignedWorkers;
+      totalSalesmenHired -= resignedSalesmen;
+      totalSeveranceWorkers += resignedWorkers;
+      totalSeveranceSalesmen += resignedSalesmen;
     }
   });
 
@@ -362,11 +385,33 @@ export function calculateFinancials(carryover, ledger, actuals) {
   
   // 固定費 F (シ, ス, セ, ソ, タ, チ + 減価償却)
   // 注: サ(完成費)、コ(投入費)、ツ(材料)、ケ(機械)、ナ(借入返済)、ニ(納税)、ヌ(買掛支払)は固定費ではない
-  const laborCost = ledgerTotals["シ"].amount; // 労務費
+
+  // ── 人件費の自動計算 ──
+  const salaryUnit     = SALARY_TABLE.normal[periodKey];    // 通常給料単価
+  const severanceUnit  = SALARY_TABLE.severance[periodKey]; // 退職時給料単価
+  const insuranceUnit  = SALARY_TABLE.insurance[periodKey]; // 社会保険料単価
+
+  // 労務費(シ) = 現在のワーカー数 × 給料単価 + 退職ワーカー × 退職給料単価
+  const workerSalary    = totalWorkersHired * salaryUnit;
+  const workerSeverance = totalSeveranceWorkers * severanceUnit;
+  const autoLaborCost   = workerSalary + workerSeverance;
+
+  // 販売費(セ) 給料分 = 現在のセールスマン数 × 給料単価 + 退職セールスマン × 退職給料単価
+  const salesmanSalary    = totalSalesmenHired * salaryUnit;
+  const salesmanSeverance = totalSeveranceSalesmen * severanceUnit;
+  const autoSalesmanCost  = salesmanSalary + salesmanSeverance;
+
+  // 社会保険料 = 期中の最大人数（ワーカー＋セールスマン） × 保険料単価
+  const autoInsuranceCost = maxTotalStaff * insuranceUnit;
+
+  // 労務費 = 自動計算分 + 手動入力分(シ)
+  const laborCost = autoLaborCost + ledgerTotals["シ"].amount;
   const manufacturingFixed = ledgerTotals["ス"].amount + depreciation + (ledgerTotals["PAC"] ? ledgerTotals["PAC"].amount : 0); // 製造固定費 (製造経費 + 減価償却 + PAC)
-  const salesCost = ledgerTotals["セ"].amount + (ledgerTotals["リサーチ"] ? ledgerTotals["リサーチ"].amount : 0); // 販売費 + リサーチ
-  // 一般管理費: 「ソ」の合計 + 「採用」+ 「保険」+ 「MD」+ 「配置転換」
-  const adminCost = ledgerTotals["ソ"].amount 
+  // 販売費 = セールスマン給料(自動) + 広告チップ等(セ) + リサーチ
+  const salesCost = autoSalesmanCost + ledgerTotals["セ"].amount + (ledgerTotals["リサーチ"] ? ledgerTotals["リサーチ"].amount : 0);
+  // 一般管理費: 社会保険料(自動) + 「ソ」+ 「採用」+ 「保険チップ」+ 「MD」+ 「配置転換」
+  const adminCost = autoInsuranceCost
+    + ledgerTotals["ソ"].amount 
     + (ledgerTotals["採用"] ? ledgerTotals["採用"].amount : 0) 
     + (ledgerTotals["保険"] ? ledgerTotals["保険"].amount : 0)
     + (ledgerTotals["MD"] ? ledgerTotals["MD"].amount : 0)
@@ -544,9 +589,20 @@ export function calculateFinancials(carryover, ledger, actuals) {
       marginRatio,
       fixedCost,
       laborCost,
+      // 労務費内訳
+      workerSalary,
+      workerSeverance,
+      autoLaborCost,
       manufacturingFixed,
       salesCost,
+      // 販売費内訳
+      salesmanSalary,
+      salesmanSeverance,
+      autoSalesmanCost,
       adminCost,
+      // 一般管理費内訳
+      autoInsuranceCost,
+      maxTotalStaff,
       rdCost,
       nonOperatingCost,
       operatingProfit,
