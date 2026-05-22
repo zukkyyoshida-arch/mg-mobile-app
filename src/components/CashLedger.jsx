@@ -668,7 +668,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         className={`btn-premium ${selectedCategory === btn.symbol ? 'btn-primary' : 'btn-secondary'}`}
                         style={{ padding: '10px 8px', fontSize: '0.85rem', borderRadius: '10px', borderColor: selectedCategory === btn.symbol ? 'var(--color-accent)' : `rgba(var(--color-${CATEGORIES[btn.symbol].color === 'blue' ? 'blue' : CATEGORIES[btn.symbol].color === 'yellow' ? 'yellow' : 'green'}), 0.15)` }}
                       >
-                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{btn.displaySymbol || btn.symbol}</span> {btn.action}
+                        {btn.action}
                       </button>
                     ))}
                   </div>
@@ -701,7 +701,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         className={`btn-premium ${selectedCategory === btn.symbol ? 'btn-primary' : 'btn-secondary'}`}
                         style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === btn.symbol ? 1 : 0.8 }}
                       >
-                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{btn.displaySymbol || btn.symbol}</span> {btn.action}
+                        {btn.action}
                       </button>
                     ))}
                   </div>
@@ -717,7 +717,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         className={`btn-premium ${selectedCategory === symbol ? 'btn-primary' : 'btn-secondary'}`}
                         style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === symbol ? 1 : 0.8, borderColor: selectedCategory === symbol ? '#ff5252' : 'rgba(255, 82, 82, 0.15)', backgroundColor: selectedCategory === symbol ? 'rgba(255, 82, 82, 0.2)' : undefined }}
                       >
-                        <span style={{ fontWeight: '800', marginRight: '4px' }}>{symbol}</span> {CATEGORIES[symbol].label}
+                        {CATEGORIES[symbol].label}
                       </button>
                     ))}
                   </div>
