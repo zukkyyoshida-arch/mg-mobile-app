@@ -4,17 +4,58 @@ import { calculateBudget } from '../utils/calculations';
 function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
   const [currentScenario, setCurrentScenario] = useState('A'); // 'A', 'B', 'C'
   
-  // シナリオ別の計画データを管理するためのローカル状態
   const [scenarios, setScenarios] = useState(() => {
+    const period = results?.rank || 1;
+    const rates = {
+      1: { worker: 10, machine: 20, sales: 10, admin: 10 },
+      2: { worker: 12, machine: 24, sales: 12, admin: 11 },
+      3: { worker: 14, machine: 26, sales: 14, admin: 12 },
+      4: { worker: 17, machine: 29, sales: 17, admin: 13 },
+      5: { worker: 19, machine: 31, sales: 19, admin: 14 },
+    };
+    const currentRates = rates[period] || rates[5];
+
     const defaultData = {
       targetG: 100,
-      laborBudget: 80,
-      manufacturingBudget: 20,
-      depreciationBudget: 30,
-      salesBudget: 15,
-      adminBudget: 15,
-      nonOperatingBudget: 5,
-      rdBudget: 10
+      
+      // 労務費
+      laborWorkers: carryover?.workers || 0,
+      laborUnitPrice: currentRates.worker,
+      
+      // 製造経費
+      mfgMachines: (carryover?.largeMachines || 0) + (carryover?.smallMachines || 0),
+      mfgUnitPrice: currentRates.machine,
+      mfgPacCount: 0,
+      mfgRepairCount: 0,
+      
+      // 減価償却費
+      depLarge: carryover?.largeMachines || 0,
+      depSmall: carryover?.smallMachines || 0,
+      depAttach: carryover?.attachments || 0,
+      
+      // 販売費
+      salesSalesmen: carryover?.salesmen || 0,
+      salesUnitPrice: currentRates.sales,
+      salesResearchCount: 0,
+      salesAdCount: 0,
+      salesClaimCount: 0,
+      
+      // 一般管理費
+      adminStaffTotal: (carryover?.workers || 0) + (carryover?.salesmen || 0),
+      adminUnitPrice: currentRates.admin,
+      adminMdCount: 0,
+      adminInsuranceCount: 0,
+      adminTransferCount: 0,
+      adminHireCount: 0,
+      
+      // 営業外費用
+      nonOpStartBalance: carryover?.loan || 0,
+      nonOpStartRate: period >= 4 ? 5 : (period >= 2 ? 10 : 0),
+      nonOpMidBalance: 0,
+      nonOpMidRate: period >= 4 ? 5 : (period >= 2 ? 10 : 0),
+      
+      // 研究開発費
+      rdCount: 0
     };
     return {
       A: { ...defaultData, targetG: 150 },
@@ -22,6 +63,19 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
       C: { ...defaultData, targetG: 50 }
     };
   });
+
+  const deriveTotals = (b) => {
+    return {
+      ...b,
+      laborBudget: b.laborWorkers * b.laborUnitPrice,
+      manufacturingBudget: (b.mfgMachines * b.mfgUnitPrice) + (b.mfgPacCount * 10) + (b.mfgRepairCount * 5),
+      depreciationBudget: (b.depLarge * 20) + (b.depSmall * 10) + (b.depAttach * 2),
+      salesBudget: (b.salesSalesmen * b.salesUnitPrice) + (b.salesResearchCount * 10) + (b.salesAdCount * 10) + (b.salesClaimCount * 5),
+      adminBudget: (b.adminStaffTotal * b.adminUnitPrice) + (b.adminMdCount * 10) + (b.adminInsuranceCount * 5) + (b.adminTransferCount * 5) + (b.adminHireCount * 5),
+      nonOperatingBudget: Math.round((b.nonOpStartBalance * b.nonOpStartRate / 100)) + Math.round((b.nonOpMidBalance * b.nonOpMidRate / 100)),
+      rdBudget: b.rdCount * 20
+    };
+  };
 
   const activeBudget = scenarios[currentScenario];
 
@@ -37,35 +91,15 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
       [currentScenario]: updatedScenario
     }));
 
-    // 親コンポーネントの状態も同期 (代表としてA予算を保存)
     if (currentScenario === 'A') {
-      onUpdateBudget(updatedScenario);
+      onUpdateBudget(deriveTotals(updatedScenario));
     }
   };
 
-  const handleSliderChange = (val) => {
-  handleInputChange('targetG', val);
-};
-
-// シンプルヒューリスティックで予算サジェストを生成し自動保存
-const suggestBudget = () => {
-  const suggestion = {
-    targetG: Math.ceil(activeBudget.targetG * 1.1), // 目標利益10%増
-    laborBudget: Math.ceil(activeBudget.laborBudget * 1.1), // 労務費10%増
-    manufacturingBudget: Math.ceil(activeBudget.manufacturingBudget * 1.1), // 製造経費10%増
-    salesBudget: Math.ceil(activeBudget.salesBudget * 1.1), // 販売費10%増
-    adminBudget: Math.ceil(activeBudget.adminBudget * 1.1), // 一般管理費10%増
-    nonOperatingBudget: Math.ceil(activeBudget.nonOperatingBudget * 1.05), // 営業外費5%増
-    rdBudget: Math.ceil(activeBudget.rdBudget * 1.05) // 研究開発費5%増
-  };
-  // 自動保存: onUpdateBudget が呼び出される
-  onUpdateBudget(suggestion);
-};
-  // 各シナリオの計算結果を算出
   const calcResults = {
-    A: calculateBudget(scenarios.A, carryover),
-    B: calculateBudget(scenarios.B, carryover),
-    C: calculateBudget(scenarios.C, carryover)
+    A: calculateBudget(deriveTotals(scenarios.A)),
+    B: calculateBudget(deriveTotals(scenarios.B)),
+    C: calculateBudget(deriveTotals(scenarios.C))
   };
 
   const activeResult = calcResults[currentScenario];
@@ -73,209 +107,225 @@ const suggestBudget = () => {
   return (
     <div style={{ padding: '0 0 24px 0' }}>
       
-      {/* シナリオの切り替え */}
-      <div className="segmented-control">
-        {['A', 'B', 'C'].map(scen => (
-          <button
-            key={scen}
-            onClick={() => setCurrentScenario(scen)}
-            className={`segment-item ${currentScenario === scen ? 'active' : ''}`}
-          >
-            {scen} 予算計画
-          </button>
-        ))}
+      <div className="glass-card" style={{ padding: '14px 16px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {['A', 'B', 'C'].map((scenario) => (
+            <button
+              key={scenario}
+              onClick={() => setCurrentScenario(scenario)}
+              className={`nav-item ${currentScenario === scenario ? 'active' : ''}`}
+              style={{ flex: 1, padding: '10px 0', fontSize: '1rem', fontWeight: '800' }}
+            >
+              {scenario} 予算
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* 目標利益と必要MQのサマリー */}
-      <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(0, 176, 255, 0.12) 0%, rgba(28, 30, 41, 0.9) 100%)', borderColor: 'rgba(0, 176, 255, 0.25)', padding: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>目標利益 (G)</span>
-            <div className="electric-number" style={{ fontSize: '2rem', color: 'var(--mg-blue)', margin: '4px 0' }}>
-              ¥{activeBudget.targetG.toLocaleString()}<span style={{ fontSize: '0.9rem' }}>万</span>
+      <div className="glass-card" style={{ marginBottom: '16px' }}>
+        <div className="glass-card-header" style={{ marginBottom: '12px' }}>
+          <h3 className="glass-card-title">① 必要目標利益 (G) を決める</h3>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div className="form-group" style={{ margin: 0, flex: 1 }}>
+            <div className="input-with-icon">
+              <span className="input-icon">¥</span>
+              <input
+                type="number"
+                value={activeBudget.targetG || ''}
+                onChange={(e) => handleInputChange('targetG', e.target.value)}
+                placeholder="0"
+                className="form-input"
+                style={{ fontSize: '1.2rem', fontWeight: '800' }}
+              />
+              <span className="input-suffix">万</span>
             </div>
           </div>
-          
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>必要付加価値 (必要MQ)</span>
-            <div className="electric-number" style={{ fontSize: '2rem', color: 'var(--mg-pink)', margin: '4px 0' }}>
+          <div style={{ flex: 1, textAlign: 'center', background: 'rgba(236, 72, 153, 0.1)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--mg-pink)', fontWeight: 'bold' }}>必要MQ (G+F)</div>
+            <div className="electric-number" style={{ fontSize: '1.2rem', color: 'var(--mg-pink)' }}>
               ¥{activeResult.requiredMQ.toLocaleString()}<span style={{ fontSize: '0.9rem' }}>万</span>
             </div>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>必要G + 固定費F</span>
           </div>
         </div>
-
-        {/* リアルタイムシミュレーション用スライダー */}
-        <div style={{ marginTop: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-            <span>利益シミュレーター (G目標値の調整)</span>
-            <span className="electric-number" style={{ color: 'var(--mg-blue)', fontWeight: '700' }}>¥{activeBudget.targetG}万</span>
-          </div>
-          <input
-            type="range"
-            min="-100"
-            max="500"
-            step="1"
-            value={activeBudget.targetG}
-            onChange={(e) => handleSliderChange(e.target.value)}
-            style={{
-              width: '100%',
-              height: '6px',
-              backgroundColor: 'rgba(255,255,255,0.08)',
-              borderRadius: '3px',
-              outline: 'none',
-              cursor: 'pointer',
-              accentColor: 'var(--mg-blue)'
-            }}
-          />
-        </div>
-      </div>
-      <div className="suggest-button-container" style={{ marginTop: '12px', textAlign: 'center' }}>
-        <button className="suggest-button" onClick={suggestBudget} style={{ background: 'var(--mg-blue)', color: '#fff', border: 'none', borderRadius: '4px', padding: '8px 16px', cursor: 'pointer' }}>
-          予算をサジェスト
-        </button>
       </div>
 
-      {/* 固定費予算の設定 */}
       <div className="glass-card">
         <div className="glass-card-header">
-          <h3 className="glass-card-title">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px', color: 'var(--mg-blue)' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-            </svg>
-            ② 固定費予算 (F) の計画
-          </h3>
+          <h3 className="glass-card-title">② 固定費予算 (F) の計画</h3>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          
+        {/* 1. 労務費 */}
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+          <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>1. 労務費</h4>
           <div className="grid-2">
-            <div className="form-group">
-              <label className="form-label">労務費 (万)</label>
-              <input
-                type="number"
-                value={activeBudget.laborBudget || ''}
-                onChange={(e) => handleInputChange('laborBudget', e.target.value)}
-                placeholder="0"
-                className="form-input"
-              />
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">ワーカー (人)</label>
+              <input type="number" value={activeBudget.laborWorkers} onChange={(e) => handleInputChange('laborWorkers', e.target.value)} className="form-input" />
             </div>
-            <div className="form-group">
-              <label className="form-label">製造経費 (万)</label>
-              <input
-                type="number"
-                value={activeBudget.manufacturingBudget || ''}
-                onChange={(e) => handleInputChange('manufacturingBudget', e.target.value)}
-                placeholder="0"
-                className="form-input"
-              />
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">期末処理単価</label>
+              <input type="number" value={activeBudget.laborUnitPrice} onChange={(e) => handleInputChange('laborUnitPrice', e.target.value)} className="form-input" />
             </div>
           </div>
+          <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '4px' }}>小計: ¥{deriveTotals(activeBudget).laborBudget.toLocaleString()}万</div>
+        </div>
 
+        {/* 2. 製造経費 */}
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+          <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>2. 製造経費</h4>
           <div className="grid-2">
-            <div className="form-group">
-              <label className="form-label">減価償却費 (万)</label>
-              <input
-                type="number"
-                value={activeBudget.depreciationBudget || ''}
-                onChange={(e) => handleInputChange('depreciationBudget', e.target.value)}
-                placeholder="0"
-                className="form-input"
-              />
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">機械 (台)</label>
+              <input type="number" value={activeBudget.mfgMachines} onChange={(e) => handleInputChange('mfgMachines', e.target.value)} className="form-input" />
             </div>
-            <div className="form-group">
-              <label className="form-label">販売費 (万)</label>
-              <input
-                type="number"
-                value={activeBudget.salesBudget || ''}
-                onChange={(e) => handleInputChange('salesBudget', e.target.value)}
-                placeholder="0"
-                className="form-input"
-              />
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">期末処理単価</label>
+              <input type="number" value={activeBudget.mfgUnitPrice} onChange={(e) => handleInputChange('mfgUnitPrice', e.target.value)} className="form-input" />
             </div>
           </div>
+          <div className="grid-2" style={{ marginTop: '8px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">PAC (枚) × 10</label>
+              <input type="number" value={activeBudget.mfgPacCount} onChange={(e) => handleInputChange('mfgPacCount', e.target.value)} className="form-input" />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">修理改修費 (回) × 5</label>
+              <input type="number" value={activeBudget.mfgRepairCount} onChange={(e) => handleInputChange('mfgRepairCount', e.target.value)} className="form-input" />
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '4px' }}>小計: ¥{deriveTotals(activeBudget).manufacturingBudget.toLocaleString()}万</div>
+        </div>
 
+        {/* 3. 減価償却費 */}
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+          <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>3. 減価償却費</h4>
           <div className="grid-2">
-            <div className="form-group">
-              <label className="form-label">一般管理費 (万)</label>
-              <input
-                type="number"
-                value={activeBudget.adminBudget || ''}
-                onChange={(e) => handleInputChange('adminBudget', e.target.value)}
-                placeholder="0"
-                className="form-input"
-              />
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">大型機械 (台) × 20</label>
+              <input type="number" value={activeBudget.depLarge} onChange={(e) => handleInputChange('depLarge', e.target.value)} className="form-input" />
             </div>
-            <div className="form-group">
-              <label className="form-label">研究開発費 (万)</label>
-              <input
-                type="number"
-                value={activeBudget.rdBudget || ''}
-                onChange={(e) => handleInputChange('rdBudget', e.target.value)}
-                placeholder="0"
-                className="form-input"
-              />
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">小型機械 (台) × 10</label>
+              <input type="number" value={activeBudget.depSmall} onChange={(e) => handleInputChange('depSmall', e.target.value)} className="form-input" />
             </div>
           </div>
-
-          <div className="form-group">
-            <label className="form-label">営業外費用 (金利等・万)</label>
-            <input
-              type="number"
-              value={activeBudget.nonOperatingBudget || ''}
-              onChange={(e) => handleInputChange('nonOperatingBudget', e.target.value)}
-              placeholder="0"
-              className="form-input"
-            />
+          <div className="form-group" style={{ marginTop: '8px', marginBottom: 0 }}>
+            <label className="form-label">アタッチメント (台) × 2</label>
+            <input type="number" value={activeBudget.depAttach} onChange={(e) => handleInputChange('depAttach', e.target.value)} className="form-input" />
           </div>
+          <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '4px' }}>小計: ¥{deriveTotals(activeBudget).depreciationBudget.toLocaleString()}万</div>
+        </div>
 
+        {/* 4. 販売費 */}
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+          <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>4. 販売費</h4>
+          <div className="grid-2">
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">ｾｰﾙｽﾏﾝ (人)</label>
+              <input type="number" value={activeBudget.salesSalesmen} onChange={(e) => handleInputChange('salesSalesmen', e.target.value)} className="form-input" />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">期末処理単価</label>
+              <input type="number" value={activeBudget.salesUnitPrice} onChange={(e) => handleInputChange('salesUnitPrice', e.target.value)} className="form-input" />
+            </div>
+          </div>
+          <div className="grid-2" style={{ marginTop: '8px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">ﾘｻｰﾁ (枚) × 10</label>
+              <input type="number" value={activeBudget.salesResearchCount} onChange={(e) => handleInputChange('salesResearchCount', e.target.value)} className="form-input" />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">広告 (枚) × 10</label>
+              <input type="number" value={activeBudget.salesAdCount} onChange={(e) => handleInputChange('salesAdCount', e.target.value)} className="form-input" />
+            </div>
+          </div>
+          <div className="form-group" style={{ marginTop: '8px', marginBottom: 0 }}>
+            <label className="form-label">クレーム処理 (回) × 5</label>
+            <input type="number" value={activeBudget.salesClaimCount} onChange={(e) => handleInputChange('salesClaimCount', e.target.value)} className="form-input" />
+          </div>
+          <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '4px' }}>小計: ¥{deriveTotals(activeBudget).salesBudget.toLocaleString()}万</div>
+        </div>
+
+        {/* 5. 一般管理費 */}
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+          <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>5. 一般管理費</h4>
+          <div className="grid-2">
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">ﾜｰｶｰ+ｾｰﾙｽﾏﾝ (人)</label>
+              <input type="number" value={activeBudget.adminStaffTotal} onChange={(e) => handleInputChange('adminStaffTotal', e.target.value)} className="form-input" />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">期末処理単価</label>
+              <input type="number" value={activeBudget.adminUnitPrice} onChange={(e) => handleInputChange('adminUnitPrice', e.target.value)} className="form-input" />
+            </div>
+          </div>
+          <div className="grid-2" style={{ marginTop: '8px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">MD (枚) × 10</label>
+              <input type="number" value={activeBudget.adminMdCount} onChange={(e) => handleInputChange('adminMdCount', e.target.value)} className="form-input" />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">保険 (枚) × 5</label>
+              <input type="number" value={activeBudget.adminInsuranceCount} onChange={(e) => handleInputChange('adminInsuranceCount', e.target.value)} className="form-input" />
+            </div>
+          </div>
+          <div className="grid-2" style={{ marginTop: '8px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">配置転換 (回) × 5</label>
+              <input type="number" value={activeBudget.adminTransferCount} onChange={(e) => handleInputChange('adminTransferCount', e.target.value)} className="form-input" />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">採用・退職 (人) × 5</label>
+              <input type="number" value={activeBudget.adminHireCount} onChange={(e) => handleInputChange('adminHireCount', e.target.value)} className="form-input" />
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '4px' }}>小計: ¥{deriveTotals(activeBudget).adminBudget.toLocaleString()}万</div>
+        </div>
+
+        {/* 6. 営業外費用 */}
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+          <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>6. 営業外費用 (金利)</h4>
+          <div className="grid-2">
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">期首残高 (万)</label>
+              <input type="number" value={activeBudget.nonOpStartBalance} onChange={(e) => handleInputChange('nonOpStartBalance', e.target.value)} className="form-input" />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">金利 (%)</label>
+              <input type="number" value={activeBudget.nonOpStartRate} onChange={(e) => handleInputChange('nonOpStartRate', e.target.value)} className="form-input" />
+            </div>
+          </div>
+          <div className="grid-2" style={{ marginTop: '8px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">期中借入 (万)</label>
+              <input type="number" value={activeBudget.nonOpMidBalance} onChange={(e) => handleInputChange('nonOpMidBalance', e.target.value)} className="form-input" />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">金利 (%)</label>
+              <input type="number" value={activeBudget.nonOpMidRate} onChange={(e) => handleInputChange('nonOpMidRate', e.target.value)} className="form-input" />
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '4px' }}>小計: ¥{deriveTotals(activeBudget).nonOperatingBudget.toLocaleString()}万</div>
+        </div>
+
+        {/* 7. 研究開発費 */}
+        <div>
+          <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>7. 研究開発費</h4>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">当期償却分 (枚) × 20</label>
+            <input type="number" value={activeBudget.rdCount} onChange={(e) => handleInputChange('rdCount', e.target.value)} className="form-input" />
+          </div>
+          <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '4px' }}>小計: ¥{deriveTotals(activeBudget).rdBudget.toLocaleString()}万</div>
         </div>
 
         {/* 固定費予算合計 */}
         <div className="glass-card" style={{ margin: '16px 0 0 0', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>固定費予算合計 (F):</span>
+          <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>固定費合計 (F):</span>
           <span className="electric-number" style={{ fontSize: '1.25rem', color: 'var(--mg-blue)' }}>
             ¥{activeResult.fixedCostTotal.toLocaleString()}万
           </span>
         </div>
-      </div>
-
-      {/* A/B/C 予算の比較表示 */}
-      <div className="glass-card">
-        <div className="glass-card-header">
-          <h3 className="glass-card-title">📊 予算シナリオ比較 (G目標 vs 必要MQ)</h3>
-        </div>
-        <table className="premium-table">
-          <thead>
-            <tr>
-              <th>シナリオ</th>
-              <th>目標利益 (G)</th>
-              <th>固定費 (F)</th>
-              <th style={{ color: 'var(--mg-pink)' }}>必要MQ</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style={{ fontWeight: currentScenario === 'A' ? '800' : 'normal', backgroundColor: currentScenario === 'A' ? 'rgba(255,255,255,0.03)' : 'transparent' }}>
-              <td>A 予算</td>
-              <td style={{ color: 'var(--mg-green)' }}>¥{scenarios.A.targetG}万</td>
-              <td>¥{calcResults.A.fixedCostTotal}万</td>
-              <td style={{ color: 'var(--mg-pink)', fontWeight: '700' }}>¥{calcResults.A.requiredMQ}万</td>
-            </tr>
-            <tr style={{ fontWeight: currentScenario === 'B' ? '800' : 'normal', backgroundColor: currentScenario === 'B' ? 'rgba(255,255,255,0.03)' : 'transparent' }}>
-              <td>B 予算</td>
-              <td style={{ color: 'var(--mg-green)' }}>¥{scenarios.B.targetG}万</td>
-              <td>¥{calcResults.B.fixedCostTotal}万</td>
-              <td style={{ color: 'var(--mg-pink)', fontWeight: '700' }}>¥{calcResults.B.requiredMQ}万</td>
-            </tr>
-            <tr style={{ fontWeight: currentScenario === 'C' ? '800' : 'normal', backgroundColor: currentScenario === 'C' ? 'rgba(255,255,255,0.03)' : 'transparent' }}>
-              <td>C 予算</td>
-              <td style={{ color: 'var(--mg-green)' }}>¥{scenarios.C.targetG}万</td>
-              <td>¥{calcResults.C.fixedCostTotal}万</td>
-              <td style={{ color: 'var(--mg-pink)', fontWeight: '700' }}>¥{calcResults.C.requiredMQ}万</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
 
     </div>
