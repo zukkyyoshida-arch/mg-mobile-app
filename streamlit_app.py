@@ -10,7 +10,7 @@ st.set_page_config(
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
-)
+st.write("✅ アプリ起動確認: ここに表示されればOK")
 
 # Streamlitの不要なUI（ヘッダー、フッター、マージン）を非表示にし、画面いっぱいに表示
 st.markdown("""
@@ -42,6 +42,10 @@ if os.path.exists(html_path):
         html_code = f.read()
     
     # コンポーネントを埋め込み
+    st.title("戦略MG アプリ")
+    st.write(f"HTML file path: {html_path}")
+    st.write(f"File exists: {os.path.exists(html_path)}")
+    st.write(f"File size (bytes): {os.path.getsize(html_path) if os.path.exists(html_path) else 'N/A'}")
     components.html(html_code, height=960, scrolling=True)
 else:
     st.error(f"ビルド済みのHTMLファイルが見つかりません: {html_path}\n`npm run build` を実行してビルドを生成してください。")
