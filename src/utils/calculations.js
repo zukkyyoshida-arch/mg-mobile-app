@@ -296,6 +296,28 @@ export function calculateFinancials(carryover, ledger, actuals) {
   const smallMachines = (carryover.smallMachines || 0) + newSmallMachines;
   const attachments = (carryover.attachments || 0) + newAttachments;
   
+  // 生産能力(PAC)の計算
+  // ワーカーの稼働割り当て（大型優先）
+  let remainingWorkersForPac = totalWorkersHired;
+  let operatingLarge = Math.min(largeMachines, remainingWorkersForPac); // 大型機械は1台につきワーカー1人必要
+  remainingWorkersForPac -= operatingLarge;
+  let operatingSmall = Math.min(smallMachines, remainingWorkersForPac); // 小型機械も1台につきワーカー1人必要
+
+  let productionCapacity = 0;
+  productionCapacity += operatingLarge * 4; // 大型機械の基本生産能力: 4
+  productionCapacity += operatingSmall * 1; // 小型機械の基本生産能力: 1
+  
+  // アタッチメント効果: 小型機械1台につき+1 (最大は稼働中の小型機械の台数まで)
+  const effectiveAttachments = Math.min(attachments, operatingSmall);
+  productionCapacity += effectiveAttachments * 1;
+  
+  // PACチップの効果: 稼働中の各機械につき+1
+  const hasPAC = ledger.some(entry => entry.category === "PAC");
+  if (hasPAC) {
+    productionCapacity += operatingLarge * 1;
+    productionCapacity += operatingSmall * 1;
+  }
+
   // 減価償却費 (大型: 20/台, 小型: 10/台, アタッチメント: 2/台)
   const depreciation = (largeMachines * 20) + (smallMachines * 10) + (attachments * 2);
   
@@ -543,6 +565,7 @@ export function calculateFinancials(carryover, ledger, actuals) {
     bookEndingCash,
     workers: totalWorkersHired, // 採用したワーカー数
     salesmen: totalSalesmenHired, // 採用したセールスマン数
+    productionCapacity: productionCapacity, // 現在の生産能力(PAC)
     rank: evaluationRank
   };
 }

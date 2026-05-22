@@ -183,6 +183,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
         : (amount === '' ? 0 : Number(amount));
       finalQuantity = quantity === '' ? 0 : Number(quantity);
       finalPrice = price === '' ? 0 : Number(price);
+
+      // 生産能力 (PAC) の上限バリデーション
+      if (["コ", "サ"].includes(selectedCategory)) {
+        if (finalQuantity > (results?.productionCapacity || 0)) {
+          alert(`入力された数量 (${finalQuantity}個) が現在の生産能力（最大 ${results?.productionCapacity || 0}個）を超えています。`);
+          return;
+        }
+      }
     }
 
     const newEntry = {
@@ -901,7 +909,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
               {isQtyNeeded && !["キ", "ネ", "ツ", "ノ", "ケ", "セ"].includes(selectedCategory) && (
                 <div className="grid-2">
                   <div className="form-group">
-                    <label className="form-label">数量 (個数)</label>
+                    <label className="form-label">
+                      数量 (個数)
+                      {["コ", "サ"].includes(selectedCategory) && (
+                        <span style={{ fontSize: '0.7rem', color: '#ff5252', marginLeft: '8px', fontWeight: 'bold' }}>
+                          (最大: {results?.productionCapacity || 0}個)
+                        </span>
+                      )}
+                    </label>
                     <input 
                       type="number" 
                       value={quantity} 

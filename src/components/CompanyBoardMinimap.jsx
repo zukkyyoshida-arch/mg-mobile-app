@@ -20,10 +20,7 @@ function CompanyBoardMinimap({ results }) {
   // 機械ごとの人員アサインの計算
   const largeMachWorkers = [];
   for (let i = 0; i < machines.large; i++) {
-    if (remainingWorkers >= 2) {
-      largeMachWorkers.push(2);
-      remainingWorkers -= 2;
-    } else if (remainingWorkers === 1) {
+    if (remainingWorkers >= 1) {
       largeMachWorkers.push(1);
       remainingWorkers -= 1;
     } else {
@@ -41,7 +38,7 @@ function CompanyBoardMinimap({ results }) {
     }
   }
 
-  const requiredWorkers = (machines.large * 2) + machines.small;
+  const requiredWorkers = machines.large + machines.small;
   const isShortOfWorkers = totalWorkers < requiredWorkers;
 
   return (
@@ -126,8 +123,8 @@ function CompanyBoardMinimap({ results }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {largeMachList.map((i) => {
                   const assigned = largeMachWorkers[i] !== undefined ? largeMachWorkers[i] : 0;
-                  const workerIcons = "🧑‍🔧".repeat(assigned) + (assigned < 2 ? "💨".repeat(2 - assigned) : "");
-                  const isOperating = assigned === 2;
+                  const workerIcons = assigned === 1 ? "🧑‍🔧" : "💨";
+                  const isOperating = assigned === 1;
                   return (
                     <div 
                       key={`l-${i}`} 
@@ -145,7 +142,7 @@ function CompanyBoardMinimap({ results }) {
                         boxShadow: isOperating ? '0 2px 4px rgba(142, 36, 170, 0.3)' : 'none'
                       }}
                     >
-                      <span>大型 ({assigned}/2人)</span>
+                      <span>大型 ({assigned}/1人)</span>
                       <span>{workerIcons}</span>
                     </div>
                   );
