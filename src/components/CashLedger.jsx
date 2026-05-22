@@ -793,7 +793,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       { action: "銀行借入", symbol: "オ" },
                       { action: "最大借入", symbol: "MAX_Loan", onClick: () => setAmount(((currentPeriod <= 1) ? 0 : (currentPeriod <= 3 ? 2 : 3) * results.totalNetAssets).toString()) },
                       { action: "借入返済", symbol: "ナ" },
-                      { action: "買掛支払", symbol: "ヌ" },
                       { action: "その他出金", symbol: "ス" }
                     ].map(btn => (
                       <button
