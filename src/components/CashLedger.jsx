@@ -37,6 +37,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   const [salesmenHired, setSalesmenHired] = useState('');
   const [hirePrice, setHirePrice] = useState(5);
 
+  // 配置転換用のステート
+  const [transferW2S, setTransferW2S] = useState(0); // ワーカー → セールスマン
+  const [transferS2W, setTransferS2W] = useState(0); // セールスマン → ワーカー
+
   // 複数市場購入用のステート
   const [marketQuantities, setMarketQuantities] = useState({
     sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0
@@ -240,6 +244,24 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       setGreenChips({ pac: 0, md: 0, research: 0 });
       setSelectedCategory('キ');
       return;
+    } else if (selectedCategory === '配置転換') {
+      const w2s = Number(transferW2S) || 0;
+      const s2w = Number(transferS2W) || 0;
+      if (w2s === 0 && s2w === 0) {
+        alert("移動する人数を選択してください");
+        return;
+      }
+      if (w2s > (results?.workers || 0)) {
+        alert("ワーカーの数が不足しています");
+        return;
+      }
+      if (s2w > (results?.salesmen || 0)) {
+        alert("セールスマンの数が不足しています");
+        return;
+      }
+      finalQuantity = w2s + s2w;
+      finalAmount = finalQuantity * 10; // 配置転換は1人あたり10万のコスト
+      finalPrice = 10;
     } else {
       finalAmount = selectedCategory === '採用' 
         ? (Number(workersHired) || 0) * hirePrice + (Number(salesmenHired) || 0) * hirePrice 
@@ -271,8 +293,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       quantity: finalQuantity,
       price: finalPrice,
       amount: finalAmount || (finalQuantity * finalPrice),
-      workersHired: selectedCategory === '採用' ? (Number(workersHired) || 0) : 0,
-      salesmenHired: selectedCategory === '採用' ? (Number(salesmenHired) || 0) : 0,
+      workersHired: selectedCategory === '採用' ? (Number(workersHired) || 0) : (selectedCategory === '配置転換' ? (Number(transferS2W) || 0) - (Number(transferW2S) || 0) : 0),
+      salesmenHired: selectedCategory === '採用' ? (Number(salesmenHired) || 0) : (selectedCategory === '配置転換' ? (Number(transferW2S) || 0) - (Number(transferS2W) || 0) : 0),
       largeMachines: selectedCategory === 'ケ' ? (machineQuantities.large || 0) : 0,
       smallMachines: selectedCategory === 'ケ' ? (machineQuantities.small || 0) : 0,
       attachments: selectedCategory === 'ケ' ? (machineQuantities.attachment || 0) : 0,
@@ -319,6 +341,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     setAmount('');
     setWorkersHired('');
     setSalesmenHired('');
+    setHirePrice(5);
+    setTransferW2S(0);
+    setTransferS2W(0);
     setMarketQuantities({ sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0 });
     setMachineQuantities({ large: 0, small: 0, attachment: 0 });
     setAdQuantities({ ad5: 0, ad10: 0, ad20: 0 });
@@ -710,6 +735,70 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   </div>
                   <div style={{ marginTop: '12px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     合計採用費: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((Number(workersHired) || 0) + (Number(salesmenHired) || 0)) * hirePrice}</span> 万
+                  </div>
+                </div>
+              ) : selectedCategory === '配置転換' ? (
+                <div style={{ background: 'rgba(33, 150, 243, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-blue)' }}>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-blue)', marginBottom: '16px' }}>配置転換（人員の移動）</h4>
+                  
+                  <div className="grid-2">
+                    {/* ワーカー → セールスマン */}
+                    <div className="form-group">
+                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>W → S へ移動</span>
+                        <span style={{ color: 'var(--text-muted)' }}>MAX: {results?.workers || 0}人</span>
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => setTransferW2S(Math.max(0, transferW2S - 1))}
+                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px' }}
+                        >-</button>
+                        <input 
+                          type="number" 
+                          value={transferW2S} 
+                          onChange={(e) => setTransferW2S(Math.min(results?.workers || 0, Math.max(0, Number(e.target.value) || 0)))}
+                          className="form-input" 
+                          style={{ textAlign: 'center' }}
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => setTransferW2S(Math.min(results?.workers || 0, transferW2S + 1))}
+                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px' }}
+                        >+</button>
+                      </div>
+                    </div>
+
+                    {/* セールスマン → ワーカー */}
+                    <div className="form-group">
+                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>S → W へ移動</span>
+                        <span style={{ color: 'var(--text-muted)' }}>MAX: {results?.salesmen || 0}人</span>
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => setTransferS2W(Math.max(0, transferS2W - 1))}
+                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px' }}
+                        >-</button>
+                        <input 
+                          type="number" 
+                          value={transferS2W} 
+                          onChange={(e) => setTransferS2W(Math.min(results?.salesmen || 0, Math.max(0, Number(e.target.value) || 0)))}
+                          className="form-input"
+                          style={{ textAlign: 'center' }}
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => setTransferS2W(Math.min(results?.salesmen || 0, transferS2W + 1))}
+                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px' }}
+                        >+</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '16px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    合計配置転換費: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((Number(transferW2S) || 0) + (Number(transferS2W) || 0)) * 10}</span> 万
                   </div>
                 </div>
               ) : selectedCategory === 'チ' ? (

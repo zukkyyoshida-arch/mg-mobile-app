@@ -64,7 +64,11 @@ export const DEFAULT_PERIOD_DATA = {
     // 機械内訳
     largeMachines: 0,       // 大型機械台数
     smallMachines: 0,       // 小型機械台数
-    attachments: 0          // アタッチメント数
+    attachments: 0,         // アタッチメント数
+    
+    // 人員
+    workers: 0,             // ワーカー数
+    salesmen: 0             // セールスマン数
   },
   ledger: [],               // 現金出納帳
   actuals: {
@@ -190,11 +194,11 @@ export function calculateFinancials(carryover, ledger, actuals) {
   // 保険の自動支払いを現金流入に加算
   cashInflow += autoInsurancePayout;
 
-  // 人員の集計（採用レコードから）
-  let totalWorkersHired = 0;
-  let totalSalesmenHired = 0;
+  // 人員の集計（期首 + 採用 + 配置転換）
+  let totalWorkersHired = carryover.workers || 0;
+  let totalSalesmenHired = carryover.salesmen || 0;
   ledger.forEach(entry => {
-    if (entry.category === "採用") {
+    if (entry.category === "採用" || entry.category === "配置転換") {
       totalWorkersHired += Number(entry.workersHired) || 0;
       totalSalesmenHired += Number(entry.salesmenHired) || 0;
     }

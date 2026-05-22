@@ -205,6 +205,33 @@ function PriorPeriodCarryover({
                 </div>
               </div>
 
+              {/* 人員（ワーカー・セールスマン） */}
+              <div>
+                <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-blue)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>人員・組織</h4>
+                <div className="grid-2" style={{ marginBottom: '16px' }}>
+                  <div className="form-group">
+                    <label className="form-label">ワーカー (人)</label>
+                    <input
+                      type="number"
+                      value={carryover.workers || ''}
+                      onChange={(e) => handleInputChange('workers', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">セールスマン (人)</label>
+                    <input
+                      type="number"
+                      value={carryover.salesmen || ''}
+                      onChange={(e) => handleInputChange('salesmen', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <hr style={{ border: 'none', borderBottom: '1px solid var(--border-glass)' }} />
 
               {/* 固定資産（機械） */}

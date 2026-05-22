@@ -130,7 +130,9 @@ function App() {
       receivables: prevBS.receivables,
       payables: prevBS.payables,
       retainedEarnings: prevBS.retainedEarnings,
-      capital: prevBS.capital
+      capital: prevBS.capital,
+      workers: prevResults.workers || 0,
+      salesmen: prevResults.salesmen || 0
     };
 
     if (window.confirm(`第${prevPeriod}期末の決算データ（現金: ¥${prevBS.cash}万、純資産: ¥${prevBS.totalNetAssets}万）を、第${currentPeriod}期の期首データとして自動引き継ぎしますか？`)) {
