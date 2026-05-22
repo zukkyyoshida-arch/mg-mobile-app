@@ -554,15 +554,11 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
             ¥ {results.bookEndingCash.toLocaleString()} <span style={{ fontSize: '1rem', fontWeight: '500' }}>万</span>
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', borderTop: '1px solid var(--border-glass)', paddingTop: '8px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>入金総額</span>
-            <span className="electric-number" style={{ fontSize: '1rem', color: 'var(--mg-pink)' }}>+¥ {results.cashInflow} 万</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border-glass)', paddingLeft: '8px' }}>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>出金総額</span>
-            <span className="electric-number" style={{ fontSize: '1rem', color: 'var(--mg-green)' }}>-¥ {results.cashOutflow} 万</span>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-glass)', paddingTop: '8px' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>現在までの経常利益 (G)</span>
+          <span className="electric-number" style={{ fontSize: '1.2rem', color: (results?.operatingProfit || 0) >= 0 ? 'var(--mg-pink)' : '#ef4444' }}>
+            {(results?.operatingProfit || 0) >= 0 ? '+' : ''}¥ {results?.operatingProfit || 0} 万
+          </span>
         </div>
       </div>
 
@@ -913,10 +909,12 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       <span style={{ color: 'var(--text-secondary)' }}>買掛金支払 (ヌ)</span>
                       <span style={{ fontWeight: 'bold' }}>{results?.carryover?.payables || 0} 万</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>法人税等支払 (ニ)</span>
-                      <span style={{ fontWeight: 'bold' }}>{results?.carryover?.taxes || 0} 万</span>
-                    </div>
+                    {currentPeriod > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>法人税等支払 (ニ)</span>
+                        <span style={{ fontWeight: 'bold' }}>{results?.carryover?.taxes || 0} 万</span>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>金利支払 (タ) <span style={{ fontSize: '0.7rem' }}>※借入残高 {results?.carryover?.loan || 0}万 の {(currentPeriod >= 4 ? 5 : 10)}%</span></span>
                       <span style={{ fontWeight: 'bold' }}>{Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10))} 万</span>
@@ -936,7 +934,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   
                   <div style={{ marginTop: '16px', textAlign: 'right', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     合計出金: <span style={{ fontSize: '1.4rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                      {(results?.carryover?.payables || 0) + (results?.carryover?.taxes || 0) + Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10)) + (Number(repaymentAmount) || 0)}
+                      {(results?.carryover?.payables || 0) + (currentPeriod > 1 ? (results?.carryover?.taxes || 0) : 0) + Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10)) + (Number(repaymentAmount) || 0)}
                     </span> 万
                   </div>
                 </div>
