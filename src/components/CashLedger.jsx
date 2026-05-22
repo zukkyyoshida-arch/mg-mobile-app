@@ -726,6 +726,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
             <form onSubmit={handleAddTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
               {/* 伝票番号 */}
+              {selectedCategory !== '期首処理' && (
               <div className="form-group">
                 <label className="form-label">伝票番号 (任意)</label>
                 <input 
@@ -736,8 +737,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   className="form-input"
                 />
               </div>
+              )}
 
               {/* 項目の選択グリッド */}
+              {selectedCategory !== '期首処理' && (
               <div>
                 <label className="form-label" style={{ marginBottom: '12px', display: 'block', fontSize: '1rem', fontWeight: 'bold' }}>実行する項目を選択</label>
                 
@@ -780,7 +783,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                     {[
-                      { action: "売掛金入金", symbol: "ア" },
                       { action: "期中 売掛割引(5%)", symbol: "売掛割引" },
                       { action: "保険", symbol: "保険" },
                       { action: "緑チップ購入", symbol: "緑チップ" },
@@ -790,7 +792,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       { action: "最大借入", symbol: "MAX_Loan", onClick: () => setAmount(((currentPeriod <= 1) ? 0 : (currentPeriod <= 3 ? 2 : 3) * results.totalNetAssets).toString()) },
                       { action: "借入返済", symbol: "ナ" },
                       { action: "買掛支払", symbol: "ヌ" },
-                      { action: "税金・配当", symbol: "ニ" },
                       { action: "その他出金", symbol: "ス" }
                     ].map(btn => (
                       <button
@@ -822,8 +823,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   </div>
                 </div>
               </div>
+              )}
 
-              {/* 選択中の科目の説明 */}
+              {/* カスタムUIブロック */}
+              {selectedCategory !== '期首処理' && (
               <div className="glass-card" style={{ margin: '4px 0', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.02)' }}>
                 <span style={{ fontSize: '0.88rem', fontWeight: '700' }}>
                   選択中: <span style={{ color: `var(--mg-${currentCatMeta.color})` }}>[{selectedCategory}] {currentCatMeta.label}</span>
@@ -832,6 +835,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   {currentCatMeta.type === 'inflow' ? '入金' : '出金'}
                 </span>
               </div>
+              )}
 
               {/* 採用専用UI */}
               {selectedCategory === '生産' ? (
