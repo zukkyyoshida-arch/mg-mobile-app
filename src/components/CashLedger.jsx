@@ -132,6 +132,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
   // 新規取引の追加
   const handleAddTransaction = (e) => {
+
     e.preventDefault();
     if (!selectedCategory) {
       alert("項目を選択してください");
@@ -302,6 +303,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       }
       onUpdateLedger([...ledger, ...newTransactions]);
       resetForm();
+      // Reset to default category and close modal
+      setSelectedCategory('キ');
+      setShowAddModal(false);
       return;
     } else if (selectedCategory === "生産") {
       const koQty = Number(productionKo) || 0;
@@ -567,6 +571,27 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     setShowAddModal(false);
   };
 
+  // 期末処理の実行
+  const handlePeriodEnd = () => {
+    const newTransactions = [];
+    const timestamp = new Date().toISOString();
+    const tax = results?.carryover?.taxes || 0;
+    if (tax > 0) {
+      newTransactions.push({ id: Date.now().toString() + "-ni", category: "ニ", quantity: 1, amount: tax, price: tax, timestamp });
+    }
+    const loan = results?.carryover?.loan || 0;
+    if (loan > 0) {
+      newTransactions.push({ id: Date.now().toString() + "-na", category: "ナ", quantity: 1, amount: loan, price: loan, timestamp });
+    }
+    if (newTransactions.length === 0) {
+      alert("期末に処理する項目がありません。");
+      return;
+    }
+    if (window.confirm("期末処理を実行しますか？")) {
+      onUpdateLedger([...ledger, ...newTransactions]);
+    }
+  };
+
   // 取引の削除
   const handleDeleteTransaction = (id) => {
     if (window.confirm("この取引データを削除してもよろしいですか？")) {
@@ -690,33 +715,61 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
       {/* 期首の一括処理アラート/ボタン（第2期以降のみ表示） */}
       {currentPeriod > 1 && (
-      <div style={{ margin: '0 16px 8px 16px' }}>
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedCategory('期首処理');
-            setShowAddModal(true);
-          }}
-          className="btn-premium"
-          style={{ 
-            width: '100%', 
-            padding: '12px', 
-            fontSize: '0.85rem', 
-            borderRadius: '12px', 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            gap: '8px', 
-            background: 'linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%)',
-            border: '1px solid rgba(255, 193, 7, 0.5)',
-            color: '#ffc107',
-            fontWeight: 'bold',
-            boxShadow: '0 4px 12px rgba(255, 193, 7, 0.1)'
-          }}
-        >
-          🌅 今期の「期首一括処理」を行う
-        </button>
-      </div>
+        <div style={{ margin: '0 16px 8px 16px' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedCategory('期首処理');
+              setShowAddModal(true);
+            }}
+            className="btn-premium"
+            style={{ 
+              width: '100%', 
+              padding: '12px', 
+              fontSize: '0.85rem', 
+              borderRadius: '12px', 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              gap: '8px', 
+              background: 'linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%)',
+              border: '1px solid rgba(255, 193, 7, 0.5)',
+              color: '#ffc107',
+              fontWeight: 'bold',
+              boxShadow: '0 4px 12px rgba(255, 193, 7, 0.1)'
+            }}
+          >
+            🌅 今期の「期首一括処理」を行う
+          </button>
+        </div>
+      )}
+
+      {/* 期末処理ボタン */}
+      {currentPeriod > 1 && (
+        <div style={{ margin: '0 16px 8px 16px' }}>
+          <button
+            type="button"
+            onClick={handlePeriodEnd}
+            className="btn-premium"
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: '0.85rem',
+              borderRadius: '12px',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'linear-gradient(135deg, rgba(255, 99, 71, 0.2) 0%, rgba(255, 69, 0, 0.2) 100%)',
+              border: '1px solid rgba(255, 99, 71, 0.5)',
+              color: '#ff6347',
+              fontWeight: 'bold',
+              boxShadow: '0 4px 12px rgba(255, 99, 71, 0.1)'
+            }}
+          >
+            🏁 今期の「期末処理」を実行
+          </button>
+        </div>
       )}
 
       {/* 取引履歴タイムライン */}
