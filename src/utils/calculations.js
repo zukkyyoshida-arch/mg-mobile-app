@@ -18,7 +18,7 @@ export const CATEGORIES = {
   "ケ": { label: "機械工具購入", type: "outflow", color: "purple", symbol: "ケ" },
   "コ": { label: "材料投入費", type: "outflow", color: "green", symbol: "コ" },
   "サ": { label: "完成費", type: "outflow", color: "green", symbol: "サ" },
-  "生産": { label: "生産一括 (コ・サ)", type: "outflow", color: "green", symbol: "生産", isCash: true },
+  "生産": { label: "投入・完成", type: "outflow", color: "green", symbol: "生産", isCash: true },
   "シ": { label: "労務費", type: "outflow", color: "blue", symbol: "シ" },
   "ス": { label: "製造経費", type: "outflow", color: "blue", symbol: "ス" },
   "セ": { label: "販売費", type: "outflow", color: "blue", symbol: "セ" },

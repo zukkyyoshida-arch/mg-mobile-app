@@ -654,7 +654,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       { action: "材料購入 (現金)", symbol: "ツ" },
                       { action: "材料購入 (買掛)", symbol: "ノ" },
                       { action: "設備投資", symbol: "ケ" },
-                      { action: "生産 (コ・サ)", symbol: "生産" },
+                      { action: "投入・完成", symbol: "生産" },
                       { action: "採用", symbol: "採用", displaySymbol: "ソ" },
                       { action: "広告", symbol: "セ" },
                       { action: "研究開発", symbol: "チ" },
@@ -738,7 +738,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
               {selectedCategory === '生産' ? (
                 <div style={{ background: 'rgba(76, 175, 80, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-green)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-green)', margin: 0 }}>生産一括処理（サ・コ）</h4>
+                    <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-green)', margin: 0 }}>投入・完成一括処理</h4>
                     <button
                       type="button"
                       onClick={() => {
