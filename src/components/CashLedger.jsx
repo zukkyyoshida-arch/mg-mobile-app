@@ -653,8 +653,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-glass)', paddingTop: '8px' }}>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>現在までの経常利益 (G)</span>
-          <span className="electric-number" style={{ fontSize: '1.2rem', color: (results?.operatingProfit || 0) >= 0 ? 'var(--mg-pink)' : '#ef4444' }}>
-            {(results?.operatingProfit || 0) >= 0 ? '+' : ''}¥ {results?.operatingProfit || 0} 万
+          <span className="electric-number" style={{ fontSize: '1.2rem', color: (results?.pl?.operatingProfit || 0) >= 0 ? 'var(--mg-pink)' : '#ef4444' }}>
+            {(results?.pl?.operatingProfit || 0) >= 0 ? '+' : ''}¥ {results?.pl?.operatingProfit || 0} 万
           </span>
         </div>
       </div>
