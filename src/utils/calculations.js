@@ -16,9 +16,9 @@ export const CATEGORIES = {
   
   // 出金系 (Outflow)
   "ケ": { label: "機械工具購入", type: "outflow", color: "purple", symbol: "ケ" },
-  "コ": { label: "材料投入費", type: "outflow", color: "green", symbol: "コ" },
-  "サ": { label: "完成費", type: "outflow", color: "green", symbol: "サ" },
-  "生産": { label: "投入・完成", type: "outflow", color: "green", symbol: "生産", isCash: true },
+  "コ": { label: "材料投入費", type: "outflow", color: "green", symbol: "コ", isCash: false },
+  "サ": { label: "完成費", type: "outflow", color: "green", symbol: "サ", isCash: false },
+  "生産": { label: "投入・完成", type: "outflow", color: "green", symbol: "生産", isCash: false },
   "シ": { label: "労務費", type: "outflow", color: "blue", symbol: "シ" },
   "ス": { label: "製造経費", type: "outflow", color: "blue", symbol: "ス" },
   "セ": { label: "販売費", type: "outflow", color: "blue", symbol: "セ" },
@@ -409,8 +409,8 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   // 購入された機械工具 (ケ)
   const purchasedMachineValue = ledgerTotals["ケ"].amount;
   // 機械資産の期末残高 (理論値)
-  // 期首金額 + 新規購入 - 減価償却 (売却があった場合は売却価値を引くが、ここでは簡易化し期末簿価に反映)
-  const bookEndingMachines = Math.max(0, carryover.machinesValue + purchasedMachineValue - depreciation - ledgerTotals["イ"].amount);
+  // 期首金額 + 新規購入 - 減価償却 (機械売却による資産減は帳簿上は簡易化するため売却額を引かない。※売却益として処理済みのため引くと二重マイナスになる)
+  const bookEndingMachines = Math.max(0, carryover.machinesValue + purchasedMachineValue - depreciation);
 
   // 4. P/L (変動損益計算書) の計算
   const salesRevenue = ledgerTotals["キ"].amount + ledgerTotals["ネ"].amount; // 売上高 PQ
@@ -488,8 +488,8 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
 
   // 5. B/S (貸借対照表) の計算
   const endingCash = bookEndingCash;
-  // 売掛金: 期首 + 新規売掛発生(ネ) - 回収(ア)
-  const endingReceivables = Math.max(0, carryover.receivables + ledgerTotals["ネ"].amount - ledgerTotals["ア"].amount);
+  // 売掛金: 期首 + 新規売掛発生(ネ) - 回収(ア) - 売掛割引
+  const endingReceivables = Math.max(0, carryover.receivables + ledgerTotals["ネ"].amount - ledgerTotals["ア"].amount - ledgerTotals["売掛割引"].amount);
   
   // 買掛金: 期首 + 新規材料買掛仕入(ノ) - 支払(ヌ)
   const endingPayables = Math.max(0, carryover.payables + (ledgerTotals["ノ"]?.amount || 0) - ledgerTotals["ヌ"].amount);
