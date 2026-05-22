@@ -595,6 +595,35 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
         )}
       </div>
 
+      {/* 期首の一括処理アラート/ボタン（まだ期首処理が済んでいない場合などに表示するのもアリですが、今回は常時表示の別ボタンとして配置） */}
+      <div style={{ margin: '0 16px 8px 16px' }}>
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedCategory('期首処理');
+            setShowAddModal(true);
+          }}
+          className="btn-premium"
+          style={{ 
+            width: '100%', 
+            padding: '12px', 
+            fontSize: '0.85rem', 
+            borderRadius: '12px', 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            gap: '8px', 
+            background: 'linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%)',
+            border: '1px solid rgba(255, 193, 7, 0.5)',
+            color: '#ffc107',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 12px rgba(255, 193, 7, 0.1)'
+          }}
+        >
+          🌅 今期の「期首一括処理」を行う
+        </button>
+      </div>
+
       {/* 取引履歴タイムライン */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '80px' }}>
         <h3 style={{ fontSize: '0.88rem', fontWeight: '700', color: 'var(--text-secondary)', margin: '16px 16px 8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -751,7 +780,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                     {[
-                      { action: "🌅 期首一括処理", symbol: "期首処理" },
                       { action: "売掛金入金", symbol: "ア" },
                       { action: "期中 売掛割引(5%)", symbol: "売掛割引" },
                       { action: "保険", symbol: "保険" },
@@ -912,7 +940,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                 <div style={{ background: 'rgba(233, 30, 99, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-pink)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-pink)', margin: 0 }}>期中 売掛割引（手数料5%）</h4>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>売掛金残高: <strong style={{ color: 'white', fontSize: '1rem' }}>{Math.max(0, (results?.carryover?.receivables || 0) + (ledgerTotals["ネ"]?.amount || 0) - (ledgerTotals["ア"]?.amount || 0))}</strong>万</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>売掛金残高: <strong style={{ color: 'white', fontSize: '1rem' }}>{results?.endingReceivables || 0}</strong>万</span>
                   </div>
 
                   <div className="form-group" style={{ marginBottom: '16px' }}>
@@ -920,7 +948,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                     <input 
                       type="number" 
                       value={factoringAmount} 
-                      onChange={(e) => setFactoringAmount(Math.min(Math.max(0, (results?.carryover?.receivables || 0) + (ledgerTotals["ネ"]?.amount || 0) - (ledgerTotals["ア"]?.amount || 0)), Math.max(0, Number(e.target.value) || 0)))}
+                      onChange={(e) => setFactoringAmount(Math.min(Math.max(0, results?.endingReceivables || 0), Math.max(0, Number(e.target.value) || 0)))}
                       placeholder="0"
                       className="form-input"
                     />
