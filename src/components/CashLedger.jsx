@@ -160,6 +160,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     } else if (selectedCategory === "期首処理") {
       const newTransactions = [];
       const timestamp = new Date().toISOString();
+      const a = results?.carryover?.receivables || 0;
+      if (a > 0) {
+        newTransactions.push({ id: Date.now().toString() + "-ar", category: "ア", quantity: 1, amount: a, price: a, timestamp });
+      }
       const p = results?.carryover?.payables || 0;
       if (p > 0) {
         newTransactions.push({ id: Date.now().toString() + "-nu", category: "ヌ", quantity: 1, amount: p, price: p, timestamp });
@@ -591,7 +595,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
         )}
       </div>
 
-      {/* 期首の一括処理アラート/ボタン（まだ期首処理が済んでいない場合などに表示するのもアリですが、今回は常時表示の別ボタンとして配置） */}
+      {/* 期首の一括処理アラート/ボタン（第2期以降のみ表示） */}
+      {currentPeriod > 1 && (
       <div style={{ margin: '0 16px 8px 16px' }}>
         <button
           type="button"
@@ -619,6 +624,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
           🌅 今期の「期首一括処理」を行う
         </button>
       </div>
+      )}
 
       {/* 取引履歴タイムライン */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '80px' }}>
@@ -906,35 +912,46 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                      <span style={{ color: 'var(--mg-pink)', fontWeight: 'bold' }}>前期売掛金回収 (ア)</span>
+                      <span style={{ fontWeight: 'bold', color: 'var(--mg-pink)' }}>+{results?.carryover?.receivables || 0} 万</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>買掛金支払 (ヌ)</span>
-                      <span style={{ fontWeight: 'bold' }}>{results?.carryover?.payables || 0} 万</span>
+                      <span style={{ fontWeight: 'bold' }}>-{results?.carryover?.payables || 0} 万</span>
                     </div>
                     {currentPeriod > 1 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                         <span style={{ color: 'var(--text-secondary)' }}>法人税等支払 (ニ)</span>
-                        <span style={{ fontWeight: 'bold' }}>{results?.carryover?.taxes || 0} 万</span>
+                        <span style={{ fontWeight: 'bold' }}>-{results?.carryover?.taxes || 0} 万</span>
                       </div>
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>金利支払 (タ) <span style={{ fontSize: '0.7rem' }}>※借入残高 {results?.carryover?.loan || 0}万 の {(currentPeriod >= 4 ? 5 : 10)}%</span></span>
-                      <span style={{ fontWeight: 'bold' }}>{Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10))} 万</span>
+                      <span style={{ fontWeight: 'bold' }}>-{Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10))} 万</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
                       <span style={{ color: 'var(--mg-yellow)' }}>[任意] 借入金返済 (ナ)</span>
-                      <input 
-                        type="number" 
-                        value={repaymentAmount} 
-                        onChange={(e) => setRepaymentAmount(Math.min(results?.carryover?.loan || 0, Math.max(0, Number(e.target.value) || 0)))}
-                        placeholder="0"
-                        className="form-input"
-                        style={{ width: '80px', textAlign: 'right' }}
-                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: 'bold' }}>-</span>
+                        <input 
+                          type="number" 
+                          value={repaymentAmount} 
+                          onChange={(e) => setRepaymentAmount(Math.min(results?.carryover?.loan || 0, Math.max(0, Number(e.target.value) || 0)))}
+                          placeholder="0"
+                          className="form-input"
+                          style={{ width: '80px', textAlign: 'right' }}
+                        />
+                      </div>
                     </div>
                   </div>
                   
                   <div style={{ marginTop: '16px', textAlign: 'right', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    合計出金: <span style={{ fontSize: '1.4rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                      {(results?.carryover?.payables || 0) + (currentPeriod > 1 ? (results?.carryover?.taxes || 0) : 0) + Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10)) + (Number(repaymentAmount) || 0)}
+                    合計出金: <span style={{ fontSize: '1.2rem', color: 'var(--mg-green)', marginRight: '8px' }}>
+                      -{(results?.carryover?.payables || 0) + (currentPeriod > 1 ? (results?.carryover?.taxes || 0) : 0) + Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10)) + (Number(repaymentAmount) || 0)}
+                    </span> 万
+                    <br/>
+                    純増減額: <span style={{ fontSize: '1.4rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                      {((results?.carryover?.receivables || 0) - ((results?.carryover?.payables || 0) + (currentPeriod > 1 ? (results?.carryover?.taxes || 0) : 0) + Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10)) + (Number(repaymentAmount) || 0))) > 0 ? '+' : ''}{((results?.carryover?.receivables || 0) - ((results?.carryover?.payables || 0) + (currentPeriod > 1 ? (results?.carryover?.taxes || 0) : 0) + Math.round((results?.carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10)) + (Number(repaymentAmount) || 0)))}
                     </span> 万
                   </div>
                 </div>
