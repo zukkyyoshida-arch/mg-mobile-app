@@ -18,6 +18,12 @@ const MACHINES = [
   { id: 'attachment', name: 'アタッチメント', basePrice: 20 }
 ];
 
+const ADS = [
+  { id: 'ad5', name: '広告 (5)', basePrice: 5 },
+  { id: 'ad10', name: '広告 (10)', basePrice: 10 },
+  { id: 'ad20', name: '広告 (20)', basePrice: 20 }
+];
+
 function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [voucherNo, setVoucherNo] = useState('');
@@ -39,6 +45,11 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   // 機械購入用のステート
   const [machineQuantities, setMachineQuantities] = useState({
     large: 0, small: 0, attachment: 0
+  });
+  
+  // 広告購入用のステート
+  const [adQuantities, setAdQuantities] = useState({
+    ad5: 0, ad10: 0, ad20: 0
   });
   
   // 電卓の状態
@@ -94,6 +105,26 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
       if (totalQty === 0) {
         alert("購入する機械の数量を入力してください");
+        return;
+      }
+
+      finalQuantity = totalQty;
+      finalAmount = totalAmount;
+      finalPrice = 0;
+    } else if (selectedCategory === "セ") {
+      let totalQty = 0;
+      let totalAmount = 0;
+
+      ADS.forEach(m => {
+        const q = adQuantities[m.id] || 0;
+        if (q > 0) {
+          totalQty += q;
+          totalAmount += q * m.basePrice;
+        }
+      });
+
+      if (totalQty === 0) {
+        alert("購入する広告の数量を入力してください");
         return;
       }
 
@@ -156,6 +187,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     setSalesmenHired('');
     setMarketQuantities({ sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0 });
     setMachineQuantities({ large: 0, small: 0, attachment: 0 });
+    setAdQuantities({ ad5: 0, ad10: 0, ad20: 0 });
     setCalcInput('');
     setShowAddModal(false);
   };
@@ -172,7 +204,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
   const handleCategorySelect = (symbol) => {
     setSelectedCategory(symbol);
     // 数量が必要ない科目の場合は数量と単価をリセット
-    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ", "保険", "MD", "リサーチ", "PAC", "配置転換"].includes(symbol);
+    const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ", "セ", "保険", "MD", "リサーチ", "PAC", "配置転換"].includes(symbol);
     if (!needsQty) {
       setQuantity('');
       setPrice('');
@@ -659,11 +691,60 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                     </div>
                   );
                 })()
+              ) : selectedCategory === "セ" ? (
+                (() => {
+                  let totalQty = 0;
+                  let totalAmount = 0;
+                  ADS.forEach(m => {
+                    const q = adQuantities[m.id] || 0;
+                    totalQty += q;
+                    totalAmount += q * m.basePrice;
+                  });
+                  
+                  return (
+                    <div style={{ background: 'rgba(33, 150, 243, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(33, 150, 243, 0.3)' }}>
+                      <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-blue)', marginBottom: '12px' }}>
+                        購入する広告の数量を入力
+                      </h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginBottom: '16px' }}>
+                        {ADS.map(m => {
+                          const qty = adQuantities[m.id] || 0;
+                          
+                          return (
+                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--mg-blue)' }}>単価: {m.basePrice}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <button 
+                                  type="button"
+                                  onClick={() => setAdQuantities(prev => ({ ...prev, [m.id]: Math.max(0, qty - 1) }))}
+                                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >-</button>
+                                <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
+                                <button 
+                                  type="button"
+                                  onClick={() => setAdQuantities(prev => ({ ...prev, [m.id]: qty + 1 }))}
+                                  style={{ background: 'rgba(33, 150, 243, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >+</button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'white', fontSize: '1rem' }}>{totalQty}個</strong></span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計金額: <strong style={{ color: 'var(--mg-blue)', fontSize: '1.1rem' }}>{totalAmount}万</strong></span>
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 <>
 
               {/* 数量・単価入力（対応する勘定科目のみ） */}
-              {isQtyNeeded && !["ツ", "ノ", "ケ"].includes(selectedCategory) && (
+              {isQtyNeeded && !["ツ", "ノ", "ケ", "セ"].includes(selectedCategory) && (
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">数量 (個数)</label>
