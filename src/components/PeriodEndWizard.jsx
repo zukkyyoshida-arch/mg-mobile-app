@@ -38,60 +38,24 @@ function PeriodEndWizard({ carryover, ledger, actuals = {}, onUpdateActuals, res
   const matMatches = matTheoretical === actualMaterials;
   const wipMatches = wipTheoretical === actualWip;
   const prodMatches = prodTheoretical === actualProduct;
-  const cashMatches = cashTheoretical === actualCash;
 
   return (
     <div style={{ padding: '0 0 24px 0' }}>
-      
-      {/* ステップインジケーター */}
-      <div className="glass-card" style={{ padding: '14px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {[1, 2].map((step) => (
-            <button
-              key={step}
-              onClick={() => handleStepChange(step)}
-              className={`nav-item ${currentStep === step ? 'active' : ''}`}
-              style={{ width: 'auto', height: 'auto', padding: '6px 12px', borderRadius: '10px', fontSize: '0.8rem', display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}
-            >
-              <div 
-                style={{ 
-                  width: '20px', 
-                  height: '20px', 
-                  borderRadius: '50%', 
-                  backgroundColor: currentStep === step ? 'var(--mg-pink)' : 'rgba(255, 255, 255, 0.1)', 
-                  color: 'white', 
-                  fontSize: '0.72rem', 
-                  fontWeight: '800', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center' 
-                }}
-              >
-                {step}
-              </div>
-              {step === 1 ? '在庫棚卸' : '現金合わせ'}
-            </button>
-          ))}
-        </div>
-      </div>
+      <div className="tab-panel">
+        <div className="glass-card">
+          <div className="glass-card-header">
+            <h3 className="glass-card-title">
+              📋 在庫の棚卸し
+            </h3>
+          </div>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+            会社盤のトレイにある「実際の数」を数えて入力してください。出納帳から計算された「帳簿残高」と一致しているか照合します。
+          </p>
 
-      {/* ステップ1: 在庫の棚卸 (盤と帳簿の照合) */}
-      {currentStep === 1 && (
-        <div className="tab-panel">
-          <div className="glass-card">
-            <div className="glass-card-header">
-              <h3 className="glass-card-title">
-                📦 ステップ1: 盤の在庫棚卸
-              </h3>
-            </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              会社盤の上のコマ数（実際数）を数えて入力してください。出納帳から計算された「帳簿残高」と一致しているか照合します。
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              
-              {/* 材料の棚卸 */}
-              <div style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', paddingBottom: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            
+            {/* 材料の棚卸 */}
+            <div style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', paddingBottom: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>1. 材料 (原料)</span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -183,94 +147,9 @@ function PeriodEndWizard({ carryover, ledger, actuals = {}, onUpdateActuals, res
                 </div>
               </div>
 
-            </div>
-            
-            <button
-              onClick={() => handleStepChange(2)}
-              className="btn-premium btn-primary"
-              style={{ width: '100%', marginTop: '20px', padding: '12px' }}
-            >
-              次へ：現金合わせ 👉
-            </button>
           </div>
         </div>
-      )}
-
-      {/* ステップ2: 現金合わせ (最終チェック) */}
-      {currentStep === 2 && (
-        <div className="tab-panel">
-          <div className="glass-card">
-            <div className="glass-card-header">
-              <h3 className="glass-card-title">
-                💰 ステップ2: 最終現金合わせ
-              </h3>
-            </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              会社盤のトレイにある「実際の現金紙幣」を数えて入力してください。出納帳の帳簿残高と完全に一致していれば決算成功です！
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>現在の帳簿残高（理論値）:</span>
-                <span className="electric-number" style={{ fontSize: '1.2rem', color: 'var(--color-accent)' }}>
-                  ¥{cashTheoretical.toLocaleString()}万
-                </span>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">実際のトレイ上の現金 (万)</label>
-                <input
-                  type="number"
-                  value={actualCash ?? ''}
-                  onChange={(e) => handleActualChange('cash', e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  step="1"
-                  className="form-input"
-                  style={{ fontSize: '1.3rem', fontWeight: '800', textAlign: 'center', padding: '12px' }}
-                />
-              </div>
-
-              {/* 照合結果 */}
-              {cashMatches ? (
-                <div className="glass-card animate-pulse" style={{ margin: '8px 0 0 0', padding: '16px', background: 'rgba(0, 230, 118, 0.08)', borderColor: 'rgba(0, 230, 118, 0.3)', textAlign: 'center' }}>
-                  <span style={{ fontSize: '1.4rem', marginRight: '6px' }}>🎉</span>
-                  <span style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--mg-green)' }}>
-                    現金残高が完全に一致しました！
-                  </span>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
-                    帳簿と現金のズレはありません。第{results.rank}決算の「決算書」タブを確認して決算書を作成しましょう！
-                  </p>
-                </div>
-              ) : (
-                <div className="glass-card" style={{ margin: '8px 0 0 0', padding: '16px', background: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.3)', textAlign: 'center' }}>
-                  <span style={{ fontSize: '1.4rem', marginRight: '6px' }}>⚠️</span>
-                  <span style={{ fontSize: '0.95rem', fontWeight: '800', color: '#ef4444' }}>
-                    現金残高にズレがあります！
-                  </span>
-                  <div className="electric-number" style={{ fontSize: '1.1rem', color: '#ef4444', margin: '8px 0' }}>
-                    ズレ金額: ¥{Math.abs(cashTheoretical - actualCash).toLocaleString()} 万
-                  </div>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                    {cashTheoretical > actualCash 
-                      ? "帳簿上の現金が実際より多いです。出金の入力忘れ、または盤上の仕訳ミスがないか確認してください。" 
-                      : "盤上の現金が帳簿より多いです。入金の入力忘れ、またはお釣りの渡し間違い等がないか確認してください。"}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={() => handleStepChange(1)}
-              className="btn-premium btn-secondary"
-              style={{ width: '100%', marginTop: '20px', padding: '12px' }}
-            >
-              ◀ 戻る
-            </button>
-          </div>
-        </div>
-      )}
-
+      </div>
     </div>
   );
 }
