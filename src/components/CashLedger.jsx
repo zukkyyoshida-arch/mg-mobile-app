@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { CATEGORIES } from '../utils/calculations';
 import CompanyBoardMinimap from './CompanyBoardMinimap';
+import { useState } from 'react';
 
 const MARKETS = [
   { id: 'sapporo', name: '札幌', basePrice: 10 },
@@ -260,8 +260,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
         return;
       }
       finalQuantity = w2s + s2w;
-      finalAmount = finalQuantity * 10; // 配置転換は1人あたり10万のコスト
-      finalPrice = 10;
+      finalAmount = finalQuantity * 5; // 配置転換は1人あたり5万のコスト
+      finalPrice = 5;
     } else {
       finalAmount = selectedCategory === '採用' 
         ? (Number(workersHired) || 0) * hirePrice + (Number(salesmenHired) || 0) * hirePrice 
@@ -311,7 +311,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
     let updatedLedger = [...ledger, newEntry];
 
-    // Q4. 借入時（オ）の自動利息（タ）計算と追加
+    // Q4. 借入時（オ）的自動利息（タ）計算と追加
     if (selectedCategory === 'オ' && finalAmount > 0) {
       const interestRate = (currentPeriod <= 3) ? 0.10 : 0.05;
       const interestAmount = Math.floor(finalAmount * interestRate); // 通常MGでは小数点切り捨てまたはそのまま、ここでは単純に計算
@@ -496,7 +496,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
             右下の「＋」ボタンから最初の出納データを入力してください。
           </div>
         ) : (
-          [...ledger].reverse().map((entry, index) => {
+          [...ledger].reverse().map((entry) => {
             const catMeta = CATEGORIES[entry.category] || { label: '未定義', color: 'pink' };
             const badgeClass = `badge badge-${catMeta.color}`;
             
@@ -798,7 +798,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   </div>
 
                   <div style={{ marginTop: '16px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    合計配置転換費: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((Number(transferW2S) || 0) + (Number(transferS2W) || 0)) * 10}</span> 万
+                    合計配置転換費: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((Number(transferW2S) || 0) + (Number(transferS2W) || 0)) * 5}</span> 万
                   </div>
                 </div>
               ) : selectedCategory === 'チ' ? (
