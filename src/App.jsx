@@ -7,16 +7,26 @@ import ManagementPlan from './components/ManagementPlan';
 import PriorPeriodCarryover from './components/PriorPeriodCarryover';
 import AIAdvisor from './components/AIAdvisor';
 
+// 安全な localStorage ラッパー
+const safeStorage = {
+  getItem: (key) => {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  },
+  setItem: (key, value) => {
+    try { localStorage.setItem(key, value); } catch (e) {}
+  }
+};
+
 function App() {
   // テーマの状態 (ダーク / ライト)
   const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('mg_theme');
+    const saved = safeStorage.getItem('mg_theme');
     return saved || 'dark';
   });
 
   // 全期 (1期〜5期) のデータ管理
   const [periods, setPeriods] = useState(() => {
-    const saved = localStorage.getItem('mg_periods_data');
+    const saved = safeStorage.getItem('mg_periods_data');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -36,7 +46,7 @@ function App() {
 
   // 現在の期 (1〜5)
   const [currentPeriod, setCurrentPeriod] = useState(() => {
-    const saved = localStorage.getItem('mg_current_period');
+    const saved = safeStorage.getItem('mg_current_period');
     return saved ? Number(saved) : 1;
   });
 
@@ -45,18 +55,18 @@ function App() {
 
   // データ変更時に localStorage に保存
   useEffect(() => {
-    localStorage.setItem('mg_periods_data', JSON.stringify(periods));
+    safeStorage.setItem('mg_periods_data', JSON.stringify(periods));
   }, [periods]);
 
   useEffect(() => {
-    localStorage.setItem('mg_current_period', String(currentPeriod));
+    safeStorage.setItem('mg_current_period', String(currentPeriod));
   }, [currentPeriod]);
 
   // テーマ切り替え処理
   useEffect(() => {
     // Apply theme via data-theme attribute on <html>
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem('mg_theme', theme);
+    safeStorage.setItem('mg_theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
