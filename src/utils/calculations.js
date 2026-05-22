@@ -213,9 +213,9 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
       const isCashTransaction = CATEGORIES[cat].isCash !== false;
       if (isCashTransaction) {
         if (CATEGORIES[cat].type === "inflow") {
-          cashInflow += amt;
-        } else {
-          cashOutflow += amt;
+          cashInflow += Math.abs(amt);
+        } else if (cat !== "シ") { // 労務費は期末処理まで現金から除外
+          cashOutflow += Math.abs(amt);
         }
       }
     }
@@ -233,9 +233,12 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
 
   ledger.forEach(entry => {
     if (entry.category === "採用" || entry.category === "配置転換") {
-      totalWorkersHired += Number(entry.workersHired) || 0;
-      totalSalesmenHired += Number(entry.salesmenHired) || 0;
-      // 採用・配置転換後の合計人数で最大値を更新
+      if (entry.category !== '採用') {
+        totalWorkersHired += Number(entry.workersHired) || 0;
+        totalSalesmenHired += Number(entry.salesmenHired) || 0;
+        // 採用・配置転換後の合計人数で最大値を更新
+        // The maxTotalStaff update is handled only for non‑採用 entries above.
+      }
       const currentTotal = totalWorkersHired + totalSalesmenHired;
       if (currentTotal > maxTotalStaff) maxTotalStaff = currentTotal;
     }
@@ -250,18 +253,24 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
   });
 
   // 人件費の自動計算（期末に現金で支払われる固定費）
+// 人件費の自動計算（期末に現金で支払われる固定費）
+  // 期中に新規採用した人員は次期の給与として計上するため、現在期の給与計算から除外
+  const hiresWorkers = ledger.reduce((sum, e) => e.category === '採用' ? sum + (Number(e.workersHired) || 0) : sum, 0);
+  const hiresSalesmen = ledger.reduce((sum, e) => e.category === '採用' ? sum + (Number(e.salesmenHired) || 0) : sum, 0);
+  const staffForSalaryWorkers = Math.max(0, totalWorkersHired - hiresWorkers);
+  const staffForSalarySalesmen = Math.max(0, totalSalesmenHired - hiresSalesmen);
   const salaryUnit_early    = SALARY_TABLE.normal[periodKey];
   const severanceUnit_early = SALARY_TABLE.severance[periodKey];
   const insuranceUnit_early = SALARY_TABLE.insurance[periodKey];
-  const autoWorkerSalary    = totalWorkersHired * salaryUnit_early;
+  const autoWorkerSalary    = staffForSalaryWorkers * salaryUnit_early;
   const autoWorkerSeverance = totalSeveranceWorkers * severanceUnit_early;
-  const autoSalesmanSal     = totalSalesmenHired * salaryUnit_early;
+  const autoSalesmanSal     = staffForSalarySalesmen * salaryUnit_early;
   const autoSalesmanSev     = totalSeveranceSalesmen * severanceUnit_early;
   const autoInsuranceStaff  = maxTotalStaff * insuranceUnit_early;
   const totalAutoStaffCost  = autoWorkerSalary + autoWorkerSeverance + autoSalesmanSal + autoSalesmanSev + autoInsuranceStaff;
 
-  // 現金残高 = 期首 + 入金 - 出金 - 人件費自動計算分（B/Sバランスのため）
-  const bookEndingCash = carryover.cash + cashInflow - cashOutflow - totalAutoStaffCost;
+// 現金残高 = 期首 + 入金 - 出金（人件費は現金流出に含めない。ただし損益計算書の費用としては計上）
+const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
 
   // 2. 在庫・原価計算 (材料 -> 仕掛品 -> 製品)
   
@@ -408,12 +417,12 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
   const autoInsuranceCost = autoInsuranceStaff;
 
   // 労務費 = 自動計算分 + 手動入力分(シ)
-  const laborCost = autoLaborCost + ledgerTotals["シ"].amount;
+  const laborCost = autoLaborCost + autoInsuranceStaff + ledgerTotals["シ"].amount;
   const manufacturingFixed = ledgerTotals["ス"].amount + depreciation + (ledgerTotals["PAC"] ? ledgerTotals["PAC"].amount : 0);
   // 販売費 = セールスマン給料(自動) + 広告チップ等(セ) + リサーチ
   const salesCost = autoSalesmanCost + ledgerTotals["セ"].amount + (ledgerTotals["リサーチ"] ? ledgerTotals["リサーチ"].amount : 0);
   // 一般管理費: 社会保険料(自動) + 「ソ」+ 「採用」+ 「保険チップ」+ 「MD」+ 「配置転換」
-  const adminCost = autoInsuranceCost
+  const adminCost = 0
     + ledgerTotals["ソ"].amount 
     + (ledgerTotals["採用"] ? ledgerTotals["採用"].amount : 0) 
     + (ledgerTotals["保険"] ? ledgerTotals["保険"].amount : 0)
