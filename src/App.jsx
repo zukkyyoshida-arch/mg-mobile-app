@@ -6,6 +6,7 @@ import PeriodEndWizard from './components/PeriodEndWizard';
 import ManagementPlan from './components/ManagementPlan';
 import PriorPeriodCarryover from './components/PriorPeriodCarryover';
 import PerformanceReport from './components/PerformanceReport';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // 安全な localStorage ラッパー
 const safeStorage = {
@@ -292,12 +293,14 @@ function App() {
         )}
 
         {showPerformanceReport && (
-          <PerformanceReport
-            ledger={currentData.ledger}
-            results={results}
-            currentPeriod={currentPeriod}
-            onClose={() => setShowPerformanceReport(false)}
-          />
+          <ErrorBoundary>
+            <PerformanceReport
+              ledger={currentData.ledger}
+              results={results}
+              currentPeriod={currentPeriod}
+              onClose={() => setShowPerformanceReport(false)}
+            />
+          </ErrorBoundary>
         )}
       </main>
 

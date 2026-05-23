@@ -88,9 +88,9 @@ export function calculateAnalytics(ledger, results) {
   const M = P - V;
   const Q = totalSalesQty;
 
-  const actualMQ = results?.grossProfit || 0;
-  const F = results?.fixedCosts || 0;
-  const G = results?.operatingProfit || 0;
+  const actualMQ = results?.pl?.margin || 0;
+  const F = results?.pl?.fixedCost || 0;
+  const G = results?.pl?.operatingProfit || 0;
 
   // 目標達成シミュレーション (BEPと安全余裕度)
   // BEP数量 = F / M (Mが0以下の場合は計算不可)
@@ -112,7 +112,7 @@ export function calculateAnalytics(ledger, results) {
 
   // 総合ランクの判定
   let rank = "C";
-  const netAssets = results?.totalNetAssets || 0;
+  const netAssets = results?.totalEquity || 0;
   
   if (G > 0 && netAssets >= 300) {
     rank = "S";
