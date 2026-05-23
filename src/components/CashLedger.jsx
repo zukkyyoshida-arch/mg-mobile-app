@@ -3,13 +3,13 @@ import CompanyBoardMinimap from './CompanyBoardMinimap';
 import { useState } from 'react';
 
 const MARKETS = [
-  { id: 'sapporo', name: '札幌', basePrice: 10 },
-  { id: 'sendai', name: '仙台', basePrice: 11 },
-  { id: 'tokyo', name: '東京', basePrice: 12 },
-  { id: 'nagoya', name: '名古屋', basePrice: 13 },
-  { id: 'osaka', name: '大阪', basePrice: 14 },
-  { id: 'fukuoka', name: '福岡', basePrice: 15 },
-  { id: 'stocker', name: 'ストッカー', basePrice: 16 }
+  { id: 'sapporo', name: '札幌', basePrice: 10, max: 3 },
+  { id: 'sendai', name: '仙台', basePrice: 11, max: 4 },
+  { id: 'tokyo', name: '東京', basePrice: 12, max: 6 },
+  { id: 'nagoya', name: '名古屋', basePrice: 13, max: 9 },
+  { id: 'osaka', name: '大阪', basePrice: 14, max: 13 },
+  { id: 'fukuoka', name: '福岡', basePrice: 15, max: 20 },
+  { id: 'stocker', name: 'ストッカー', basePrice: 16, max: 0 }
 ];
 
 const MACHINES = [
