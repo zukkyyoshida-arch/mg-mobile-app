@@ -2,7 +2,7 @@
  * 経営分析ロジック（PVMQ、戦略投資の集計）
  */
 
-export function calculateAnalytics(ledger, results) {
+export function calculateAnalytics(ledger, results, prevLedger = null, prevResults = null) {
   // P, V, M, Q の集計用
   let totalSalesQty = 0;
   let totalSalesAmount = 0;
@@ -154,6 +154,72 @@ export function calculateAnalytics(ledger, results) {
   const nextPeriodInitialCosts = payables + unpaidTax;
   const nextPeriodCashShortfall = currentCash < nextPeriodInitialCosts ? (nextPeriodInitialCosts - currentCash) : 0;
 
+  // --- 前期比較（YoY/MoM） ---
+  let comparison = null;
+  if (prevLedger && prevResults) {
+    // 過去データを再計算して比較対象を作成
+    const prev = calculateAnalytics(prevLedger, prevResults);
+    
+    // 成長スコア
+    const diffNetAssets = netAssets - prev.simulation.currentNetAssets; // ※ 後でcurrentNetAssetsを返すように追加する
+    const diffG = G - prev.financials.G;
+
+    // 利益構造
+    const diffP = P - prev.P;
+    const diffM = M - prev.M;
+    const diffQ = Q - prev.Q;
+
+    // 固定費・資金繰り
+    const diffF = F - prev.financials.F;
+    const diffCash = currentCash - prev.simulation.currentCash;
+
+    // AIアドバイスの生成
+    let growthAdvice = "";
+    if (diffG > 0 && diffNetAssets > 0) {
+      growthAdvice = "🎉 前期から見事に業績を伸ばし、会社が成長しています！戦略がバッチリ当たっていますね。";
+    } else if (diffG <= 0 && prev.financials.G > 0 && G <= 0) {
+      growthAdvice = "⚠️ 前期の黒字から一転して赤字に転落しました。戦略の大幅な見直しが必要です。";
+    } else if (diffNetAssets < 0) {
+      growthAdvice = "⚠️ 純資産が減少（赤字）しています。まずは止血（黒字化）を最優先にしましょう。";
+    } else {
+      growthAdvice = "安定した経営が続いていますが、さらにブレイクスルーを狙いたいところです。";
+    }
+
+    let pvmqAdvice = "";
+    if (diffP > 0 && diffQ < 0) {
+      pvmqAdvice = "数量(Q)は減りましたが、単価(P)を上げたことで高付加価値化に成功しています！";
+    } else if (diffQ > 0 && diffM < 0) {
+      pvmqAdvice = "⚠️ 数量(Q)は伸びていますが、1個あたりの粗利(M)が下がっています。薄利多売による「忙しいのに儲からない」状態に注意！";
+    } else if (diffQ > 0 && diffP >= 0) {
+      pvmqAdvice = "🚀 単価を維持（または向上）したまま数量(Q)を伸ばす、最高のスケールアップができています！";
+    } else {
+      pvmqAdvice = "P・V・M・Qのバランスを見極め、次期の「値決め」戦略を練りましょう。";
+    }
+
+    let investmentAdvice = "";
+    if (diffF > 0 && diffG > 0) {
+      investmentAdvice = `前期より固定費(F)を ${diffF}万 増やして攻めましたが、見事に利益(G)として回収できています！`;
+    } else if (diffF > 0 && diffG <= 0) {
+      investmentAdvice = `前期より固定費(F)が ${diffF}万 増えましたが、利益が追いついておらず「経費倒れ」気味です。回収のスピードを上げましょう。`;
+    } else if (diffCash < 0 && G > 0) {
+      investmentAdvice = `⚠️ 利益は出ていますが、手元の現金が前期より ${-diffCash}万 減っています。資金の固定化（在庫や設備）に注意してください！`;
+    }
+
+    comparison = {
+      diffNetAssets,
+      diffG,
+      diffP,
+      diffM,
+      diffQ,
+      diffF,
+      diffCash,
+      growthAdvice,
+      pvmqAdvice,
+      investmentAdvice,
+      prev
+    };
+  }
+
   return {
     rank,
     P,
@@ -179,6 +245,7 @@ export function calculateAnalytics(ledger, results) {
       nextPeriodCashShortfall,
       deadStockValue,
       currentCash,
+      currentNetAssets: netAssets,
       nextPeriodInitialCosts
     },
     investments: {
@@ -204,6 +271,7 @@ export function calculateAnalytics(ledger, results) {
       completedQty,
       maxCapacity,
       capacityUtilization
-    }
+    },
+    comparison
   };
 }

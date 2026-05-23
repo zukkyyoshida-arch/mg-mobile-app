@@ -1,9 +1,8 @@
 import React from 'react';
 import { calculateAnalytics } from '../utils/analytics';
 
-export default function PerformanceReport({ ledger, results, currentPeriod, onClose }) {
-  const analytics = calculateAnalytics(ledger, results);
-
+export default function PerformanceReport({ ledger, results, prevLedger, prevResults, currentPeriod, onClose }) {
+  const analytics = calculateAnalytics(ledger, results, prevLedger, prevResults);
   const getRankColor = (rank) => {
     switch (rank) {
       case 'S': return 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
@@ -43,6 +42,52 @@ export default function PerformanceReport({ ledger, results, currentPeriod, onCl
           閉じる
         </button>
       </div>
+
+      {/* --- 前期比較セクション (第2期以降のみ表示) --- */}
+      {analytics.comparison && (
+        <div className="report-section" style={{ background: 'rgba(33, 150, 243, 0.05)', border: '1px solid rgba(33, 150, 243, 0.3)' }}>
+          <h3 className="report-title" style={{ color: '#64B5F6' }}>📊 前期との比較レポート (YoY)</h3>
+          
+          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>🏢 会社の成長（自己資本と利益）</div>
+            <p style={{ margin: '0 0 6px 0' }}>
+              自己資本: ¥{analytics.simulation.currentNetAssets}万 (前期比 <span style={{ color: analytics.comparison.diffNetAssets > 0 ? '#4caf50' : analytics.comparison.diffNetAssets < 0 ? '#ff5252' : 'inherit' }}>{analytics.comparison.diffNetAssets > 0 ? '+' : ''}{analytics.comparison.diffNetAssets}万</span>)<br/>
+              経常利益: ¥{analytics.financials.G}万 (前期比 <span style={{ color: analytics.comparison.diffG > 0 ? '#4caf50' : analytics.comparison.diffG < 0 ? '#ff5252' : 'inherit' }}>{analytics.comparison.diffG > 0 ? '+' : ''}{analytics.comparison.diffG}万</span>)
+            </p>
+            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#90CAF9' }}>
+              {analytics.comparison.growthAdvice}
+            </div>
+          </div>
+
+          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>📈 利益構造（P・V・M・Q）の変化</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '4px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>単価(P)の変化</div>
+                <div style={{ fontWeight: 'bold', color: analytics.comparison.diffP > 0 ? '#4caf50' : analytics.comparison.diffP < 0 ? '#ff5252' : 'inherit' }}>{analytics.comparison.diffP > 0 ? '+' : ''}{analytics.comparison.diffP.toFixed(1)}万</div>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '4px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>数量(Q)の変化</div>
+                <div style={{ fontWeight: 'bold', color: analytics.comparison.diffQ > 0 ? '#4caf50' : analytics.comparison.diffQ < 0 ? '#ff5252' : 'inherit' }}>{analytics.comparison.diffQ > 0 ? '+' : ''}{analytics.comparison.diffQ}個</div>
+              </div>
+            </div>
+            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#90CAF9' }}>
+              {analytics.comparison.pvmqAdvice}
+            </div>
+          </div>
+
+          <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>⚙️ 固定費と資金繰り</div>
+            <p style={{ margin: '0 0 6px 0' }}>
+              固定費(F): ¥{analytics.financials.F}万 (前期比 <span style={{ color: analytics.comparison.diffF > 0 ? '#ffb74d' : analytics.comparison.diffF < 0 ? '#4caf50' : 'inherit' }}>{analytics.comparison.diffF > 0 ? '+' : ''}{analytics.comparison.diffF}万</span>)<br/>
+              現預金残高: ¥{analytics.simulation.currentCash}万 (前期比 <span style={{ color: analytics.comparison.diffCash > 0 ? '#4caf50' : analytics.comparison.diffCash < 0 ? '#ff5252' : 'inherit' }}>{analytics.comparison.diffCash > 0 ? '+' : ''}{analytics.comparison.diffCash}万</span>)
+            </p>
+            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#90CAF9' }}>
+              {analytics.comparison.investmentAdvice}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* セクション1: 総合評価 */}
       <div className="report-section" style={{ textAlign: 'center', padding: '24px 16px' }}>

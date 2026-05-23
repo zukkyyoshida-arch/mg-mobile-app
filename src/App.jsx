@@ -292,16 +292,23 @@ function App() {
           </div>
         )}
 
-        {showPerformanceReport && (
-          <ErrorBoundary>
-            <PerformanceReport
-              ledger={currentData.ledger}
-              results={results}
-              currentPeriod={currentPeriod}
-              onClose={() => setShowPerformanceReport(false)}
-            />
-          </ErrorBoundary>
-        )}
+        {showPerformanceReport && (() => {
+          const prevData = currentPeriod > 1 ? periods[currentPeriod - 1] : null;
+          const prevResults = prevData ? calculateFinancials(prevData.carryover, prevData.ledger, prevData.actuals, currentPeriod - 1) : null;
+          
+          return (
+            <ErrorBoundary>
+              <PerformanceReport
+                ledger={currentData.ledger}
+                results={results}
+                prevLedger={prevData?.ledger}
+                prevResults={prevResults}
+                currentPeriod={currentPeriod}
+                onClose={() => setShowPerformanceReport(false)}
+              />
+            </ErrorBoundary>
+          );
+        })()}
       </main>
 
       {/* スマホ用ボトムナビゲーション */}
