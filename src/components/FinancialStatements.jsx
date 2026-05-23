@@ -74,21 +74,51 @@ function FinancialStatements({ results, carryover, currentPeriod, onShowPerforma
       </div>
 
       {/* 決算書タブ切り替え */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
-        <button onClick={() => setStatementTab('pl')} className={`btn-secondary ${statementTab === 'pl' ? 'btn-primary' : ''}`} style={{ whiteSpace: 'nowrap', padding: '8px 12px' }}>P/L (損益)</button>
-        <button onClick={() => setStatementTab('bs')} className={`btn-secondary ${statementTab === 'bs' ? 'btn-primary' : ''}`} style={{ whiteSpace: 'nowrap', padding: '8px 12px' }}>B/S (貸借)</button>
-        <button onClick={() => setStatementTab('cf')} className={`btn-secondary ${statementTab === 'cf' ? 'btn-primary' : ''}`} style={{ whiteSpace: 'nowrap', padding: '8px 12px' }}>C/F (資金)</button>
-        {onShowPerformance && (
-          <button 
-            onClick={onShowPerformance} 
-            style={{ 
-              whiteSpace: 'nowrap', padding: '8px 12px', background: 'var(--color-accent)', 
-              color: 'black', border: 'none', borderRadius: '8px', fontWeight: 'bold', marginLeft: 'auto'
-            }}
-          >
-            📊 成績発表(KPI)
-          </button>
-        )}
+      {/* KPIダッシュボードボタン (プレミアムなバナー風デザイン) */}
+      {onShowPerformance && (
+        <button 
+          onClick={onShowPerformance} 
+          className="btn-premium"
+          style={{ 
+            width: '100%',
+            marginBottom: '16px',
+            background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 165, 0, 0.15) 100%)',
+            border: '1px solid rgba(255, 215, 0, 0.3)',
+            color: '#FFD700',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '12px',
+            boxShadow: '0 4px 12px rgba(255, 215, 0, 0.1)'
+          }}
+        >
+          <span style={{ fontSize: '1.2rem' }}>📊</span>
+          <span style={{ fontWeight: 'bold', letterSpacing: '1px' }}>今期の経営成績（KPI）を見る</span>
+          <span style={{ marginLeft: 'auto' }}>→</span>
+        </button>
+      )}
+
+      {/* 決算書タブ切り替え (スタイリッシュなセグメントコントロール) */}
+      <div className="segmented-control" style={{ marginBottom: '20px' }}>
+        <button
+          onClick={() => setStatementTab('pl')}
+          className={`segment-item ${statementTab === 'pl' ? 'active' : ''}`}
+        >
+          P/L (損益)
+        </button>
+        <button
+          onClick={() => setStatementTab('bs')}
+          className={`segment-item ${statementTab === 'bs' ? 'active' : ''}`}
+        >
+          B/S (貸借)
+        </button>
+        <button
+          onClick={() => setStatementTab('cf')}
+          className={`segment-item ${statementTab === 'cf' ? 'active' : ''}`}
+        >
+          C/F (資金)
+        </button>
       </div>
 
       {/* ==================== 1. 変動損益計算書 (P/L) ==================== */}

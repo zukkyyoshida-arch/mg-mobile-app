@@ -25,21 +25,21 @@ export default function PerformanceReport({ ledger, results, currentPeriod, onCl
       <style>
         {`
           @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-          .report-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
-          .report-title { font-size: 1.2rem; color: var(--color-accent); margin-top: 0; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-          .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-          .kpi-card { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; text-align: center; }
-          .kpi-value { font-size: 1.5rem; font-weight: bold; color: var(--text-primary); margin: 8px 0 4px; }
-          .kpi-label { font-size: 0.75rem; color: var(--text-secondary); }
-          .rank-badge { font-size: 3rem; font-weight: 900; background-clip: text; -webkit-background-clip: text; color: transparent; display: inline-block; }
-          .bar-container { width: 100%; height: 24px; background: rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; display: flex; margin-top: 8px; }
-          .bar-fill { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; color: rgba(255,255,255,0.9); }
+          .report-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; margin-bottom: 16px; }
+          .report-title { font-size: 1.1rem; color: var(--color-accent); margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+          .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+          .kpi-card { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; text-align: center; }
+          .kpi-value { font-size: 1.25rem; font-weight: bold; color: var(--text-primary); margin: 6px 0 2px; }
+          .kpi-label { font-size: 0.7rem; color: var(--text-secondary); }
+          .rank-badge { font-size: 2.5rem; font-weight: 900; background-clip: text; -webkit-background-clip: text; color: transparent; display: inline-block; }
+          .bar-container { width: 100%; height: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; display: flex; margin-top: 6px; }
+          .bar-fill { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold; color: rgba(255,255,255,0.9); }
         `}
       </style>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 style={{ margin: 0, fontSize: '1.5rem', color: 'white' }}>第{currentPeriod}期 経営成績レポート</h2>
-        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '8px 16px', borderRadius: '20px', fontWeight: 'bold' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'white' }}>第{currentPeriod}期 経営成績</h2>
+        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.85rem' }}>
           閉じる
         </button>
       </div>
