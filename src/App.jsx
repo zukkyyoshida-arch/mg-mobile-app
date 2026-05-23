@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { calculateFinancials, DEFAULT_PERIOD_DATA } from './utils/calculations';
 import CashLedger from './components/CashLedger';
 import FinancialStatements from './components/FinancialStatements';
@@ -78,9 +78,12 @@ function App() {
   // リアルタイム財務計算を実行
   const results = calculateFinancials(currentData.carryover, currentData.ledger, currentData.actuals, currentPeriod);
 
-  // バグ救済用：すでに期をまたいでしまっていて未払税金(taxes)が0になっている場合、自動補完する
+  // バグ救済用：期をまたいだ際に未払税金が引き継がれていない場合、一度だけ自動補完する
+  const taxPatchedRef = useRef({});
   useEffect(() => {
-    if (currentPeriod > 1 && !currentData.carryover.taxes) {
+    const key = `${currentPeriod}`;
+    if (currentPeriod > 1 && !currentData.carryover.taxes && !taxPatchedRef.current[key]) {
+      taxPatchedRef.current[key] = true;
       const prevData = periods[currentPeriod - 1];
       if (prevData) {
         const prevResults = calculateFinancials(prevData.carryover, prevData.ledger, prevData.actuals, currentPeriod - 1);
@@ -99,7 +102,7 @@ function App() {
         }
       }
     }
-  }, [currentPeriod, currentData.carryover.taxes, periods]);
+  }, [currentPeriod]);
 
   // データの更新関数群
   const updatePeriodData = (field, newData) => {
@@ -144,26 +147,32 @@ function App() {
     const prevProd = prevResults.prod;
     const prevMach = prevResults.machines;
 
-    // B/S残高を引き継ぎ
+    // B/S残高を引き継ぎ（次期に必要な全情報を網羅）
     const nextCarryover = {
+      // 現金
       cash: prevBS.cash,
+      // 棚卸資産
       materialsCount: prevMat.endingCount,
       materialsValue: prevMat.endingValue,
       wipCount: prevWip.endingCount,
       wipValue: prevWip.endingValue,
       productCount: prevProd.endingCount,
       productValue: prevProd.endingValue,
-      largeMachines: prevMach.large, // 機械数も引き継ぎ
+      // 機械設備
+      largeMachines: prevMach.large,
       smallMachines: prevMach.small,
       attachments: prevMach.attachments,
       machinesCount: prevMach.large + prevMach.small,
       machinesValue: prevBS.fixedAssets,
+      // 負債
       loan: prevBS.loans,
       receivables: prevBS.receivables,
       payables: prevBS.payables,
-      taxes: prevBS.unpaidTax,
+      taxes: prevBS.unpaidTax,       // 未払法人税等
+      // 純資産
       retainedEarnings: prevBS.retainedEarnings,
       capital: prevBS.capital,
+      // 人員
       workers: prevResults.workers || 0,
       salesmen: prevResults.salesmen || 0
     };
