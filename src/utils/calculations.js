@@ -297,18 +297,22 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   const matTotalCount = matBeginningCount + matPurchaseCount;
   const matTotalValue = matBeginningValue + matPurchaseValue;
   
-  // 平均単価の算出 (四捨五入)
+  // 平均単価（表示用のみ。B/S計算には比例配分を使用）
   const matUnitCost = matTotalCount > 0 ? Math.round(matTotalValue / matTotalCount) : 0;
   
-  // 投入 (コ)
+  // 投入 (コ) → 比例配分で計算し誤差を排除
   const matInputCount = ledgerTotals["コ"].quantity;
-  const matInputValue = matInputCount * matUnitCost;
+  const matInputValue = matTotalCount > 0
+    ? Math.round((matInputCount / matTotalCount) * matTotalValue)
+    : 0;
   
-  // 事故災害：火災 (材料)
+  // 事故災害：火災 (材料) → 比例配分
   const fireCount = totalFireCount;
-  const matFireValue = fireCount * matUnitCost;
+  const matFireValue = matTotalCount > 0
+    ? Math.round((fireCount / matTotalCount) * matTotalValue)
+    : 0;
   
-  // 材料の次期繰越 (理論値)
+  // 材料の次期繰越 (理論値) → 差引きで正確に計算
   const matEndingCount = matTotalCount - matInputCount - fireCount;
   const matEndingValue = Math.max(0, matTotalValue - matInputValue - matFireValue);
 
@@ -325,15 +329,19 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   
   const wipUnitCost = wipTotalCount > 0 ? Math.round(wipTotalValue / wipTotalCount) : 0;
   
-  // 完成 (サ の生産個数)
+  // 完成 (サ の生産個数) → 比例配分で計算
   const wipCompletedCount = ledgerTotals["サ"].quantity;
-  const wipCompletedValue = wipCompletedCount * wipUnitCost;
+  const wipCompletedValue = wipTotalCount > 0
+    ? Math.round((wipCompletedCount / wipTotalCount) * wipTotalValue)
+    : 0;
   
-  // 事故災害：製造ミス (仕掛品)
+  // 事故災害：製造ミス (仕掛品) → 比例配分
   const missCount = totalMissCount;
-  const wipMissValue = missCount * wipUnitCost;
+  const wipMissValue = wipTotalCount > 0
+    ? Math.round((missCount / wipTotalCount) * wipTotalValue)
+    : 0;
   
-  // 仕掛品の次期繰越 (理論値)
+  // 仕掛品の次期繰越 (理論値) → 差引きで正確に計算
   const wipEndingCount = wipTotalCount - wipCompletedCount - missCount;
   const wipEndingValue = Math.max(0, wipTotalValue - wipCompletedValue - wipMissValue);
 
@@ -348,15 +356,19 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   
   const prodUnitCost = prodTotalCount > 0 ? Math.round(prodTotalValue / prodTotalCount) : 0;
   
-  // 売上個数 (キ + ネ の合計個数)
+  // 売上個数 (キ + ネ の合計個数) → 比例配分で計算
   const salesCount = ledgerTotals["キ"].quantity + ledgerTotals["ネ"].quantity;
-  const cogsValue = salesCount * prodUnitCost; // 売上原価
+  const cogsValue = prodTotalCount > 0
+    ? Math.round((salesCount / prodTotalCount) * prodTotalValue)
+    : 0; // 売上原価
   
-  // 事故災害：盗難 (製品)
+  // 事故災害：盗難 (製品) → 比例配分
   const theftCount = totalTheftCount;
-  const prodTheftValue = theftCount * prodUnitCost;
+  const prodTheftValue = prodTotalCount > 0
+    ? Math.round((theftCount / prodTotalCount) * prodTotalValue)
+    : 0;
   
-  // 製品の次期繰越 (理論値)
+  // 製品の次期繰越 (理論値) → 差引きで正確に計算
   const prodEndingCount = prodTotalCount - salesCount - theftCount;
   const prodEndingValue = Math.max(0, prodTotalValue - cogsValue - prodTheftValue);
 
