@@ -64,15 +64,6 @@ function PeriodEndWizard({ carryover, ledger, actuals = {}, onUpdateActuals, onU
       newTransactions.push({ id: Date.now().toString() + "-ins", category: "ソ", quantity: 1, amount: insurance, price: insurance, timestamp: new Date(Date.now() + 3).toISOString(), customName: "社会保険料の支払", customShortName: "保険" });
     }
 
-    const tax = results?.carryover?.taxes || 0;
-    if (tax > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-ni", category: "ニ", quantity: 1, amount: tax, price: tax, timestamp: new Date(Date.now() + 4).toISOString() });
-    }
-    const loan = results?.carryover?.loan || 0;
-    if (loan > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-na", category: "ナ", quantity: 1, amount: loan, price: loan, timestamp: new Date(Date.now() + 5).toISOString() });
-    }
-
     if (newTransactions.length === 0) {
       alert("期末に処理する給与・支払いがありません。");
       setCurrentStep(1); // Go back or show completed
