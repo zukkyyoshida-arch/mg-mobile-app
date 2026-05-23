@@ -252,7 +252,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
             alert("購入する口数を入力してください");
             return;
           }
-          newTransactions.push({ id: Date.now().toString() + "-ad", category: "セ", quantity: q, amount: q * 5, price: 5, timestamp });
+          newTransactions.push({ id: Date.now().toString() + "-ad", category: "セ", quantity: q, amount: q * 5, price: 5, timestamp, customName: "特別サービス(広告)の支払", customShortName: "広告" });
         }
       } else {
         if (riskAction === 'retire_worker') {
