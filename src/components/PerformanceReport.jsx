@@ -60,16 +60,16 @@ export default function PerformanceReport({ ledger, results, currentPeriod, onCl
       <div className="report-section" style={{ background: 'rgba(255, 215, 0, 0.05)', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
         <h3 className="report-title" style={{ color: '#FFD700' }}>💡 コンサルタントのアドバイス</h3>
         
-        {analytics.financials.G < 0 ? (
+        {analytics.financials.G <= 0 ? (
           <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>
-            <div style={{ marginBottom: '8px', color: '#ff5252', fontWeight: 'bold' }}>⚠️ 赤字決算でした（営業利益: {analytics.financials.G}万）</div>
+            <div style={{ marginBottom: '8px', color: '#ff5252', fontWeight: 'bold' }}>⚠️ {analytics.financials.G === 0 ? '利益ゼロのトントン決算でした' : '赤字決算でした'}（営業利益: {analytics.financials.G}万）</div>
             {analytics.M > 0 && analytics.simulation.bepQty !== null ? (
               <>
                 <p style={{ margin: '0 0 8px 0' }}>
                   今の1個あたりの粗利(M: {analytics.M.toFixed(1)}万)で、固定費(F: {analytics.financials.F}万)を回収するためには、<strong>最低 {analytics.simulation.bepQty} 個</strong>売る必要がありました。（損益分岐点）
                 </p>
                 <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#ffcc80' }}>
-                  👉 あと <strong>{analytics.simulation.remainingForBEP} 個</strong> 多く売れていれば黒字でした！次期は販売数量を増やすか、販売単価を上げてMを改善しましょう。
+                  👉 あと <strong>{analytics.simulation.remainingForBEP > 0 ? analytics.simulation.remainingForBEP : 1} 個</strong> 多く売れていれば確実な黒字でした！次期は販売数量を増やすか、販売単価を上げてMを改善しましょう。
                 </div>
               </>
             ) : (
