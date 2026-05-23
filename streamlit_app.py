@@ -10,7 +10,6 @@ st.set_page_config(
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed")
-st.write("✅ アプリ起動確認: ここに表示されればOK")
 
 # Streamlitの不要なUI（ヘッダー、フッター、マージン）を非表示にし、画面いっぱいに表示
 st.markdown("""
