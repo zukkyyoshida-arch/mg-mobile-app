@@ -134,12 +134,33 @@ export function calculateAnalytics(ledger, results) {
     rank = "B";
   }
 
+  // --- 高度なKPI（資金繰り・在庫・値決め） ---
+
+  // 1. m率（マージン率）
+  const mRatio = P > 0 ? Math.round((M / P) * 100) : 0;
+
+  // 2. 在庫の「死に金」合計（材料 + 仕掛品 + 製品）
+  const deadStockValue = 
+    (results?.bs?.materialsValue || 0) + 
+    (results?.bs?.wipValue || 0) + 
+    (results?.bs?.productValue || 0);
+
+  // 3. 次期首の資金繰り診断
+  const currentCash = results?.bs?.cash || 0;
+  const payables = results?.bs?.payables || 0;
+  const unpaidTax = results?.bs?.unpaidTax || 0;
+  // MGでは通常、次期首に借入金の利息を払うか、借入金の一部を返すなどが必要な場合があるが、
+  // 最低限「買掛金」と「未払法人税等」は払う必要がある。
+  const nextPeriodInitialCosts = payables + unpaidTax;
+  const nextPeriodCashShortfall = currentCash < nextPeriodInitialCosts ? (nextPeriodInitialCosts - currentCash) : 0;
+
   return {
     rank,
     P,
     V,
     M,
     Q,
+    mRatio,
     totals: {
       salesAmount: totalSalesAmount,
       salesQty: totalSalesQty,
@@ -154,7 +175,11 @@ export function calculateAnalytics(ledger, results) {
     simulation: {
       bepQty,
       remainingForBEP,
-      safetyMargin
+      safetyMargin,
+      nextPeriodCashShortfall,
+      deadStockValue,
+      currentCash,
+      nextPeriodInitialCosts
     },
     investments: {
       ads: { 

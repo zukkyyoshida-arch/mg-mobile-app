@@ -59,9 +59,9 @@ export default function PerformanceReport({ ledger, results, currentPeriod, onCl
       {/* セクション2: 経営コンサル・タラレバ分析 */}
       <div className="report-section" style={{ background: 'rgba(255, 215, 0, 0.05)', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
         <h3 className="report-title" style={{ color: '#FFD700' }}>💡 コンサルタントのアドバイス</h3>
-        
+        {/* 1. 利益目標と安全余裕度 */}
         {analytics.financials.G <= 0 ? (
-          <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>
+          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ marginBottom: '8px', color: '#ff5252', fontWeight: 'bold' }}>⚠️ {analytics.financials.G === 0 ? '利益ゼロのトントン決算でした' : '赤字決算でした'}（営業利益: {analytics.financials.G}万）</div>
             {analytics.M > 0 && analytics.simulation.bepQty !== null ? (
               <>
@@ -79,17 +79,67 @@ export default function PerformanceReport({ ledger, results, currentPeriod, onCl
             )}
           </div>
         ) : (
-          <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>
+          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ marginBottom: '8px', color: '#4caf50', fontWeight: 'bold' }}>🎉 黒字達成おめでとうございます！（営業利益: +{analytics.financials.G}万）</div>
             <p style={{ margin: '0 0 8px 0' }}>
               損益分岐点（最低販売数）は <strong>{analytics.simulation.bepQty} 個</strong> でした。それを超えてしっかりと売上を作れています。
             </p>
             <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#81c784' }}>
               👉 あなたの安全余裕額は <strong>{analytics.simulation.safetyMargin} 万</strong> です。<br/>
-              つまり、今期あとこれだけ広告や研究開発に「追加投資」しても、赤字にはなりませんでした。次期はさらに強気でチップを買いに行っても大丈夫です！
+              つまり、今期あとこれだけ追加で投資していても赤字にはなりませんでした。次期はさらに強気でチップを買いに行っても大丈夫です！
             </div>
           </div>
         )}
+
+        {/* 2. キャッシュフロー・資金繰り診断 */}
+        <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>💰 資金繰り（キャッシュフロー）診断</div>
+          <p style={{ margin: '0 0 8px 0' }}>
+            現在の現金残高: ¥{analytics.simulation.currentCash}万 / 次期首の必須支払額: ¥{analytics.simulation.nextPeriodInitialCosts}万
+          </p>
+          {analytics.simulation.nextPeriodCashShortfall > 0 ? (
+            <div style={{ padding: '8px', background: 'rgba(255, 82, 82, 0.15)', borderLeft: '4px solid #ff5252', borderRadius: '4px', color: '#ff5252' }}>
+              <strong>⚠️ 黒字倒産の危機（資金ショート）</strong><br/>
+              次期首の支払い（買掛金や税金）に対して、手元の現金が <strong>¥{analytics.simulation.nextPeriodCashShortfall}万 不足</strong> しています。次期開始直後に借入（オ）か売掛割引をしないと倒産します！
+            </div>
+          ) : (
+            <div style={{ padding: '8px', background: 'rgba(76, 175, 80, 0.15)', borderLeft: '4px solid #4caf50', borderRadius: '4px', color: '#81c784' }}>
+              ✅ 手元現金は潤沢です。次期の支払いは余裕でクリアできます！
+            </div>
+          )}
+        </div>
+
+        {/* 3. 在庫の「死に金」警告 */}
+        <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>📦 在庫の滞留（死に金）チェック</div>
+          {analytics.simulation.deadStockValue > 0 ? (
+            <div style={{ padding: '8px', background: 'rgba(255, 152, 0, 0.15)', borderLeft: '4px solid #ff9800', borderRadius: '4px', color: '#ffcc80' }}>
+              現在、<strong>¥{analytics.simulation.deadStockValue}万</strong> 分の資金が、売れ残った「材料・仕掛品・製品」として眠っています。キャッシュの回転が悪化しています。次期は『売れる分だけ仕入れて作る』ジャストインタイムを意識しましょう！
+            </div>
+          ) : (
+            <div style={{ padding: '8px', background: 'rgba(76, 175, 80, 0.15)', borderLeft: '4px solid #4caf50', borderRadius: '4px', color: '#81c784' }}>
+              ✅ 在庫ゼロで期末を迎えました！素晴らしいキャッシュの回転率です。
+            </div>
+          )}
+        </div>
+
+        {/* 4. 値決め診断 (m率) */}
+        <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>
+          <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>💎 値決め診断（m率 = {analytics.mRatio}%）</div>
+          {analytics.mRatio >= 50 ? (
+            <div style={{ padding: '8px', background: 'rgba(76, 175, 80, 0.15)', borderLeft: '4px solid #4caf50', borderRadius: '4px', color: '#81c784' }}>
+              ✅ m率50%以上！高付加価値な素晴らしい商売ができています。この価格設定を維持しましょう。
+            </div>
+          ) : analytics.mRatio >= 40 ? (
+            <div style={{ padding: '8px', background: 'rgba(255, 255, 255, 0.05)', borderLeft: '4px solid #9e9e9e', borderRadius: '4px', color: 'var(--text-secondary)' }}>
+              標準的なm率（40%台）です。さらに利益を伸ばすために単価アップを狙えるか検討しましょう。
+            </div>
+          ) : (
+            <div style={{ padding: '8px', background: 'rgba(255, 82, 82, 0.15)', borderLeft: '4px solid #ff5252', borderRadius: '4px', color: '#ff5252' }}>
+              ⚠️ 薄利多売の体質になっています（m率40%未満）。少しでも販売単価(P)を上げるか、安く仕入れる工夫をしないと、数を売っても利益が出ない苦しい展開になります。
+            </div>
+          )}
+        </div>
       </div>
 
       {/* セクション3: P・V・M・Q 分析と工場稼働率 */}
