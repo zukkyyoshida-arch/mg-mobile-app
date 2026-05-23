@@ -39,6 +39,37 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
     }
   };
 
+  // 材料/仕掛品/製品の帳簿残高 (理論値)
+  const matTheoretical = results.mat.endingCount;
+  const wipTheoretical = results.wip.endingCount;
+  const prodTheoretical = results.prod.endingCount;
+  const cashTheoretical = results.bookEndingCash;
+
+  // 在庫不一致チェック
+  const matMatches = matTheoretical === actualMaterials;
+  const wipMatches = wipTheoretical === actualWip;
+  const prodMatches = prodTheoretical === actualProduct;
+
+  const handleNextStep = () => {
+    const matDiff = matTheoretical - actualMaterials;
+    const wipDiff = wipTheoretical - actualWip;
+    const prodDiff = prodTheoretical - actualProduct;
+
+    if (matDiff < 0 || wipDiff < 0 || prodDiff < 0) {
+      alert(`⚠️ 盤上の個数が理論値よりも多くなっています。\n余分な個数（材料:${matDiff<0 ? -matDiff : 0}, 仕掛品:${wipDiff<0 ? -wipDiff : 0}, 製品:${prodDiff<0 ? -prodDiff : 0}）はストッカーに戻し、理論値に合わせてから次へ進んでください。`);
+      return;
+    }
+
+    if (matDiff > 0 || wipDiff > 0 || prodDiff > 0) {
+      const confirm = window.confirm(`⚠️ 盤上の個数が不足しています（材料:-${matDiff}, 仕掛品:-${wipDiff}, 製品:-${prodDiff}）。\nこのまま進むと、不足分は「特別損失（紛失ロス）」として計上されますがよろしいですか？`);
+      if (!confirm) {
+        return;
+      }
+    }
+
+    setCurrentStep(2);
+  };
+
   const confirmPeriodEnd = () => {
     const newTransactions = [];
     
@@ -64,6 +95,20 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
       newTransactions.push({ id: Date.now().toString() + "-ins", category: "ソ", quantity: 1, amount: insurance, price: insurance, timestamp: new Date(Date.now() + 3).toISOString(), customName: "社会保険料の支払", customShortName: "保険" });
     }
 
+    const matDiff = matTheoretical - actualMaterials;
+    const wipDiff = wipTheoretical - actualWip;
+    const prodDiff = prodTheoretical - actualProduct;
+
+    if (matDiff > 0) {
+      newTransactions.push({ id: Date.now().toString() + "-loss-mat", category: "棚卸ロス(材料)", quantity: matDiff, amount: 0, price: 0, timestamp: new Date(Date.now() + 4).toISOString(), customName: "期末棚卸による材料紛失", customShortName: "ロス" });
+    }
+    if (wipDiff > 0) {
+      newTransactions.push({ id: Date.now().toString() + "-loss-wip", category: "棚卸ロス(仕掛品)", quantity: wipDiff, amount: 0, price: 0, timestamp: new Date(Date.now() + 5).toISOString(), customName: "期末棚卸による仕掛品紛失", customShortName: "ロス" });
+    }
+    if (prodDiff > 0) {
+      newTransactions.push({ id: Date.now().toString() + "-loss-prod", category: "棚卸ロス(製品)", quantity: prodDiff, amount: 0, price: 0, timestamp: new Date(Date.now() + 6).toISOString(), customName: "期末棚卸による製品紛失", customShortName: "ロス" });
+    }
+
     if (newTransactions.length === 0) {
       alert("期末に処理する給与・支払いがありません。\n成績発表画面を開きます。");
       setCurrentStep(1); 
@@ -77,16 +122,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
     if (onShowPerformance) onShowPerformance();
   };
 
-  // 材料/仕掛品/製品の帳簿残高 (理論値)
-  const matTheoretical = results.mat.endingCount;
-  const wipTheoretical = results.wip.endingCount;
-  const prodTheoretical = results.prod.endingCount;
-  const cashTheoretical = results.bookEndingCash;
 
-  // 在庫不一致チェック
-  const matMatches = matTheoretical === actualMaterials;
-  const wipMatches = wipTheoretical === actualWip;
-  const prodMatches = prodTheoretical === actualProduct;
 
   return (
     <div style={{ padding: '0 0 24px 0' }}>
@@ -199,7 +235,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                 </div>
                 
                 <button 
-                  onClick={() => setCurrentStep(2)} 
+                  onClick={handleNextStep} 
                   className="btn-premium" 
                   style={{ 
                     width: '100%', 

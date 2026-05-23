@@ -34,6 +34,9 @@ export const CATEGORIES = {
   "火災": { label: "火災 (材料ロス)", type: "outflow", color: "red", symbol: "火災", isCash: false, shortName: "火災", actionName: "火災による材料喪失" },
   "製造ミス": { label: "製造ミス (仕掛品ロス)", type: "outflow", color: "red", symbol: "ミス", isCash: false, shortName: "ミス", actionName: "製造ミスによる仕掛品喪失" },
   "盗難": { label: "盗難 (製品ロス)", type: "outflow", color: "red", symbol: "盗難", isCash: false, shortName: "盗難", actionName: "盗難による製品喪失" },
+  "棚卸ロス(材料)": { label: "材料紛失ロス", type: "outflow", color: "red", symbol: "特損", isCash: false, shortName: "材料ロス", actionName: "棚卸時の材料紛失" },
+  "棚卸ロス(仕掛品)": { label: "仕掛品紛失ロス", type: "outflow", color: "red", symbol: "特損", isCash: false, shortName: "仕掛ロス", actionName: "棚卸時の仕掛品紛失" },
+  "棚卸ロス(製品)": { label: "製品紛失ロス", type: "outflow", color: "red", symbol: "特損", isCash: false, shortName: "製品ロス", actionName: "棚卸時の製品紛失" },
   "タ": { label: "営業外費用", type: "outflow", color: "blue", symbol: "タ", shortName: "外費", actionName: "営業外費用の支払" },
   "チ": { label: "研究開発費", type: "outflow", color: "blue", symbol: "チ", shortName: "研究", actionName: "研究開発の実行" },
   "ツ": { label: "材料現金仕入", type: "outflow", color: "green", symbol: "ツ", shortName: "材料", actionName: "材料の現金仕入" },
@@ -202,6 +205,30 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
           }
           if (insuranceChips > 0) {
             insuranceChips -= 1;
+          }
+          break;
+        }
+        case "棚卸ロス(材料)": {
+          const lostMat = Math.min(Math.max(0, currentMatCount), qty);
+          if (lostMat > 0) {
+            totalFireCount += lostMat;
+            currentMatCount -= lostMat;
+          }
+          break;
+        }
+        case "棚卸ロス(仕掛品)": {
+          const lostWip = Math.min(Math.max(0, currentWipCount), qty);
+          if (lostWip > 0) {
+            totalMissCount += lostWip;
+            currentWipCount -= lostWip;
+          }
+          break;
+        }
+        case "棚卸ロス(製品)": {
+          const lostProd = Math.min(Math.max(0, currentProdCount), qty);
+          if (lostProd > 0) {
+            totalTheftCount += lostProd;
+            currentProdCount -= lostProd;
           }
           break;
         }
