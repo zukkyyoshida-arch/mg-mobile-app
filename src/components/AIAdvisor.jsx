@@ -10,43 +10,55 @@ export default function AIAdvisor({ results, currentPeriod }) {
     return (
       <button 
         onClick={() => setIsOpen(true)}
+        className="glass-card"
         style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          width: '60px',
-          height: '60px',
-          borderRadius: '30px',
-          background: 'linear-gradient(135deg, #00C6FF, #0072FF)',
+          width: '100%',
+          padding: '12px 16px',
+          borderRadius: '12px',
+          background: 'linear-gradient(135deg, rgba(0, 198, 255, 0.15), rgba(0, 114, 255, 0.15))',
           color: 'white',
-          border: 'none',
-          boxShadow: '0 8px 16px rgba(0, 114, 255, 0.4)',
-          fontSize: '1.5rem',
+          border: '1px solid rgba(0, 198, 255, 0.3)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+          fontSize: '1rem',
+          fontWeight: 'bold',
           cursor: 'pointer',
-          zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          gap: '8px'
         }}
       >
-        💡
+        <span style={{ fontSize: '1.2rem' }}>💡</span> AI経営診断ダッシュボードを開く
       </button>
     );
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '24px',
-      right: '24px',
-      width: '380px',
-      height: '600px',
-      maxHeight: '80vh',
-      backgroundColor: 'var(--bg-card)',
-      borderRadius: '16px',
-      boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      display: 'flex',
+    <>
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          zIndex: 999,
+          backdropFilter: 'blur(4px)'
+        }}
+        onClick={() => setIsOpen(false)}
+      />
+      <div style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '90%',
+        maxWidth: '400px',
+        height: '600px',
+        maxHeight: '80vh',
+        backgroundColor: 'var(--bg-card)',
+        borderRadius: '16px',
+        boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        display: 'flex',
       flexDirection: 'column',
       zIndex: 1000,
       overflow: 'hidden'
@@ -159,8 +171,8 @@ export default function AIAdvisor({ results, currentPeriod }) {
             </div>
           )}
         </section>
-        
       </div>
     </div>
+    </>
   );
 }

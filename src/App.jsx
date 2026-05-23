@@ -5,7 +5,6 @@ import FinancialStatements from './components/FinancialStatements';
 import PeriodEndWizard from './components/PeriodEndWizard';
 import ManagementPlan from './components/ManagementPlan';
 import PriorPeriodCarryover from './components/PriorPeriodCarryover';
-import AIAdvisor from './components/AIAdvisor';
 
 // 安全な localStorage ラッパー
 const safeStorage = {
@@ -209,6 +208,7 @@ function App() {
             <FinancialStatements 
               results={results} 
               carryover={currentData.carryover}
+              currentPeriod={currentPeriod}
             />
           </div>
         )}
@@ -306,13 +306,6 @@ function App() {
           設定
         </button>
       </nav>
-
-      {/* AIアドバイザー機能 */}
-      <AIAdvisor 
-        ledger={currentData.ledger} 
-        results={results} 
-        currentPeriod={currentPeriod} 
-      />
     </div>
   );
 }
