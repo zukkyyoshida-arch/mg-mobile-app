@@ -1668,6 +1668,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         {MARKETS.filter(m => m.id !== 'stocker').map(m => {
                           const qty = salesData[m.id]?.qty || 0;
                           const prc = salesData[m.id]?.price || '';
+                          const maxPrice = MARKET_MAX_PRICES[m.id] || 40;
                           
                           return (
                             <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px' }}>
@@ -1679,23 +1680,31 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                                     type="number"
                                     placeholder="単価"
                                     value={prc}
-                                    onChange={(e) => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], price: e.target.value } }))}
+                                    onChange={(e) => {
+                                      let val = e.target.value === '' ? '' : Number(e.target.value);
+                                      if (val !== '' && val > maxPrice) val = maxPrice;
+                                      setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], price: val } }));
+                                    }}
                                     style={{ width: '80px', padding: '8px 8px', fontSize: '1.1rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', color: 'white', textAlign: 'center' }}
                                   />
+                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>MAX: {maxPrice}</span>
                                 </div>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <button 
-                                  type="button"
-                                  onClick={() => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: Math.max(0, qty - 1) } }))}
-                                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                >-</button>
-                                <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
-                                <button 
-                                  type="button"
-                                  onClick={() => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: qty + 1 } }))}
-                                  style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                >+</button>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'right' }}>MAX: {m.max}個</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <button 
+                                    type="button"
+                                    onClick={() => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: Math.max(0, qty - 1) } }))}
+                                    style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  >-</button>
+                                  <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
+                                  <button 
+                                    type="button"
+                                    onClick={() => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: Math.min(m.max, qty + 1) } }))}
+                                    style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  >+</button>
+                                </div>
                               </div>
                             </div>
                           );
