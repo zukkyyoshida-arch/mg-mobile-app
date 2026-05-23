@@ -515,6 +515,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       quantity: finalQuantity,
       price: finalPrice,
       amount: finalAmount || (finalQuantity * finalPrice),
+      customName: selectedCategory === 'セ' ? '広告費の支払' : undefined,
+      customShortName: selectedCategory === 'セ' ? '広告' : undefined,
       workersHired: selectedCategory === '採用' ? (Number(workersHired) || 0) : (selectedCategory === '配置転換' ? (Number(transferS2W) || 0) - (Number(transferW2S) || 0) : 0),
       salesmenHired: selectedCategory === '採用' ? (Number(salesmenHired) || 0) : (selectedCategory === '配置転換' ? (Number(transferW2S) || 0) - (Number(transferS2W) || 0) : 0),
       largeMachines: selectedCategory === 'ケ' ? (machineQuantities.large || 0) : 0,
