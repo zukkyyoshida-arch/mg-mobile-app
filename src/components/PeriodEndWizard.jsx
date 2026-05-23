@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SALARY_TABLE } from '../utils/calculations';
 
-function PeriodEndWizard({ carryover, ledger, actuals = {}, onUpdateActuals, onUpdateLedger, currentPeriod, results }) {
+function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdateLedger, currentPeriod, results, onShowPerformance }) {
   const [currentStep, setCurrentStep] = useState(1);
   
   // Step 1: Inventory state
@@ -65,14 +65,16 @@ function PeriodEndWizard({ carryover, ledger, actuals = {}, onUpdateActuals, onU
     }
 
     if (newTransactions.length === 0) {
-      alert("期末に処理する給与・支払いがありません。");
-      setCurrentStep(1); // Go back or show completed
+      alert("期末に処理する給与・支払いがありません。\n成績発表画面を開きます。");
+      setCurrentStep(1); 
+      if (onShowPerformance) onShowPerformance();
       return;
     }
     
     onUpdateLedger([...ledger, ...newTransactions]);
-    alert("給与などの期末データを出納帳に登録しました！");
-    setCurrentStep(1); // Reset for next time or stay at step 2
+    alert("給与などの期末データを出納帳に登録しました！\n成績発表画面を開きます。");
+    setCurrentStep(1);
+    if (onShowPerformance) onShowPerformance();
   };
 
   // 材料/仕掛品/製品の帳簿残高 (理論値)

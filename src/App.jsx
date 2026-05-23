@@ -5,6 +5,7 @@ import FinancialStatements from './components/FinancialStatements';
 import PeriodEndWizard from './components/PeriodEndWizard';
 import ManagementPlan from './components/ManagementPlan';
 import PriorPeriodCarryover from './components/PriorPeriodCarryover';
+import PerformanceReport from './components/PerformanceReport';
 
 // 安全な localStorage ラッパー
 const safeStorage = {
@@ -22,6 +23,9 @@ function App() {
     const saved = safeStorage.getItem('mg_theme');
     return saved || 'dark';
   });
+
+  // 成績表表示の状態
+  const [showPerformanceReport, setShowPerformanceReport] = useState(false);
 
   // 全期 (1期〜5期) のデータ管理
   const [periods, setPeriods] = useState(() => {
@@ -242,6 +246,7 @@ function App() {
               results={results} 
               carryover={currentData.carryover}
               currentPeriod={currentPeriod}
+              onShowPerformance={() => setShowPerformanceReport(true)}
             />
           </div>
         )}
@@ -256,6 +261,7 @@ function App() {
               onUpdateLedger={(newLedger) => updatePeriodData('ledger', newLedger)}
               currentPeriod={currentPeriod}
               results={results}
+              onShowPerformance={() => setShowPerformanceReport(true)}
             />
           </div>
         )}
@@ -283,6 +289,15 @@ function App() {
               resetAllData={resetAllData}
             />
           </div>
+        )}
+
+        {showPerformanceReport && (
+          <PerformanceReport
+            ledger={currentData.ledger}
+            results={results}
+            currentPeriod={currentPeriod}
+            onClose={() => setShowPerformanceReport(false)}
+          />
         )}
       </main>
 

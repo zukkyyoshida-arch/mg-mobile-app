@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AIAdvisor from './AIAdvisor';
 
-function FinancialStatements({ results, carryover, currentPeriod }) {
+function FinancialStatements({ results, carryover, currentPeriod, onShowPerformance }) {
   // Defensive defaults for possible undefined props
   const safeCarry = carryover || {
     materialsValue: 0,
@@ -74,25 +74,21 @@ function FinancialStatements({ results, carryover, currentPeriod }) {
       </div>
 
       {/* 決算書タブ切り替え */}
-      <div className="segmented-control">
-        <button
-          onClick={() => setStatementTab('pl')}
-          className={`segment-item ${statementTab === 'pl' ? 'active' : ''}`}
-        >
-          変動損益計算書 (P/L)
-        </button>
-        <button
-          onClick={() => setStatementTab('bs')}
-          className={`segment-item ${statementTab === 'bs' ? 'active' : ''}`}
-        >
-          貸借対照表 (B/S)
-        </button>
-        <button
-          onClick={() => setStatementTab('cf')}
-          className={`segment-item ${statementTab === 'cf' ? 'active' : ''}`}
-        >
-          資金計算書 (C/F)
-        </button>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
+        <button onClick={() => setStatementTab('pl')} className={`btn-secondary ${statementTab === 'pl' ? 'btn-primary' : ''}`} style={{ whiteSpace: 'nowrap', padding: '8px 12px' }}>P/L (損益)</button>
+        <button onClick={() => setStatementTab('bs')} className={`btn-secondary ${statementTab === 'bs' ? 'btn-primary' : ''}`} style={{ whiteSpace: 'nowrap', padding: '8px 12px' }}>B/S (貸借)</button>
+        <button onClick={() => setStatementTab('cf')} className={`btn-secondary ${statementTab === 'cf' ? 'btn-primary' : ''}`} style={{ whiteSpace: 'nowrap', padding: '8px 12px' }}>C/F (資金)</button>
+        {onShowPerformance && (
+          <button 
+            onClick={onShowPerformance} 
+            style={{ 
+              whiteSpace: 'nowrap', padding: '8px 12px', background: 'var(--color-accent)', 
+              color: 'black', border: 'none', borderRadius: '8px', fontWeight: 'bold', marginLeft: 'auto'
+            }}
+          >
+            📊 成績発表(KPI)
+          </button>
+        )}
       </div>
 
       {/* ==================== 1. 変動損益計算書 (P/L) ==================== */}
