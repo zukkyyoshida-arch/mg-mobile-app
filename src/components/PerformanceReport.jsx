@@ -56,7 +56,43 @@ export default function PerformanceReport({ ledger, results, currentPeriod, onCl
         </div>
       </div>
 
-      {/* セクション2: P・V・M・Q 分析 */}
+      {/* セクション2: 経営コンサル・タラレバ分析 */}
+      <div className="report-section" style={{ background: 'rgba(255, 215, 0, 0.05)', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
+        <h3 className="report-title" style={{ color: '#FFD700' }}>💡 コンサルタントのアドバイス</h3>
+        
+        {analytics.financials.G < 0 ? (
+          <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>
+            <div style={{ marginBottom: '8px', color: '#ff5252', fontWeight: 'bold' }}>⚠️ 赤字決算でした（営業利益: {analytics.financials.G}万）</div>
+            {analytics.M > 0 && analytics.simulation.bepQty !== null ? (
+              <>
+                <p style={{ margin: '0 0 8px 0' }}>
+                  今の1個あたりの粗利(M: {analytics.M.toFixed(1)}万)で、固定費(F: {analytics.financials.F}万)を回収するためには、<strong>最低 {analytics.simulation.bepQty} 個</strong>売る必要がありました。（損益分岐点）
+                </p>
+                <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#ffcc80' }}>
+                  👉 あと <strong>{analytics.simulation.remainingForBEP} 個</strong> 多く売れていれば黒字でした！次期は販売数量を増やすか、販売単価を上げてMを改善しましょう。
+                </div>
+              </>
+            ) : (
+              <p style={{ margin: 0, color: '#ffcc80' }}>
+                👉 1個あたりの粗利(M)がマイナスまたはゼロです。「安売りしすぎ」か「仕入が高すぎ」ます。まずは単価(P)を上げるか、安く材料(V)を仕入れることに集中してください。
+              </p>
+            )}
+          </div>
+        ) : (
+          <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>
+            <div style={{ marginBottom: '8px', color: '#4caf50', fontWeight: 'bold' }}>🎉 黒字達成おめでとうございます！（営業利益: +{analytics.financials.G}万）</div>
+            <p style={{ margin: '0 0 8px 0' }}>
+              損益分岐点（最低販売数）は <strong>{analytics.simulation.bepQty} 個</strong> でした。それを超えてしっかりと売上を作れています。
+            </p>
+            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#81c784' }}>
+              👉 あなたの安全余裕額は <strong>{analytics.simulation.safetyMargin} 万</strong> です。<br/>
+              つまり、今期あとこれだけ広告や研究開発に「追加投資」しても、赤字にはなりませんでした。次期はさらに強気でチップを買いに行っても大丈夫です！
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* セクション3: P・V・M・Q 分析と工場稼働率 */}
       <div className="report-section">
         <h3 className="report-title">📈 営業・製造パフォーマンス (PVMQ)</h3>
         <div className="kpi-grid">
@@ -71,41 +107,80 @@ export default function PerformanceReport({ ledger, results, currentPeriod, onCl
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>総仕入数: {analytics.totals.purchaseQty}個</div>
           </div>
         </div>
+        
         <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
-          <div className="kpi-card" style={{ flex: 1 }}>
+          <div className="kpi-card" style={{ flex: 1, borderBottom: '3px solid var(--mg-pink)' }}>
             <div className="kpi-label">M (1個あたり粗利)</div>
             <div className="kpi-value" style={{ color: 'var(--mg-pink)' }}>¥{analytics.M.toFixed(1)}万</div>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>高いほど利益が出やすい体質</div>
           </div>
-          <div className="kpi-card" style={{ flex: 1, background: 'rgba(255, 82, 82, 0.15)', border: '1px solid rgba(255, 82, 82, 0.3)' }}>
-            <div className="kpi-label" style={{ color: '#ff5252' }}>ロス (火災/ミス/盗難)</div>
-            <div className="kpi-value" style={{ color: '#ff5252' }}>{analytics.operations.lossQty}個</div>
+        </div>
+
+        <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ fontSize: '0.85rem' }}>🏭 工場稼働率（生産スピード）</span>
+            <span style={{ fontWeight: 'bold' }}>{analytics.operations.capacityUtilization}%</span>
+          </div>
+          <div className="bar-container" style={{ marginTop: 0, height: '12px' }}>
+            <div className="bar-fill" style={{ 
+              width: `${Math.min(100, analytics.operations.capacityUtilization)}%`, 
+              background: analytics.operations.capacityUtilization < 50 ? '#ffb74d' : '#4caf50' 
+            }} />
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+            今期の最大生産可能数 <strong>{analytics.operations.maxCapacity}個</strong> に対し、実際に完成させたのは <strong>{analytics.operations.completedQty}個</strong> です。
+            {analytics.operations.capacityUtilization < 50 && " 機会損失が起きています。ワーカーをもっと生産に回しましょう！"}
           </div>
         </div>
       </div>
 
-      {/* セクション3: 戦略投資 */}
+      {/* セクション4: 戦略投資とROI */}
       <div className="report-section">
-        <h3 className="report-title">💡 戦略投資パフォーマンス</h3>
-        <div className="kpi-grid">
-          <div className="kpi-card" style={{ borderLeft: '4px solid var(--mg-blue)' }}>
-            <div className="kpi-label">広告投資 (セ)</div>
-            <div className="kpi-value">¥{analytics.investments.ads.amount}万</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>購入回数: {analytics.investments.ads.count}回 / 保有: {analytics.investments.ads.active}枚</div>
+        <h3 className="report-title">💡 戦略投資とそのリターン(ROI)</h3>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* 広告 */}
+          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', borderLeft: '4px solid var(--mg-yellow)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 'bold', color: 'var(--mg-yellow)' }}>広告投資 (セ)</span>
+              <span>投資額: ¥{analytics.investments.ads.amount}万</span>
+            </div>
+            <div style={{ fontSize: '0.8rem', marginTop: '8px', color: 'var(--text-secondary)' }}>
+              広告を活用して販売できた実績: <strong>{analytics.investments.ads.returnsQty}個</strong> (売上: ¥{analytics.investments.ads.returnsAmount}万)<br/>
+              {analytics.investments.ads.amount > 0 && analytics.investments.ads.returnsQty === 0 && (
+                <span style={{ color: '#ffb74d' }}>⚠️ チップを買ったのに使えていません！「独占販売」を狙いましょう。</span>
+              )}
+            </div>
           </div>
-          <div className="kpi-card" style={{ borderLeft: '4px solid var(--mg-yellow)' }}>
-            <div className="kpi-label">研究開発 (チ)</div>
-            <div className="kpi-value">¥{analytics.investments.rd.amount}万</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>購入回数: {analytics.investments.rd.count}回 / 保有: {analytics.investments.rd.active}枚</div>
+
+          {/* 研究開発 */}
+          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', borderLeft: '4px solid var(--mg-blue)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 'bold', color: 'var(--mg-blue)' }}>研究開発 (チ)</span>
+              <span>投資額: ¥{analytics.investments.rd.amount}万</span>
+            </div>
+            <div style={{ fontSize: '0.8rem', marginTop: '8px', color: 'var(--text-secondary)' }}>
+              青チップを活用して販売できた実績: <strong>{analytics.investments.rd.returnsQty}個</strong> (売上: ¥{analytics.investments.rd.returnsAmount}万)<br/>
+              {analytics.investments.rd.amount > 0 && analytics.investments.rd.returnsQty === 0 && (
+                <span style={{ color: '#ffb74d' }}>⚠️ 研究開発は完了していますが、高単価販売に結びついていません。</span>
+              )}
+            </div>
           </div>
-          <div className="kpi-card" style={{ borderLeft: '4px solid var(--mg-green)', gridColumn: 'span 2' }}>
-            <div className="kpi-label">設備投資 (ケ)</div>
-            <div className="kpi-value">¥{analytics.investments.equipment.amount}万</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>新規購入: {analytics.investments.equipment.count}台(アタッチメント含)</div>
+          
+          {/* 設備 */}
+          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', borderLeft: '4px solid var(--mg-green)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 'bold', color: 'var(--mg-green)' }}>設備投資 (ケ)</span>
+              <span>投資額: ¥{analytics.investments.equipment.amount}万</span>
+            </div>
+            <div style={{ fontSize: '0.8rem', marginTop: '4px', color: 'var(--text-secondary)' }}>
+              新規購入: {analytics.investments.equipment.count}台 (アタッチメント含)
+            </div>
           </div>
         </div>
       </div>
 
-      {/* セクション4: コスト構造 (MQ vs F) */}
+      {/* セクション5: コスト構造 (MQ vs F) */}
       <div className="report-section">
         <h3 className="report-title">🏢 コスト構造 (MQ vs F)</h3>
         

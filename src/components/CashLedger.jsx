@@ -217,7 +217,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
           Object.entries(riskMonopolyAdQtys).forEach(([market, qty]) => {
             if (qty > 0) {
               totalQ += qty;
-              newTransactions.push({ id: Date.now().toString() + "-sale-" + market, category: cat, quantity: qty, amount: qty * adPrices[market], price: adPrices[market], timestamp: new Date(Date.now() + Math.random()).toISOString() });
+              newTransactions.push({ id: Date.now().toString() + "-sale-" + market, category: cat, quantity: qty, amount: qty * adPrices[market], price: adPrices[market], timestamp: new Date(Date.now() + Math.random()).toISOString(), usedAd: true });
             }
           });
           if (totalQ <= 0) {
@@ -230,7 +230,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
             return;
           }
           const cat = riskSaleType === 'credit' ? 'ネ' : 'キ';
-          newTransactions.push({ id: Date.now().toString() + "-sale", category: cat, quantity: q, amount: q * p, price: p, timestamp });
+          newTransactions.push({ id: Date.now().toString() + "-sale", category: cat, quantity: q, amount: q * p, price: p, timestamp, usedRD: riskAction === 'rd_success' });
         } else if (riskAction === 'special_mat' || riskAction === 'common_mat') {
           if (q <= 0) {
             alert("購入する数量を入力してください");

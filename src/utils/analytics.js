@@ -11,17 +11,11 @@ export function calculateAnalytics(ledger, results) {
   let totalPurchaseAmount = 0;
 
   // 戦略投資・ロスの集計用
-  let adInvestmentAmount = 0;
-  let adInvestmentQty = 0;
-  
-  let rdInvestmentAmount = 0;
-  let rdInvestmentQty = 0;
-  
-  let equipmentInvestmentAmount = 0;
-  let machineCount = 0;
-
-  let lossQty = 0;
-  let factoringCost = 0;
+  let adSalesAmount = 0;
+  let adSalesQty = 0;
+  let rdSalesAmount = 0;
+  let rdSalesQty = 0;
+  let completedQty = 0;
 
   // 全トランザクションを走査
   ledger.forEach(entry => {
@@ -29,6 +23,15 @@ export function calculateAnalytics(ledger, results) {
     if (entry.category === "キ" || entry.category === "ネ") {
       totalSalesQty += entry.quantity || 0;
       totalSalesAmount += entry.amount || 0;
+      
+      if (entry.usedAd) {
+        adSalesQty += entry.quantity || 0;
+        adSalesAmount += entry.amount || 0;
+      }
+      if (entry.usedRD) {
+        rdSalesQty += entry.quantity || 0;
+        rdSalesAmount += entry.amount || 0;
+      }
     }
     
     // 2. 仕入（ツ・ノ）
@@ -40,7 +43,7 @@ export function calculateAnalytics(ledger, results) {
     // 3. 広告投資（セ ※クレーム処理などを除外するためカスタム名で判定）
     if (entry.category === "セ" && entry.customShortName === "広告") {
       adInvestmentAmount += entry.amount || 0;
-      adInvestmentQty += entry.quantity || 1; // 数量がなければ1回とカウント
+      adInvestmentQty += entry.quantity || 1; 
     }
 
     // 4. 研究開発投資（チ）
@@ -57,7 +60,6 @@ export function calculateAnalytics(ledger, results) {
 
     // 6. 各種ロス（火災、製造ミス、盗難）
     if (["火災", "製造ミス", "盗難"].includes(entry.category)) {
-      // 火災は全損だが記録上は quantity:1 になっていることが多いので、results 側のロストカウントを後で使うか、ここで大まかに拾う
       if (entry.category !== "火災") {
         lossQty += entry.quantity || 1;
       }
@@ -67,40 +69,48 @@ export function calculateAnalytics(ledger, results) {
     if (entry.category === "売掛割引") {
       factoringCost += entry.amount || 0;
     }
+    
+    // 8. 製品の完成 (サ)
+    if (entry.category === "サ") {
+      completedQty += entry.quantity || 0;
+    }
   });
 
-  // 結果オブジェクトから火災ロスを正確に拾う
-  // 火災は結果（results.mat.fireCount）で正確な喪失数がわかる
   if (results?.mat?.fireCount) {
     lossQty += results.mat.fireCount;
   }
 
   // --- KPI の算出 ---
   
-  // P: 平均販売単価 (Price)
+  // P, V, M, Q
   const P = totalSalesQty > 0 ? (totalSalesAmount / totalSalesQty) : 0;
-  
-  // V: 平均仕入単価 (Variable Cost)
   const V = totalPurchaseQty > 0 ? (totalPurchaseAmount / totalPurchaseQty) : 0;
-  
-  // M: 1個あたりの限界利益 (Marginal Profit Unit)
   const M = P - V;
-  
-  // Q: 販売数量 (Quantity)
   const Q = totalSalesQty;
 
-  // MQ: 総限界利益
-  // ※理論値は M * Q だが、実際は期首在庫の原価なども絡むため results の粗利を使うのが正確
   const actualMQ = results?.grossProfit || 0;
-
-  // F: 固定費
   const F = results?.fixedCosts || 0;
-
-  // G: 営業利益
   const G = results?.operatingProfit || 0;
 
-  // 総合ランクの判定 (自己資本と利益に基づく独自ロジック)
-  // 例: 黒字で自己資本300以上ならS、黒字ならA、赤字ならB、債務超過ならC
+  // 目標達成シミュレーション (BEPと安全余裕度)
+  // BEP数量 = F / M (Mが0以下の場合は計算不可)
+  let bepQty = M > 0 ? Math.ceil(F / M) : null;
+  let remainingForBEP = null;
+  let safetyMargin = 0;
+  
+  if (bepQty !== null) {
+    if (Q < bepQty) {
+      remainingForBEP = bepQty - Q;
+    } else {
+      safetyMargin = actualMQ - F;
+    }
+  }
+
+  // 工場稼働率 (PAC Utilization)
+  const maxCapacity = results?.productionCapacity || 0;
+  const capacityUtilization = maxCapacity > 0 ? Math.round((completedQty / maxCapacity) * 100) : 0;
+
+  // 総合ランクの判定
   let rank = "C";
   const netAssets = results?.totalNetAssets || 0;
   
@@ -111,11 +121,6 @@ export function calculateAnalytics(ledger, results) {
   } else if (netAssets > 0) {
     rank = "B";
   }
-
-  // リターン計算用（簡易）
-  // ※実際はどの売上がどのチップによるものか完全な紐付けは難しいが、
-  // 「広告チップを持っている状態での売上」として恩恵を算出可能。
-  // 今回はシンプルに、投資額とチップ保有数を返す。
 
   return {
     rank,
@@ -134,14 +139,34 @@ export function calculateAnalytics(ledger, results) {
       F,
       G
     },
+    simulation: {
+      bepQty,
+      remainingForBEP,
+      safetyMargin
+    },
     investments: {
-      ads: { amount: adInvestmentAmount, count: adInvestmentQty, active: results?.activeAdChips || 0 },
-      rd: { amount: rdInvestmentAmount, count: rdInvestmentQty, active: results?.activeRdChips || 0 },
+      ads: { 
+        amount: adInvestmentAmount, 
+        count: adInvestmentQty, 
+        active: results?.activeAdChips || 0,
+        returnsAmount: adSalesAmount,
+        returnsQty: adSalesQty
+      },
+      rd: { 
+        amount: rdInvestmentAmount, 
+        count: rdInvestmentQty, 
+        active: results?.activeRdChips || 0,
+        returnsAmount: rdSalesAmount,
+        returnsQty: rdSalesQty
+      },
       equipment: { amount: equipmentInvestmentAmount, count: machineCount }
     },
     operations: {
       lossQty,
-      factoringCost
+      factoringCost,
+      completedQty,
+      maxCapacity,
+      capacityUtilization
     }
   };
 }
