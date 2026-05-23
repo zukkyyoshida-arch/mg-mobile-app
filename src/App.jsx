@@ -78,6 +78,29 @@ function App() {
   // リアルタイム財務計算を実行
   const results = calculateFinancials(currentData.carryover, currentData.ledger, currentData.actuals, currentPeriod);
 
+  // バグ救済用：すでに期をまたいでしまっていて未払税金(taxes)が0になっている場合、自動補完する
+  useEffect(() => {
+    if (currentPeriod > 1 && !currentData.carryover.taxes) {
+      const prevData = periods[currentPeriod - 1];
+      if (prevData) {
+        const prevResults = calculateFinancials(prevData.carryover, prevData.ledger, prevData.actuals, currentPeriod - 1);
+        const unpaidTax = prevResults.bs?.unpaidTax || 0;
+        if (unpaidTax > 0) {
+          setPeriods(prev => ({
+            ...prev,
+            [currentPeriod]: {
+              ...prev[currentPeriod],
+              carryover: {
+                ...prev[currentPeriod].carryover,
+                taxes: unpaidTax
+              }
+            }
+          }));
+        }
+      }
+    }
+  }, [currentPeriod, currentData.carryover.taxes, periods]);
+
   // データの更新関数群
   const updatePeriodData = (field, newData) => {
     setPeriods(prev => ({
