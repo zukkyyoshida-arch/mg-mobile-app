@@ -11,6 +11,18 @@ export function calculateAnalytics(ledger, results) {
   let totalPurchaseAmount = 0;
 
   // 戦略投資・ロスの集計用
+  let adInvestmentAmount = 0;
+  let adInvestmentQty = 0;
+  
+  let rdInvestmentAmount = 0;
+  let rdInvestmentQty = 0;
+  
+  let equipmentInvestmentAmount = 0;
+  let machineCount = 0;
+
+  let lossQty = 0;
+  let factoringCost = 0;
+
   let adSalesAmount = 0;
   let adSalesQty = 0;
   let rdSalesAmount = 0;
