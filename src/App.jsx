@@ -138,6 +138,7 @@ function App() {
       loan: prevBS.loans,
       receivables: prevBS.receivables,
       payables: prevBS.payables,
+      taxes: prevBS.unpaidTax,
       retainedEarnings: prevBS.retainedEarnings,
       capital: prevBS.capital,
       workers: prevResults.workers || 0,

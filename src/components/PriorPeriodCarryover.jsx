@@ -300,12 +300,24 @@ function PriorPeriodCarryover({
                       className="form-input"
                     />
                   </div>
+                </div>
+                <div className="grid-2" style={{ marginTop: '8px' }}>
                   <div className="form-group">
                     <label className="form-label">⑲ 買掛金 (万)</label>
                     <input
                       type="number"
                       value={carryover.payables || ''}
                       onChange={(e) => handleInputChange('payables', e.target.value)}
+                      placeholder="0"
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">⑳ 未払税金 (万)</label>
+                    <input
+                      type="number"
+                      value={carryover.taxes || ''}
+                      onChange={(e) => handleInputChange('taxes', e.target.value)}
                       placeholder="0"
                       className="form-input"
                     />
