@@ -170,7 +170,10 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
 
         {/* 4. 値決め診断 (m率) */}
         <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>
-          <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>💎 値決め診断（m率 = {analytics.mRatio}%）</div>
+          <div style={{ marginBottom: '8px', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+            💎 値決め診断（m率 = {analytics.mRatio}%）
+            {analytics.mRatio >= 50 && <span className="god-tier-badge">🏅 God Tier</span>}
+          </div>
           {analytics.mRatio >= 50 ? (
             <div style={{ padding: '8px', background: 'rgba(76, 175, 80, 0.15)', borderLeft: '4px solid #4caf50', borderRadius: '4px', color: '#81c784' }}>
               ✅ m率50%以上！高付加価値な素晴らしい商売ができています。この価格設定を維持しましょう。

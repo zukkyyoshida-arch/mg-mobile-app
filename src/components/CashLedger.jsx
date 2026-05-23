@@ -1661,9 +1661,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                   
                   return (
                     <div style={{ background: 'rgba(233, 30, 99, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(233, 30, 99, 0.3)' }}>
-                      <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-pink)', marginBottom: '12px' }}>
-                        販売する市場・数量・単価を入力
-                      </h4>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-pink)', margin: 0 }}>
+                          販売する市場・数量・単価を入力
+                        </h4>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          手持在庫 (完成品): <strong style={{ color: 'white', fontSize: '1rem' }}>{results?.prod?.endingCount || 0}</strong> 個
+                        </span>
+                      </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginBottom: '16px' }}>
                         {MARKETS.filter(m => m.id !== 'stocker').map(m => {
                           const qty = salesData[m.id]?.qty || 0;
@@ -1701,8 +1706,13 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                                   <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
                                   <button 
                                     type="button"
-                                    onClick={() => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: Math.min(m.max, qty + 1) } }))}
-                                    style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    onClick={() => {
+                                      const remainingInventory = (results?.prod?.endingCount || 0) - totalQty;
+                                      if (remainingInventory > 0 && qty < m.max) {
+                                        setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: qty + 1 } }));
+                                      }
+                                    }}
+                                    style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: ((results?.prod?.endingCount || 0) - totalQty > 0 && qty < m.max) ? 1 : 0.5 }}
                                   >+</button>
                                 </div>
                               </div>
