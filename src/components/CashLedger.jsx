@@ -1476,6 +1476,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                                   style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: maxLimit !== undefined && qty >= maxLimit ? 0.3 : 1 }}
                                   disabled={maxLimit !== undefined && qty >= maxLimit}
                                 >+</button>
+                                {maxLimit !== undefined && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setMarketQuantities(prev => ({ ...prev, [m.id]: maxLimit }))}
+                                    style={{ background: 'var(--color-accent)', border: 'none', color: 'black', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', opacity: qty >= maxLimit ? 0.3 : 1 }}
+                                    disabled={qty >= maxLimit}
+                                  >MAX</button>
+                                )}
                               </div>
                             </div>
                           );
