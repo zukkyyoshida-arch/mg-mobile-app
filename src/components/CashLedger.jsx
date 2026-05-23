@@ -1452,12 +1452,16 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                         {MARKETS.map(m => {
                           const discountedPrice = (hasMD && m.id !== 'stocker') ? m.basePrice - 2 : m.basePrice;
                           const qty = marketQuantities[m.id] || 0;
+                          const marketLimits = { sapporo: 3, sendai: 4, tokyo: 6, nagoya: 9, osaka: 13, fukuoka: 20 };
+                          const maxLimit = marketLimits[m.id];
                           
                           return (
                             <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px' }}>
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--mg-green)' }}>単価: {discountedPrice}</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--mg-green)' }}>
+                                  単価: {discountedPrice} {maxLimit !== undefined && `(上限 ${maxLimit}個)`}
+                                </span>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <button 
@@ -1468,8 +1472,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                                 <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
                                 <button 
                                   type="button"
-                                  onClick={() => setMarketQuantities(prev => ({ ...prev, [m.id]: qty + 1 }))}
-                                  style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  onClick={() => setMarketQuantities(prev => ({ ...prev, [m.id]: maxLimit !== undefined ? Math.min(maxLimit, qty + 1) : qty + 1 }))}
+                                  style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: maxLimit !== undefined && qty >= maxLimit ? 0.3 : 1 }}
+                                  disabled={maxLimit !== undefined && qty >= maxLimit}
                                 >+</button>
                               </div>
                             </div>
