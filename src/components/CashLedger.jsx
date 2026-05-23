@@ -24,6 +24,15 @@ const ADS = [
   { id: 'ad20', name: '広告 (20)', basePrice: 20 }
 ];
 
+const MARKET_MAX_PRICES = {
+  sapporo: 40,
+  sendai: 36,
+  tokyo: 32,
+  nagoya: 28,
+  osaka: 24,
+  fukuoka: 20
+};
+
 function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [voucherNo, setVoucherNo] = useState('');
