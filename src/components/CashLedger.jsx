@@ -205,6 +205,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
     } else if (selectedCategory === "リスクカード") {
       const newTransactions = [];
       const timestamp = new Date().toISOString();
+      const tsGroup = Date.now().toString();
       const q = Number(riskQty) || 0;
       const p = Number(riskPrice) || 0;
       
@@ -246,23 +247,23 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
         }
       } else {
         if (riskAction === 'retire_worker') {
-          newTransactions.push({ id: Date.now().toString() + "-resw", category: "退職", workersResigned: 1, salesmenResigned: 0, amount: 0, quantity: 1, price: 0, timestamp });
-          newTransactions.push({ id: Date.now().toString() + "-reswp", category: "ソ", amount: 5, quantity: 1, price: 5, timestamp: new Date(Date.now() + 1).toISOString() });
+          newTransactions.push({ id: tsGroup + "-resw", groupId: tsGroup, category: "退職", workersResigned: 1, salesmenResigned: 0, amount: 0, quantity: 1, price: 0, timestamp, customName: "ワーカー退職", customShortName: "退職" });
+          newTransactions.push({ id: tsGroup + "-reswp", groupId: tsGroup, category: "ソ", amount: 5, quantity: 1, price: 5, timestamp: new Date(Date.now() + 1).toISOString(), customName: "退職費用 (ワーカー)", customShortName: "退職" });
         } else if (riskAction === 'retire_salesman') {
-          newTransactions.push({ id: Date.now().toString() + "-ress", category: "退職", workersResigned: 0, salesmenResigned: 1, amount: 0, quantity: 1, price: 0, timestamp });
-          newTransactions.push({ id: Date.now().toString() + "-ressp", category: "ソ", amount: 5, quantity: 1, price: 5, timestamp: new Date(Date.now() + 1).toISOString() });
+          newTransactions.push({ id: tsGroup + "-ress", groupId: tsGroup, category: "退職", workersResigned: 0, salesmenResigned: 1, amount: 0, quantity: 1, price: 0, timestamp, customName: "セールスマン退職", customShortName: "退職" });
+          newTransactions.push({ id: tsGroup + "-ressp", groupId: tsGroup, category: "ソ", amount: 5, quantity: 1, price: 5, timestamp: new Date(Date.now() + 1).toISOString(), customName: "退職費用 (セールスマン)", customShortName: "退職" });
         } else if (riskAction === 'claim') {
-          newTransactions.push({ id: Date.now().toString() + "-claim", category: "セ", amount: 5, quantity: 1, price: 5, timestamp });
+          newTransactions.push({ id: tsGroup + "-claim", groupId: tsGroup, category: "セ", amount: 5, quantity: 1, price: 5, timestamp, customName: "クレーム処理費用", customShortName: "苦情" });
         } else if (riskAction === 'machine_break' || riskAction === 'design_trouble') {
-          newTransactions.push({ id: Date.now().toString() + "-trouble", category: "ス", amount: 5, quantity: 1, price: 5, timestamp });
+          newTransactions.push({ id: tsGroup + "-trouble", groupId: tsGroup, category: "ス", amount: 5, quantity: 1, price: 5, timestamp, customName: riskAction === 'machine_break' ? "機械故障修理費用" : "デザイン設計変更", customShortName: "修理" });
         } else if (riskAction === 'rd_fail') {
-          newTransactions.push({ id: Date.now().toString() + "-rdfail", category: "研究開発失敗", amount: 0, quantity: 1, price: 0, timestamp });
+          newTransactions.push({ id: tsGroup + "-rdfail", groupId: tsGroup, category: "研究開発失敗", amount: 0, quantity: 1, price: 0, timestamp, customName: "研究開発の失敗", customShortName: "失敗" });
         } else if (riskAction === 'theft') {
-          newTransactions.push({ id: Date.now().toString() + "-theft", category: "盗難", quantity: 1, amount: 0, price: 0, timestamp });
+          newTransactions.push({ id: tsGroup + "-theft", groupId: tsGroup, category: "盗難", quantity: 1, amount: 0, price: 0, timestamp, customName: "盗難による製品ロス", customShortName: "盗難" });
         } else if (riskAction === 'miss') {
-          newTransactions.push({ id: Date.now().toString() + "-miss", category: "製造ミス", quantity: 1, amount: 0, price: 0, timestamp });
+          newTransactions.push({ id: tsGroup + "-miss", groupId: tsGroup, category: "製造ミス", quantity: 1, amount: 0, price: 0, timestamp, customName: "製造ミスによる仕掛品ロス", customShortName: "ミス" });
         } else if (riskAction === 'fire') {
-          newTransactions.push({ id: Date.now().toString() + "-fire", category: "火災", quantity: 1, amount: 0, price: 0, timestamp });
+          newTransactions.push({ id: tsGroup + "-fire", groupId: tsGroup, category: "火災", quantity: 1, amount: 0, price: 0, timestamp, customName: "火災による材料ロス", customShortName: "火災" });
         }
       }
       
@@ -573,8 +574,16 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
   // 取引の削除
   const handleDeleteTransaction = (id) => {
-    if (window.confirm("この取引データを削除してもよろしいですか？")) {
-      const updated = ledger.filter(entry => entry.id !== id);
+    const entryToDelete = ledger.find(t => t.id === id);
+    if (!entryToDelete) return;
+
+    if (window.confirm("この取引データを削除してもよろしいですか？（関連する処理も同時に削除されます）")) {
+      let updated;
+      if (entryToDelete.groupId) {
+        updated = ledger.filter(entry => entry.groupId !== entryToDelete.groupId);
+      } else {
+        updated = ledger.filter(entry => entry.id !== id);
+      }
       onUpdateLedger(updated);
     }
   };
@@ -744,18 +753,20 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
           </div>
         ) : (
           [...ledger].reverse().map((entry) => {
-            const catMeta = CATEGORIES[entry.category] || { label: '未定義', color: 'pink' };
+            const catMeta = CATEGORIES[entry.category] || { label: '未定義', color: 'pink', shortName: '不明', actionName: '不明' };
             const badgeClass = `badge badge-${catMeta.color}`;
+            const iconText = entry.customShortName || catMeta.shortName || entry.category;
+            const labelText = entry.customName || catMeta.actionName || catMeta.label;
             
             return (
               <div key={entry.id} className="glass-card" style={{ margin: '8px 16px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: `4px solid var(--mg-${catMeta.color})` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div className={badgeClass} style={{ width: '32px', height: '32px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '800' }}>
-                    {entry.category}
+                  <div className={badgeClass} style={{ width: '32px', height: '32px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {iconText}
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: '700' }}>{catMeta.label}</span>
+                      <span style={{ fontSize: '0.88rem', fontWeight: '700' }}>{labelText}</span>
                       <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>#{entry.voucherNo}</span>
                     </div>
                     {["コ", "サ", "ツ", "ノ", "ケ"].includes(entry.category) && (
