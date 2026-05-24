@@ -9,6 +9,7 @@ import PerformanceReport from './components/PerformanceReport';
 import ErrorBoundary from './components/ErrorBoundary';
 import { syncPlayerData } from './firebase';
 import { useDebounce } from 'react-use';
+import { useNavigate } from 'react-router-dom';
 
 // 安全な localStorage ラッパー
 const safeStorage = {
@@ -77,6 +78,8 @@ function App() {
   });
   
   const [loginInput, setLoginInput] = useState({ room: safeStorage.getItem('mg_room_id') || '', player: safeStorage.getItem('mg_player_id') || '' });
+
+  const navigate = useNavigate();
 
   // 同期ステータス表示用
   const [syncStatus, setSyncStatus] = useState(isOffline ? 'オフライン' : '未同期');
@@ -435,6 +438,14 @@ function App() {
               >
                 手動で強制同期する
               </button>
+              
+              <button 
+                className="btn-secondary"
+                onClick={() => navigate('/dashboard')}
+                style={{ width: '100%', padding: '12px', marginTop: '12px', border: '1px solid var(--mg-blue)', color: 'var(--mg-blue)', background: 'transparent' }}
+              >
+                📊 プロジェクター用ダッシュボードを開く
+              </button>
             </div>
 
             <PriorPeriodCarryover 
@@ -585,6 +596,15 @@ function App() {
             >
               参加せずに一人でプレイする
             </button>
+            
+            <div style={{ marginTop: '20px', textAlign: 'center' }}>
+              <button 
+                onClick={() => navigate('/dashboard')}
+                style={{ background: 'none', border: 'none', color: 'var(--mg-blue)', textDecoration: 'underline', fontSize: '0.9rem', cursor: 'pointer' }}
+              >
+                プロジェクター用ダッシュボード画面へ移動
+              </button>
+            </div>
           </div>
         </div>
       )}
