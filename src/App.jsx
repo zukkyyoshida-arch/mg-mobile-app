@@ -7,6 +7,8 @@ import ManagementPlan from './components/ManagementPlan';
 import PriorPeriodCarryover from './components/PriorPeriodCarryover';
 import PerformanceReport from './components/PerformanceReport';
 import ErrorBoundary from './components/ErrorBoundary';
+import { syncPlayerData } from './firebase';
+import { useDebounce } from 'react-use';
 
 // 安全な localStorage ラッパー
 const safeStorage = {
@@ -62,6 +64,23 @@ function App() {
     return safeStorage.getItem('mg_transaction_mode') || 'cash';
   });
 
+  // Firebase Room/Player ID
+  const [roomId, setRoomId] = useState(() => safeStorage.getItem('mg_room_id') || '');
+  const [playerId, setPlayerId] = useState(() => safeStorage.getItem('mg_player_id') || '');
+  
+  // オフラインモード（同期なし）フラグ
+  const [isOffline, setIsOffline] = useState(() => safeStorage.getItem('mg_offline_mode') === 'true');
+
+  const [showLogin, setShowLogin] = useState(() => {
+    if (safeStorage.getItem('mg_offline_mode') === 'true') return false;
+    return !safeStorage.getItem('mg_room_id') || !safeStorage.getItem('mg_player_id');
+  });
+  
+  const [loginInput, setLoginInput] = useState({ room: safeStorage.getItem('mg_room_id') || '', player: safeStorage.getItem('mg_player_id') || '' });
+
+  // 同期ステータス表示用
+  const [syncStatus, setSyncStatus] = useState(isOffline ? 'オフライン' : '未同期');
+
   // データ変更時に localStorage に保存
   useEffect(() => {
     safeStorage.setItem('mg_periods_data', JSON.stringify(periods));
@@ -91,6 +110,68 @@ function App() {
 
   // リアルタイム財務計算を実行
   const results = calculateFinancials(currentData.carryover, currentData.ledger, currentData.actuals, currentPeriod);
+
+  // 初回接続時（またはリロード時）に即座に同期してダッシュボードに表示させる
+  useEffect(() => {
+    if (roomId && playerId) {
+      setSyncStatus('同期中...');
+      const salesCount = results?.cost?.salesCount || 0;
+      const salesRevenue = results?.pl?.salesRevenue || 0;
+      const avgPrice = salesCount > 0 ? Math.round(salesRevenue / salesCount) : 0;
+      
+      syncPlayerData(roomId, playerId, {
+        currentPeriod,
+        totalNetAssets: results?.totalNetAssets || 0,
+        cash: results?.bs?.cash || 0,
+        capital: results?.bs?.capital || 0,
+        retainedEarnings: results?.bs?.retainedEarnings || 0,
+        sales: salesRevenue,
+        profit: results?.pl?.recurringProfit || 0,
+        salesQty: salesCount,
+        averagePrice: avgPrice,
+        lastUpdated: Date.now()
+      }).then(() => {
+        setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
+      }).catch(err => {
+        console.error(err);
+        setSyncStatus('同期エラー');
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, playerId]); // ルーム参加時に1回だけ即時実行
+
+  // Firebaseへデータ同期（通信量を抑えるために2秒ディレイでデバウンス送信）
+  useDebounce(
+    () => {
+      if (roomId && playerId) {
+        setSyncStatus('同期中...');
+        const salesCount = results?.cost?.salesCount || 0;
+        const salesRevenue = results?.pl?.salesRevenue || 0;
+        const avgPrice = salesCount > 0 ? Math.round(salesRevenue / salesCount) : 0;
+
+        syncPlayerData(roomId, playerId, {
+          currentPeriod,
+          totalNetAssets: results?.totalNetAssets || 0,
+          cash: results?.bs?.cash || 0,
+          capital: results?.bs?.capital || 0,
+          retainedEarnings: results?.bs?.retainedEarnings || 0,
+          sales: salesRevenue,
+          profit: results?.pl?.recurringProfit || 0,
+          salesQty: salesCount,
+          averagePrice: avgPrice,
+          lastUpdated: Date.now()
+        }).then(() => {
+          setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
+        }).catch(err => {
+          console.error("Firebase sync error:", err);
+          setSyncStatus('同期エラー');
+          alert("データベース接続エラー（URLや権限の可能性があります）: " + err.message);
+        });
+      }
+    },
+    2000, // 2秒間操作が落ち着いたら送信
+    [results, currentPeriod, roomId, playerId]
+  );
 
   // バグ救済用：期をまたいだ際に未払税金が引き継がれていない場合、一度だけ自動補完する
   const taxPatchedRef = useRef({});
@@ -215,14 +296,15 @@ function App() {
     <div className="phone-shell">
       {/* アプリ共通ヘッダー */}
       <header className="app-header glass-bg">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div className="badge badge-pink" style={{ fontSize: '0.8rem', padding: '4px 8px' }}>
-            第{currentPeriod}期
-          </div>
-          <span className="app-title">戦略MG 製造業</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h1 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 'bold' }}>戦略MG</h1>
+          <span className="badge badge-blue">第{currentPeriod}期</span>
+          <span style={{ fontSize: '0.8rem', color: syncStatus.includes('エラー') ? '#ff4444' : 'var(--text-secondary)' }}>
+            ☁️ {syncStatus}
+          </span>
         </div>
         
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button onClick={toggleTheme} className="theme-switch" aria-label="Toggle theme">
             {theme === 'dark' ? (
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
@@ -292,6 +374,69 @@ function App() {
 
         {activeTab === 'settings' && (
           <div className="tab-panel">
+            <div className="glass-card" style={{ padding: '20px', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>ネットワーク設定</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  <div>ルームID: <strong style={{ color: 'white' }}>{roomId || '未参加'}</strong></div>
+                  <div>プレイヤー名: <strong style={{ color: 'white' }}>{playerId || '未設定'}</strong></div>
+                  {isOffline && <div style={{ color: 'var(--mg-yellow)' }}>現在オフラインモードです</div>}
+                </div>
+                <button 
+                  onClick={() => {
+                    if(window.confirm('ルーム設定を変更しますか？（参加画面に戻ります）')){
+                      safeStorage.setItem('mg_room_id', '');
+                      safeStorage.setItem('mg_player_id', '');
+                      safeStorage.setItem('mg_offline_mode', 'false');
+                      setRoomId('');
+                      setPlayerId('');
+                      setIsOffline(false);
+                      setSyncStatus('未同期');
+                      setShowLogin(true);
+                    }
+                  }}
+                  style={{ padding: '8px 16px', backgroundColor: '#ff4444', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}
+                >
+                  退出する
+                </button>
+              </div>
+              <button 
+                className="btn-secondary"
+                onClick={() => {
+                  if (roomId && playerId) {
+                    setSyncStatus('同期中...');
+                    const salesCount = results?.cost?.salesCount || 0;
+                    const salesRevenue = results?.pl?.salesRevenue || 0;
+                    const avgPrice = salesCount > 0 ? Math.round(salesRevenue / salesCount) : 0;
+
+                    syncPlayerData(roomId, playerId, {
+                      currentPeriod,
+                      totalNetAssets: results?.totalNetAssets || 0,
+                      cash: results?.bs?.cash || 0,
+                      capital: results?.bs?.capital || 0,
+                      retainedEarnings: results?.bs?.retainedEarnings || 0,
+                      sales: salesRevenue,
+                      profit: results?.pl?.recurringProfit || 0,
+                      salesQty: salesCount,
+                      averagePrice: avgPrice,
+                      lastUpdated: Date.now()
+                    }).then(() => {
+                      setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
+                      alert('手動での強制同期が完了しました');
+                    }).catch(err => {
+                      setSyncStatus('同期エラー');
+                      alert("エラー: " + err.message);
+                    });
+                  } else {
+                    alert("ルームに参加していません");
+                  }
+                }}
+                style={{ width: '100%', padding: '12px' }}
+              >
+                手動で強制同期する
+              </button>
+            </div>
+
             <PriorPeriodCarryover 
               carryover={currentData.carryover}
               onUpdateCarryover={(newCarryover) => updatePeriodData('carryover', newCarryover)}
@@ -376,6 +521,73 @@ function App() {
           設定
         </button>
       </nav>
+
+      {/* ルーム・プレイヤー登録モーダル */}
+      {showLogin && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '400px', padding: '24px', borderRadius: '16px' }}>
+            <h2 style={{ textAlign: 'center', marginBottom: '20px', color: 'var(--text-primary)' }}>研修ルームに参加</h2>
+            <div className="form-group">
+              <label className="form-label">ルームID（講師から指定されたID）</label>
+              <input 
+                type="text" 
+                className="form-input" 
+                value={loginInput.room}
+                onChange={e => setLoginInput({...loginInput, room: e.target.value})}
+                placeholder="例: mg-tokyo-01"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">プレイヤー名（表示名）</label>
+              <input 
+                type="text" 
+                className="form-input" 
+                value={loginInput.player}
+                onChange={e => setLoginInput({...loginInput, player: e.target.value})}
+                placeholder="例: 鈴木一郎"
+              />
+            </div>
+            <button 
+              className="btn-primary" 
+              style={{ width: '100%', marginTop: '20px', padding: '12px', fontSize: '1.1rem' }}
+              onClick={() => {
+                const cleanRoom = loginInput.room.trim();
+                const cleanPlayer = loginInput.player.trim();
+                if (!cleanRoom || !cleanPlayer) {
+                  alert("ルームIDとプレイヤー名を入力してください");
+                  return;
+                }
+                safeStorage.setItem('mg_room_id', cleanRoom);
+                safeStorage.setItem('mg_player_id', cleanPlayer);
+                safeStorage.setItem('mg_offline_mode', 'false');
+                setRoomId(cleanRoom);
+                setPlayerId(cleanPlayer);
+                setIsOffline(false);
+                setShowLogin(false);
+              }}
+            >
+              参加する
+            </button>
+            <button 
+              className="btn-secondary" 
+              style={{ width: '100%', marginTop: '12px', padding: '12px', fontSize: '1rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)' }}
+              onClick={() => {
+                safeStorage.setItem('mg_offline_mode', 'true');
+                setIsOffline(true);
+                setSyncStatus('オフライン');
+                setShowLogin(false);
+              }}
+            >
+              参加せずに一人でプレイする
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
