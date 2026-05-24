@@ -33,7 +33,7 @@ const MARKET_MAX_PRICES = {
   fukuoka: 20
 };
 
-function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod }) {
+function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod, transactionMode, setTransactionMode }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [voucherNo, setVoucherNo] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('キ'); // Default to現金売上
@@ -141,7 +141,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
 
   // 新規取引の追加
   const handleAddTransaction = (e) => {
-
     e.preventDefault();
     if (!selectedCategory) {
       alert("項目を選択してください");
@@ -221,7 +220,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
       if (riskTab === 'positive') {
         if (riskAction === 'monopoly_ad') {
           const adPrices = { sapporo: 40, sendai: 36, tokyo: 32, nagoya: 28, osaka: 24, fukuoka: 20 };
-          const cat = riskSaleType === 'credit' ? 'ネ' : 'キ';
+          const cat = transactionMode === 'credit' ? 'ネ' : 'キ';
           let totalQ = 0;
           Object.entries(riskMonopolyAdQtys).forEach(([market, qty]) => {
             if (qty > 0) {
@@ -238,7 +237,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
             alert("販売する数量と単価を入力してください");
             return;
           }
-          const cat = riskSaleType === 'credit' ? 'ネ' : 'キ';
+          const cat = transactionMode === 'credit' ? 'ネ' : 'キ';
           newTransactions.push({ id: Date.now().toString() + "-sale", category: cat, quantity: q, amount: q * p, price: p, timestamp, usedRD: riskAction === 'rd_success' });
         } else if (riskAction === 'special_mat' || riskAction === 'common_mat') {
           if (q <= 0) {
@@ -712,6 +711,31 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
         )}
       </div>
 
+      {/* 掛け取引モードへの切り替えバナー */}
+      {currentPeriod >= 2 && transactionMode === 'cash' && (
+        <div style={{ margin: '8px 16px', padding: '16px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(103, 58, 183, 0.1) 100%)', border: '1px solid rgba(156, 39, 176, 0.4)' }}>
+          <h4 style={{ fontSize: '0.95rem', color: '#e040fb', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>🚀</span> 掛け取引（売掛・買掛）が解禁されました！
+          </h4>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0 0 12px 0', lineHeight: '1.4' }}>
+            2期目以降は、会社の信用力があがり「掛け取引」での販売・仕入が可能になります。<br/>
+            <span style={{ color: '#ff5252' }}>※ 一度「掛け取引」を開始すると以降はずっと掛け取引となり、現金取引（現金販売・現金仕入）には戻せません。</span>
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm("これ以降すべての「商品販売」「材料仕入」が掛け取引（売掛・買掛）になります。本当によろしいですか？\n※元の現金取引には戻せません。")) {
+                setTransactionMode('credit');
+              }
+            }}
+            className="btn-premium"
+            style={{ width: '100%', padding: '10px', fontSize: '0.85rem', borderRadius: '8px', background: 'linear-gradient(135deg, #9c27b0, #673ab7)', color: 'white', fontWeight: 'bold', border: 'none' }}
+          >
+            掛け取引モードを開始する
+          </button>
+        </div>
+      )}
+
       {/* 期首の一括処理アラート/ボタン（第2期以降のみ表示） */}
       {currentPeriod > 1 && (
         <div style={{ margin: '0 16px 8px 16px' }}>
@@ -884,7 +908,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                       { action: "研究開発", symbol: "チ" },
                       { action: "商品販売 (現金)", symbol: "キ" },
                       { action: "商品販売 (売掛)", symbol: "ネ" }
-                    ].map(btn => (
+                    ].filter(btn => {
+                      if (transactionMode === 'cash') {
+                        return btn.symbol !== 'ノ' && btn.symbol !== 'ネ';
+                      } else if (transactionMode === 'credit') {
+                        return btn.symbol !== 'ツ' && btn.symbol !== 'キ';
+                      }
+                      return true;
+                    }).map(btn => (
                       <button
                         type="button"
                         key={btn.action}
@@ -1141,10 +1172,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                           </div>
                           <div className="form-group" style={{ gridColumn: 'span 2' }}>
                             <label className="form-label">売上計上先</label>
-                            <select className="form-input" value={riskSaleType} onChange={(e) => setRiskSaleType(e.target.value)}>
-                              <option value="cash">現金 (キ)</option>
-                              <option value="credit">売掛 (ネ)</option>
-                            </select>
+                            <div style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                              {transactionMode === 'credit' ? '売掛販売 (ネ)' : '現金販売 (キ)'}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1179,10 +1209,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod 
                           </div>
                           <div className="form-group">
                             <label className="form-label">売上計上先</label>
-                            <select className="form-input" value={riskSaleType} onChange={(e) => setRiskSaleType(e.target.value)}>
-                              <option value="cash">現金 (キ)</option>
-                              <option value="credit">売掛 (ネ)</option>
-                            </select>
+                            <div style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                              {transactionMode === 'credit' ? '売掛販売 (ネ)' : '現金販売 (キ)'}
+                            </div>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.85rem' }}>
                             <span style={{ color: 'var(--text-secondary)' }}>合計数量: <strong style={{ color: 'white', fontSize: '1rem' }}>{Object.values(riskMonopolyAdQtys).reduce((a, b) => a + b, 0)} 個</strong></span>

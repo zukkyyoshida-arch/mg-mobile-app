@@ -57,6 +57,11 @@ function App() {
   // アクティブなタブ (ledger, statements, periodEnd, plan, settings)
   const [activeTab, setActiveTab] = useState('ledger');
 
+  // 取引モード ('cash' or 'credit')
+  const [transactionMode, setTransactionMode] = useState(() => {
+    return safeStorage.getItem('mg_transaction_mode') || 'cash';
+  });
+
   // データ変更時に localStorage に保存
   useEffect(() => {
     safeStorage.setItem('mg_periods_data', JSON.stringify(periods));
@@ -65,6 +70,10 @@ function App() {
   useEffect(() => {
     safeStorage.setItem('mg_current_period', String(currentPeriod));
   }, [currentPeriod]);
+
+  useEffect(() => {
+    safeStorage.setItem('mg_transaction_mode', transactionMode);
+  }, [transactionMode]);
 
   // テーマ切り替え処理
   useEffect(() => {
@@ -132,6 +141,7 @@ function App() {
       };
       setPeriods(freshData);
       setCurrentPeriod(1);
+      setTransactionMode('cash');
       setActiveTab('ledger');
     }
   };
@@ -237,6 +247,8 @@ function App() {
               onUpdateLedger={(newLedger) => updatePeriodData('ledger', newLedger)}
               results={results}
               currentPeriod={currentPeriod}
+              transactionMode={transactionMode}
+              setTransactionMode={setTransactionMode}
             />
           </div>
         )}
