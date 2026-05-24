@@ -220,7 +220,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       if (riskTab === 'positive') {
         if (riskAction === 'monopoly_ad') {
           const adPrices = { sapporo: 40, sendai: 36, tokyo: 32, nagoya: 28, osaka: 24, fukuoka: 20 };
-          const cat = transactionMode === 'credit' ? 'ネ' : 'キ';
+          const cat = riskSaleType === 'credit' ? 'ネ' : 'キ';
           let totalQ = 0;
           Object.entries(riskMonopolyAdQtys).forEach(([market, qty]) => {
             if (qty > 0) {
@@ -237,7 +237,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
             alert("販売する数量と単価を入力してください");
             return;
           }
-          const cat = transactionMode === 'credit' ? 'ネ' : 'キ';
+          const cat = riskSaleType === 'credit' ? 'ネ' : 'キ';
           newTransactions.push({ id: Date.now().toString() + "-sale", category: cat, quantity: q, amount: q * p, price: p, timestamp, usedRD: riskAction === 'rd_success' });
         } else if (riskAction === 'special_mat' || riskAction === 'common_mat') {
           if (q <= 0) {
@@ -943,7 +943,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                       { action: "配置転換", symbol: "配置転換" },
                       { action: "機械売却", symbol: "イ" },
                       { action: "銀行借入", symbol: "オ" },
-                      { action: "最大借入", symbol: "MAX_Loan", onClick: () => setAmount(((currentPeriod <= 1) ? 0 : (currentPeriod <= 3 ? 2 : 3) * results.totalNetAssets).toString()) },
+                      { action: "最大借入", symbol: "MAX_Loan", onClick: () => { setSelectedCategory('オ'); setAmount(((currentPeriod <= 1) ? 0 : (currentPeriod <= 3 ? 2 : 3) * results.totalNetAssets).toString()); } },
                       { action: "借入返済", symbol: "ナ" },
                       { action: "その他出金", symbol: "ス" }
                     ].map(btn => (
@@ -958,6 +958,11 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                       </button>
                     ))}
                   </div>
+{selectedCategory === 'オ' && (
+  <div style={{fontSize:'0.75rem', color:'var(--text-secondary)', marginTop:'4px'}}>
+    最大借入可能額: {(currentPeriod <= 1) ? '∞' : ((currentPeriod <= 3 ? 2 : 3) * results.totalNetAssets)} 万
+  </div>
+)}
 
                   {/* リスクカード */}
                   <span style={{ fontSize: '0.65rem', color: '#9c27b0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginTop: '16px', marginBottom: '6px' }}>🃏 リスクカード</span>
@@ -1116,7 +1121,31 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                 </div>
               ) : selectedCategory === 'リスクカード' ? (
                 <div style={{ background: 'rgba(156, 39, 176, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-purple)' }}>
-                  <h4 style={{ fontSize: '0.9rem', color: 'var(--mg-purple)', marginBottom: '16px' }}>🃏 リスクカード</h4>
+                  <h4 style={{ fontSize: '0.9rem', color: 'var(--mg-purple)', marginBottom: '8px' }}>🃏 リスクカード</h4>
+          {/* 取引方式トグル */}
+          <div style={{ marginBottom: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <label style={{ color: 'var(--text-secondary)' }}>取引方式：</label>
+            <label>
+              <input
+                type="radio"
+                name="riskSaleType"
+                value="cash"
+                checked={riskSaleType === 'cash'}
+                onChange={() => setRiskSaleType('cash')}
+              />
+              現金（キ）
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="riskSaleType"
+                value="credit"
+                checked={riskSaleType === 'credit'}
+                onChange={() => setRiskSaleType('credit')}
+              />
+              売掛（ネ）
+            </label>
+          </div>
                   
                   {/* Tabs */}
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
