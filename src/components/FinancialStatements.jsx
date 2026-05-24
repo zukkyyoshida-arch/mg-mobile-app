@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import AIAdvisor from './AIAdvisor';
 
 function FinancialStatements({ results, carryover, currentPeriod, onShowPerformance }) {
   // Defensive defaults for possible undefined props
@@ -68,11 +67,6 @@ function FinancialStatements({ results, carryover, currentPeriod, onShowPerforma
   return (
     <div style={{ padding: '0 0 24px 0' }}>
       
-      {/* AI経営診断ダッシュボード (バナー配置) */}
-      <div style={{ padding: '0 16px', marginBottom: '16px' }}>
-        <AIAdvisor results={results} currentPeriod={currentPeriod} />
-      </div>
-
       {/* 決算書タブ切り替え */}
       {/* KPIダッシュボードボタン (プレミアムなバナー風デザイン) */}
       {onShowPerformance && (
