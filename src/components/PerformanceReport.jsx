@@ -1,14 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { calculateAnalytics } from '../utils/analytics';
-import { useAI } from '../hooks/useAI';
 
 export default function PerformanceReport({ ledger, results, prevLedger, prevResults, currentPeriod, onClose }) {
   const analytics = calculateAnalytics(ledger, results, prevLedger, prevResults);
-  const { warnings, report, generateReport } = useAI(results, currentPeriod);
-
-  useEffect(() => {
-    generateReport();
-  }, [generateReport]);
 
   const getRankColor = (rank) => {
     switch (rank) {
@@ -320,56 +314,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
         </div>
       </div>
       
-      {/* 🤖 AI経営コンサルタントの診断セクション */}
-      <div className="report-section" style={{ background: 'linear-gradient(135deg, rgba(0, 198, 255, 0.05), rgba(0, 114, 255, 0.05))', border: '1px solid rgba(0, 198, 255, 0.3)' }}>
-        <h3 className="report-title" style={{ color: '#00c6ff' }}>🤖 AI経営コンサルタントの総評</h3>
-        
-        {/* アラート */}
-        {warnings && warnings.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-            {warnings.map((w, index) => {
-              let bg = 'rgba(255,255,255,0.05)';
-              let border = 'rgba(255,255,255,0.1)';
-              let icon = 'ℹ️';
-              
-              if (w.type === 'danger') {
-                bg = 'rgba(255, 82, 82, 0.1)';
-                border = '#ff5252';
-                icon = '🚨';
-              } else if (w.type === 'warning') {
-                bg = 'rgba(255, 193, 7, 0.1)';
-                border = '#ffc107';
-                icon = '⚠️';
-              } else if (w.type === 'success') {
-                bg = 'rgba(76, 175, 80, 0.1)';
-                border = '#4caf50';
-                icon = '✅';
-              }
 
-              return (
-                <div key={index} style={{
-                  padding: '12px', borderRadius: '8px', background: bg, borderLeft: `4px solid ${border}`,
-                  fontSize: '0.85rem', lineHeight: '1.5', color: 'var(--text-primary)', display: 'flex', gap: '8px'
-                }}>
-                  <span style={{ fontSize: '1rem' }}>{icon}</span>
-                  <div>{w.message}</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* AIレポート出力 */}
-        {report ? (
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', fontSize: '0.88rem', lineHeight: '1.6', color: 'rgba(255,255,255,0.9)', whiteSpace: 'pre-wrap' }}>
-            {report}
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
-            AI分析を生成中...
-          </div>
-        )}
-      </div>
 
       <button 
         onClick={onClose}
