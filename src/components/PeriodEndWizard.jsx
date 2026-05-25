@@ -14,6 +14,9 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const [periodEndWorkers, setPeriodEndWorkers] = useState('');
   const [periodEndSalesmen, setPeriodEndSalesmen] = useState('');
 
+  // Step 3: AR Collection state
+  const [arCollection, setArCollection] = useState('');
+
   // Initialize salary state when moving to step 2
   useEffect(() => {
     if (currentStep === 2) {
@@ -86,21 +89,23 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const requiredRepayment = Math.ceil(totalLoan * 0.2);
   const remainingRepayment = Math.max(0, requiredRepayment - currentLedgerRepay);
 
+  // 計算のヘルパー
+  const wCount = Number(periodEndWorkers) || 0;
+  const sCount = Number(periodEndSalesmen) || 0;
+  const totalStaff = wCount + sCount;
+  const periodKey = Math.min(5, Math.max(1, currentPeriod));
+  const salaryUnit = SALARY_TABLE.normal[periodKey] || 0;
+  const insuranceUnit = SALARY_TABLE.insurance[periodKey] || 0;
+  const workerSal = wCount * salaryUnit;
+  const salesmanSal = sCount * salaryUnit;
+  const insurance = totalStaff * insuranceUnit;
+  const totalAmount = workerSal + salesmanSal + insurance;
+  const currentCash = results.bookEndingCash || 0;
+  const arToCollect = Number(arCollection) || 0;
+  const finalCash = currentCash - totalAmount - remainingRepayment + arToCollect;
+
   const confirmPeriodEnd = () => {
     const newTransactions = [];
-    
-    const wCount = Number(periodEndWorkers) || 0;
-    const sCount = Number(periodEndSalesmen) || 0;
-    const totalStaff = wCount + sCount;
-    
-    const periodKey = Math.min(5, Math.max(1, currentPeriod));
-    const salaryUnit = SALARY_TABLE.normal[periodKey] || 0;
-    const insuranceUnit = SALARY_TABLE.insurance[periodKey] || 0;
-    
-    const workerSal = wCount * salaryUnit;
-    const salesmanSal = sCount * salaryUnit;
-    const insurance = totalStaff * insuranceUnit;
-
     if (workerSal > 0) {
       newTransactions.push({ id: Date.now().toString() + "-w-sal", category: "シ", quantity: 1, amount: workerSal, price: workerSal, timestamp: new Date(Date.now() + 1).toISOString(), customName: "ワーカー給与の支払", customShortName: "労務" });
     }
@@ -131,6 +136,10 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
 
     if (remainingRepayment > 0) {
       newTransactions.push({ id: Date.now().toString() + "-loan-repay", category: "ナ", quantity: 1, amount: remainingRepayment, price: remainingRepayment, timestamp: new Date(Date.now() + 7).toISOString(), customName: "期末の自動借入返済 (20%)", customShortName: "返済" });
+    }
+
+    if (arToCollect > 0) {
+      newTransactions.push({ id: Date.now().toString() + "-ar-col", category: "ア", quantity: 1, amount: arToCollect, price: arToCollect, timestamp: new Date(Date.now() + 8).toISOString(), customName: "期末の売掛金回収", customShortName: "回収" });
     }
 
     if (newTransactions.length === 0) {
@@ -376,13 +385,8 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                   <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem' }}>労務費(シ): ¥{workerSal}万</p>
                   <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem' }}>販売費(セ): ¥{salesmanSal}万</p>
                   <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem' }}>社会保険料(ソ): ¥{insurance}万</p>
-                  {remainingRepayment > 0 && (
-                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--mg-pink)' }}>
-                      ⚠️借入返済(ナ): ¥{remainingRepayment}万 <span style={{fontSize:'0.75rem'}}>(未返済の20%分)</span>
-                    </p>
-                  )}
                   <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                    合計引落額: ¥{totalAmount + remainingRepayment}万
+                    合計引落額: ¥{totalAmount}万
                   </p>
                 </div>
               );
@@ -402,22 +406,127 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                 ← 戻る
               </button>
               <button 
-                onClick={confirmPeriodEnd} 
+                onClick={() => setCurrentStep(3)} 
                 className="btn-premium" 
                 style={{ 
                   flex: 2,
-                  background: 'linear-gradient(135deg, var(--mg-pink) 0%, #ff80b0 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  boxShadow: '0 4px 16px rgba(255, 46, 147, 0.3)'
+                  background: 'linear-gradient(135deg, rgba(0, 176, 255, 0.2) 0%, rgba(0, 119, 255, 0.2) 100%)',
+                  border: '1px solid rgba(0, 176, 255, 0.4)',
+                  color: '#40c4ff',
+                  boxShadow: '0 4px 16px rgba(0, 176, 255, 0.15)'
                 }}
               >
-                🏁 給与を確定して登録
+                次へ：最終資金確認 →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 3 && (
+          <div className="glass-card">
+            <div className="glass-card-header">
+              <h3 className="glass-card-title">
+                💰 ステップ 3: 最終現金確認
+              </h3>
+            </div>
+            
+            <div style={{ background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                💡 <strong>AIクラウド会計の事前予測</strong><br/>
+                キャッシュアウト（資金ショート）する前に、期末の現金残高をシミュレーションします。<br/>
+                マイナスになる場合は、ここで売掛金を回収して補填するか、一度画面を閉じて借入（オ）を行ってください。
+              </p>
+            </div>
+
+            <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>現在の現金:</span>
+                <span style={{ fontWeight: 'bold' }}>¥{currentCash}万</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--mg-pink)' }}>
+                <span>➖ 給与・保険料合計:</span>
+                <span>-¥{totalAmount}万</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', color: 'var(--mg-pink)' }}>
+                <span>➖ 借入金返済(自動20%):</span>
+                <span>-¥{remainingRepayment}万</span>
+              </div>
+              
+              {results.endingReceivables > 0 && (
+                <div style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '12px', marginBottom: '16px' }}>
+                  <label style={{ fontSize: '0.85rem', display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>
+                    ➕ 売掛金入金（ア） <span style={{color:'var(--text-muted)'}}>(最大 {results.endingReceivables}万)</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={arCollection}
+                    onChange={(e) => setArCollection(Math.min(results.endingReceivables, Math.max(0, Number(e.target.value) || 0)))}
+                    placeholder="回収する金額を入力"
+                    className="form-input"
+                    style={{ width: '100%', padding: '10px' }}
+                  />
+                  {arToCollect > 0 && (
+                    <div style={{ textAlign: 'right', marginTop: '4px', color: 'var(--mg-blue)', fontSize: '0.9rem' }}>
+                      回収額: +¥{arToCollect}万
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.2)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 'bold' }}>最終現金残高:</span>
+                <span style={{ 
+                  fontSize: '1.4rem', 
+                  fontWeight: 'bold', 
+                  color: finalCash < 0 ? 'var(--mg-pink)' : 'var(--text-primary)' 
+                }}>
+                  ¥{finalCash}万
+                </span>
+              </div>
+            </div>
+
+            {finalCash < 0 && (
+              <div style={{ background: 'rgba(255, 46, 147, 0.1)', border: '1px solid var(--mg-pink)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--mg-pink)' }}>
+                  ⚠️ <strong>現金が不足しています！</strong><br/>
+                  このままでは資金ショートしてしまいます。売掛金を回収するか、一度「戻る」で閉じてから「借入（オ）」を行ってください。
+                </p>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+              <button 
+                onClick={() => setCurrentStep(2)} 
+                className="btn-premium" 
+                style={{ 
+                  flex: 1,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: 'var(--text-secondary)'
+                }}
+              >
+                ← 戻る
+              </button>
+              <button 
+                onClick={confirmPeriodEnd} 
+                disabled={finalCash < 0}
+                className="btn-premium" 
+                style={{ 
+                  flex: 2,
+                  background: finalCash < 0 ? 'var(--bg-card)' : 'linear-gradient(135deg, var(--mg-pink) 0%, #ff80b0 100%)',
+                  color: finalCash < 0 ? 'var(--text-muted)' : '#fff',
+                  border: finalCash < 0 ? '1px solid var(--text-muted)' : 'none',
+                  boxShadow: finalCash < 0 ? 'none' : '0 4px 16px rgba(255, 46, 147, 0.3)',
+                  cursor: finalCash < 0 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                🏁 {finalCash < 0 ? '確定不可（残高不足）' : '出納帳に確定登録'}
               </button>
             </div>
             
           </div>
         )}
+        
         
       </div>
     </div>
