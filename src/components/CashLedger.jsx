@@ -543,11 +543,15 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
     let updatedLedger = [...ledger, newEntry];
 
+    const actualCategory = selectedCategory === 'MAX_Loan' ? 'オ' : selectedCategory;
+
     // Q4. 借入時（オ）的自動利息（タ）計算と追加
-    if (selectedCategory === 'オ' && finalAmount > 0) {
-      // Determine max loan based on net assets and current period
+    if (actualCategory === 'オ' && finalAmount > 0) {
+      newEntry.category = 'オ'; // Override the saved category
+      // Determine max loan based on beginning net assets and current period
       const ratio = currentPeriod <= 3 ? 2 : 3;
-      const limit = (currentPeriod <= 1) ? Number.MAX_SAFE_INTEGER : ratio * (results?.totalNetAssets || 0);
+      const beginningNetAssets = (carryover?.capital || 300) + (carryover?.retainedEarnings || 0);
+      const limit = ratio * beginningNetAssets;
       
       const currentLedgerLoan = ledger.reduce((sum, item) => {
         if (item.category === 'オ') return sum + Number(item.amount || 0);
@@ -952,13 +956,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                       { action: "機械売却", symbol: "イ" },
                       { action: "銀行借入", symbol: "オ" },
                       { action: "最大借入", symbol: "MAX_Loan", onClick: () => { 
-                          handleCategorySelect('オ'); 
-                          if (currentPeriod <= 1) {
-                            setAmount('0');
-                            return;
-                          }
+                          handleCategorySelect('MAX_Loan'); 
                           const ratio = currentPeriod <= 3 ? 2 : 3;
-                          const limit = ratio * (results?.totalNetAssets || 0);
+                          const beginningNetAssets = (carryover?.capital || 300) + (carryover?.retainedEarnings || 0);
+                          const limit = ratio * beginningNetAssets;
                           const currentLedgerLoan = ledger.reduce((sum, item) => {
                             if (item.category === 'オ') return sum + Number(item.amount || 0);
                             if (item.category === 'ナ') return sum - Number(item.amount || 0);
@@ -983,9 +984,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                       </button>
                     ))}
                   </div>
-{selectedCategory === 'オ' && (
+{(selectedCategory === 'オ' || selectedCategory === 'MAX_Loan') && (
   <div style={{fontSize:'0.75rem', color:'var(--text-secondary)', marginTop:'4px'}}>
-    最大借入残高の上限: {(currentPeriod <= 1) ? '∞' : ((currentPeriod <= 3 ? 2 : 3) * results.totalNetAssets)} 万
+    最大借入残高の上限: {(currentPeriod <= 3 ? 2 : 3) * ((carryover?.capital || 300) + (carryover?.retainedEarnings || 0))} 万
   </div>
 )}
 
