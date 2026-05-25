@@ -80,6 +80,12 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
     setCurrentStep(2);
   };
 
+  const currentLedgerLoan = ledger.reduce((sum, item) => item.category === 'オ' ? sum + Number(item.amount || 0) : sum, 0);
+  const currentLedgerRepay = ledger.reduce((sum, item) => item.category === 'ナ' ? sum + Number(item.amount || 0) : sum, 0);
+  const totalLoan = (carryover?.loan || 0) + currentLedgerLoan;
+  const requiredRepayment = Math.ceil(totalLoan * 0.2);
+  const remainingRepayment = Math.max(0, requiredRepayment - currentLedgerRepay);
+
   const confirmPeriodEnd = () => {
     const newTransactions = [];
     
@@ -121,6 +127,10 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
     }
     if (prodDiff > 0) {
       newTransactions.push({ id: Date.now().toString() + "-loss-prod", category: "棚卸ロス(製品)", quantity: prodDiff, amount: 0, price: 0, timestamp: new Date(Date.now() + 6).toISOString(), customName: "期末棚卸による製品紛失", customShortName: "ロス" });
+    }
+
+    if (remainingRepayment > 0) {
+      newTransactions.push({ id: Date.now().toString() + "-loan-repay", category: "ナ", quantity: 1, amount: remainingRepayment, price: remainingRepayment, timestamp: new Date(Date.now() + 7).toISOString(), customName: "期末の自動借入返済 (20%)", customShortName: "返済" });
     }
 
     if (newTransactions.length === 0) {
@@ -365,9 +375,14 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                   </p>
                   <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem' }}>労務費(シ): ¥{workerSal}万</p>
                   <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem' }}>販売費(セ): ¥{salesmanSal}万</p>
-                  <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>社会保険料(ソ): ¥{insurance}万</p>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem' }}>社会保険料(ソ): ¥{insurance}万</p>
+                  {remainingRepayment > 0 && (
+                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--mg-pink)' }}>
+                      ⚠️借入返済(ナ): ¥{remainingRepayment}万 <span style={{fontSize:'0.75rem'}}>(未返済の20%分)</span>
+                    </p>
+                  )}
                   <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                    合計引落額: ¥{totalAmount}万
+                    合計引落額: ¥{totalAmount + remainingRepayment}万
                   </p>
                 </div>
               );
