@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { subscribeToRoom, removePlayer, archiveRoom } from '../firebase';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [roomId, setRoomId] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [playersData, setPlayersData] = useState({});
@@ -95,6 +97,13 @@ export default function Dashboard() {
             style={{ padding: '8px 16px', fontSize: '1rem', background: 'var(--mg-pink)', border: 'none' }}
           >
             💾 成績を永久保存
+          </button>
+          <button 
+            onClick={() => navigate('/archives')} 
+            className="btn-secondary"
+            style={{ padding: '8px 16px', fontSize: '1rem', background: 'transparent', border: '1px solid #FFD700', color: '#FFD700' }}
+          >
+            🏆 歴代ランキングを見る
           </button>
           <button 
             onClick={() => setIsSubscribed(false)} 
