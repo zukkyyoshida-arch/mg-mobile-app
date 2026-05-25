@@ -59,7 +59,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
   const [riskTab, setRiskTab] = useState('positive'); // positive, negative
   const [riskAction, setRiskAction] = useState('special_sale'); 
-  const [riskSaleType, setRiskSaleType] = useState('cash'); // cash(キ) or credit(ネ)
   const [riskQty, setRiskQty] = useState('');
   const [riskPrice, setRiskPrice] = useState('');
   const [riskMarket, setRiskMarket] = useState('sapporo');
@@ -221,7 +220,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       if (riskTab === 'positive') {
         if (riskAction === 'monopoly_ad') {
           const adPrices = { sapporo: 40, sendai: 36, tokyo: 32, nagoya: 28, osaka: 24, fukuoka: 20 };
-          const cat = riskSaleType === 'credit' ? 'ネ' : 'キ';
+          const cat = transactionMode === 'credit' ? 'ネ' : 'キ';
           let totalQ = 0;
           Object.entries(riskMonopolyAdQtys).forEach(([market, qty]) => {
             if (qty > 0) {
@@ -238,7 +237,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
             alert("販売する数量と単価を入力してください");
             return;
           }
-          const cat = riskSaleType === 'credit' ? 'ネ' : 'キ';
+          const cat = transactionMode === 'credit' ? 'ネ' : 'キ';
           newTransactions.push({ id: Date.now().toString() + "-sale", category: cat, quantity: q, amount: q * p, price: p, timestamp, usedRD: riskAction === 'rd_success' });
         } else if (riskAction === 'special_mat' || riskAction === 'common_mat') {
           if (q <= 0) {
@@ -1167,30 +1166,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
               ) : selectedCategory === 'リスクカード' ? (
                 <div style={{ background: 'rgba(156, 39, 176, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-purple)' }}>
                   <h4 style={{ fontSize: '0.9rem', color: 'var(--mg-purple)', marginBottom: '8px' }}>🃏 リスクカード</h4>
-          {/* 取引方式トグル */}
-          <div style={{ marginBottom: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <label style={{ color: 'var(--text-secondary)' }}>取引方式：</label>
-            <label>
-              <input
-                type="radio"
-                name="riskSaleType"
-                value="cash"
-                checked={riskSaleType === 'cash'}
-                onChange={() => setRiskSaleType('cash')}
-              />
-              現金（キ）
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="riskSaleType"
-                value="credit"
-                checked={riskSaleType === 'credit'}
-                onChange={() => setRiskSaleType('credit')}
-              />
-              売掛（ネ）
-            </label>
-          </div>
                   
                   {/* Tabs */}
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
