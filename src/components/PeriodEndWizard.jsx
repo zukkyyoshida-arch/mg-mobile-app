@@ -5,10 +5,10 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const [currentStep, setCurrentStep] = useState(1);
   
   // Step 1: Inventory state
-  const [actualMaterials, setActualMaterials] = useState(actuals?.actualMaterials ?? 0);
-  const [actualWip, setActualWip] = useState(actuals?.actualWip ?? 0);
-  const [actualProduct, setActualProduct] = useState(actuals?.actualProduct ?? 0);
-  const [actualCash, setActualCash] = useState(actuals?.actualCash ?? 0);
+  const [actualMaterials, setActualMaterials] = useState(actuals?.actualMaterials ?? '');
+  const [actualWip, setActualWip] = useState(actuals?.actualWip ?? '');
+  const [actualProduct, setActualProduct] = useState(actuals?.actualProduct ?? '');
+  const [actualCash, setActualCash] = useState(actuals?.actualCash ?? '');
 
   // Step 2: Salary state
   const [periodEndWorkers, setPeriodEndWorkers] = useState('');
@@ -23,19 +23,21 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   }, [currentStep, results, periodEndWorkers, periodEndSalesmen]);
 
   const handleActualChange = (field, val) => {
-    const num = val === '' ? 0 : Number(val);
+    const rawVal = val === '' ? '' : Number(val);
+    const updateVal = val === '' ? 0 : Number(val);
+    
     if (field === 'mat') {
-      setActualMaterials(num);
-      onUpdateActuals({ ...actuals, actualMaterials: num });
+      setActualMaterials(rawVal);
+      onUpdateActuals({ ...actuals, actualMaterials: updateVal });
     } else if (field === 'wip') {
-      setActualWip(num);
-      onUpdateActuals({ ...actuals, actualWip: num });
+      setActualWip(rawVal);
+      onUpdateActuals({ ...actuals, actualWip: updateVal });
     } else if (field === 'prod') {
-      setActualProduct(num);
-      onUpdateActuals({ ...actuals, actualProduct: num });
+      setActualProduct(rawVal);
+      onUpdateActuals({ ...actuals, actualProduct: updateVal });
     } else if (field === 'cash') {
-      setActualCash(num);
-      onUpdateActuals({ ...actuals, actualCash: num });
+      setActualCash(rawVal);
+      onUpdateActuals({ ...actuals, actualCash: updateVal });
     }
   };
 
@@ -46,14 +48,22 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const cashTheoretical = results.bookEndingCash;
 
   // 在庫不一致チェック
-  const matMatches = matTheoretical === actualMaterials;
-  const wipMatches = wipTheoretical === actualWip;
-  const prodMatches = prodTheoretical === actualProduct;
+  const safeMat = actualMaterials === '' ? 0 : actualMaterials;
+  const safeWip = actualWip === '' ? 0 : actualWip;
+  const safeProd = actualProduct === '' ? 0 : actualProduct;
+
+  const matMatches = matTheoretical === safeMat;
+  const wipMatches = wipTheoretical === safeWip;
+  const prodMatches = prodTheoretical === safeProd;
 
   const handleNextStep = () => {
-    const matDiff = matTheoretical - actualMaterials;
-    const wipDiff = wipTheoretical - actualWip;
-    const prodDiff = prodTheoretical - actualProduct;
+    const safeMat = actualMaterials === '' ? 0 : actualMaterials;
+    const safeWip = actualWip === '' ? 0 : actualWip;
+    const safeProd = actualProduct === '' ? 0 : actualProduct;
+    
+    const matDiff = matTheoretical - safeMat;
+    const wipDiff = wipTheoretical - safeWip;
+    const prodDiff = prodTheoretical - safeProd;
 
     if (matDiff < 0 || wipDiff < 0 || prodDiff < 0) {
       alert(`⚠️ 盤上の個数が理論値よりも多くなっています。\n余分な個数（材料:${matDiff<0 ? -matDiff : 0}, 仕掛品:${wipDiff<0 ? -wipDiff : 0}, 製品:${prodDiff<0 ? -prodDiff : 0}）はストッカーに戻し、理論値に合わせてから次へ進んでください。`);
@@ -95,9 +105,13 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
       newTransactions.push({ id: Date.now().toString() + "-ins", category: "ソ", quantity: 1, amount: insurance, price: insurance, timestamp: new Date(Date.now() + 3).toISOString(), customName: "社会保険料の支払", customShortName: "保険" });
     }
 
-    const matDiff = matTheoretical - actualMaterials;
-    const wipDiff = wipTheoretical - actualWip;
-    const prodDiff = prodTheoretical - actualProduct;
+    const safeMat = actualMaterials === '' ? 0 : actualMaterials;
+    const safeWip = actualWip === '' ? 0 : actualWip;
+    const safeProd = actualProduct === '' ? 0 : actualProduct;
+
+    const matDiff = matTheoretical - safeMat;
+    const wipDiff = wipTheoretical - safeWip;
+    const prodDiff = prodTheoretical - safeProd;
 
     if (matDiff > 0) {
       newTransactions.push({ id: Date.now().toString() + "-loss-mat", category: "棚卸ロス(材料)", quantity: matDiff, amount: 0, price: 0, timestamp: new Date(Date.now() + 4).toISOString(), customName: "期末棚卸による材料紛失", customShortName: "ロス" });
