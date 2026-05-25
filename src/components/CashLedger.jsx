@@ -245,7 +245,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
             return;
           }
           const price = riskAction === 'special_mat' ? 10 : 12;
-          newTransactions.push({ id: Date.now().toString() + "-mat", category: "ツ", quantity: q, amount: q * price, price: price, timestamp });
+          const cat = transactionMode === 'credit' ? 'ノ' : 'ツ';
+          newTransactions.push({ id: Date.now().toString() + "-mat", category: cat, quantity: q, amount: q * price, price: price, timestamp });
         } else if (riskAction === 'special_ad') {
           if (q <= 0) {
             alert("購入する口数を入力してください");
