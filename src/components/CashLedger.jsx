@@ -366,6 +366,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       
       onUpdateLedger([...ledger, ...newTransactions]);
       resetForm();
+      if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       return; // Skip normal add
     } else if (["ツ", "ノ"].includes(selectedCategory)) {
       const hasMD = ledger.some(e => e.category === "MD");
@@ -490,6 +491,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       onUpdateLedger(updatedLedger);
       
       resetForm();
+      if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     } else if (selectedCategory === '配置転換') {
       const w2s = Number(transferW2S) || 0;
