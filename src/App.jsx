@@ -172,7 +172,7 @@ function App() {
         });
       }
     },
-    2000, // 2秒間操作が落ち着いたら送信
+    5000, // 5秒間操作が落ち着いたら送信
     [results, currentPeriod, roomId, playerId]
   );
 
