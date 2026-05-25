@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { subscribeToRoom } from '../firebase';
+import { subscribeToRoom, removePlayer } from '../firebase';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 
@@ -106,7 +106,7 @@ export default function Dashboard() {
             {/* テーブルヘッダー */}
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: '90px 1fr 70px 120px 120px 120px 80px 100px 120px', 
+              gridTemplateColumns: '90px 1fr 70px 120px 120px 120px 80px 100px 120px 40px', 
               gap: '16px', 
               padding: '0 24px', 
               color: 'var(--text-secondary)', 
@@ -125,6 +125,7 @@ export default function Dashboard() {
               <div style={{ textAlign: 'right', color: 'var(--mg-yellow)' }}>販売数</div>
               <div style={{ textAlign: 'right', color: 'var(--mg-yellow)' }}>平均単価</div>
               <div style={{ textAlign: 'right', color: 'var(--mg-pink)' }}>利益(G)</div>
+              <div style={{ textAlign: 'center' }}></div>
             </div>
 
             {/* ランキングリスト */}
@@ -194,6 +195,19 @@ export default function Dashboard() {
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '1.5rem', fontWeight: 'bold', fontFamily: 'monospace', color: 'var(--mg-pink)' }}>
                     {(player.profit || 0).toLocaleString()}
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <button 
+                      onClick={() => {
+                        if (window.confirm(`「${player.id}」を成績表から削除しますか？`)) {
+                          removePlayer(roomId, player.id);
+                        }
+                      }}
+                      style={{ background: 'transparent', border: 'none', color: '#ff4444', fontSize: '1.2rem', cursor: 'pointer', padding: '4px' }}
+                      title="退出させる"
+                    >
+                      ×
+                    </button>
                   </div>
                 </div>
               );

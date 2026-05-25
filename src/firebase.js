@@ -39,3 +39,14 @@ export const subscribeToRoom = (roomId, callback) => {
   });
   return unsubscribe;
 };
+
+// Helper function to remove a player from a room
+export const removePlayer = (roomId, playerId) => {
+  if (!roomId || !playerId) return Promise.resolve();
+  const playerRef = doc(db, `rooms/${roomId}/players/${playerId}`);
+  // deleteDoc は import に追加しておく必要があります
+  import("firebase/firestore").then(({ deleteDoc }) => {
+    deleteDoc(playerRef).catch(console.error);
+  });
+  return Promise.resolve();
+};

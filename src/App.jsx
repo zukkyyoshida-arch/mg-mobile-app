@@ -7,7 +7,7 @@ import ManagementPlan from './components/ManagementPlan';
 import PriorPeriodCarryover from './components/PriorPeriodCarryover';
 import PerformanceReport from './components/PerformanceReport';
 import ErrorBoundary from './components/ErrorBoundary';
-import { syncPlayerData } from './firebase';
+import { syncPlayerData, removePlayer } from './firebase';
 import { useDebounce } from 'react-use';
 import { useNavigate } from 'react-router-dom';
 
@@ -388,6 +388,10 @@ function App() {
                 <button 
                   onClick={() => {
                     if(window.confirm('ルーム設定を変更しますか？（参加画面に戻ります）')){
+                      // Firestoreからプレイヤー情報を削除
+                      if (roomId && playerId) {
+                        removePlayer(roomId, playerId);
+                      }
                       safeStorage.setItem('mg_room_id', '');
                       safeStorage.setItem('mg_player_id', '');
                       safeStorage.setItem('mg_offline_mode', 'false');
