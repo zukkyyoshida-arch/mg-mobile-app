@@ -736,8 +736,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
         </div>
       )}
 
-      {/* 期首の一括処理アラート/ボタン（第2期以降のみ表示） */}
-      {currentPeriod > 1 && (
+      {/* 期首の一括処理アラート/ボタン（第2期以降のみ表示かつ、未処理の場合） */}
+      {currentPeriod > 1 && !ledger.some(entry => entry.category === '期首処理') && (
         <div style={{ margin: '0 16px 8px 16px' }}>
           <button
             type="button"
