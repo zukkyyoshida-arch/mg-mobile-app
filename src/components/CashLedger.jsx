@@ -1,6 +1,6 @@
 import { CATEGORIES, SALARY_TABLE } from '../utils/calculations';
 import CompanyBoardMinimap from './CompanyBoardMinimap';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 const MARKETS = [
   { id: 'sapporo', name: '札幌', basePrice: 10, max: 3 },
@@ -34,6 +34,7 @@ const MARKET_MAX_PRICES = {
 };
 
 function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod, transactionMode, setTransactionMode }) {
+  const modalContentRef = useRef(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [voucherNo, setVoucherNo] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('キ'); // Default to現金売上
@@ -208,7 +209,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       }
       onUpdateLedger([...ledger, ...newTransactions]);
       resetForm();
-      setShowAddModal(false);
+      if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     } else if (selectedCategory === "リスクカード") {
       const newTransactions = [];
@@ -293,7 +294,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       
       onUpdateLedger([...ledger, ...newTransactions]);
       resetForm();
-      setShowAddModal(false);
+      if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     } else if (selectedCategory === "期首処理") {
       const newTransactions = [];
@@ -330,7 +331,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       resetForm();
       // Reset to default category and close modal
       setSelectedCategory('キ');
-      setShowAddModal(false);
+      if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     } else if (selectedCategory === "生産") {
       const koQty = Number(productionKo) || 0;
@@ -607,7 +608,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     resetForm();
     setGreenChips({ pac: 0, md: 0, research: 0 });
     setCalcInput('');
-    setShowAddModal(false);
+    if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // 取引の削除
@@ -892,7 +893,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       {/* ワンタップ追加ボトムシート（モーダル） */}
       {showAddModal && (
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" ref={modalContentRef} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">出納データの追加</h3>
               <button onClick={() => setShowAddModal(false)} className="modal-close">×</button>
