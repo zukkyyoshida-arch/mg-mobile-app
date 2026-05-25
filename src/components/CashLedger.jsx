@@ -267,11 +267,27 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
         } else if (riskAction === 'rd_fail') {
           newTransactions.push({ id: tsGroup + "-rdfail", groupId: tsGroup, category: "研究開発失敗", amount: 0, quantity: 1, price: 0, timestamp, customName: "研究開発の失敗", customShortName: "失敗" });
         } else if (riskAction === 'theft') {
-          newTransactions.push({ id: tsGroup + "-theft", groupId: tsGroup, category: "盗難", quantity: 1, amount: 0, price: 0, timestamp, customName: "盗難による製品ロス", customShortName: "盗難" });
+          const qtyToLose = Math.min(2, results?.prod?.endingCount || 0);
+          newTransactions.push({ id: tsGroup + "-theft", groupId: tsGroup, category: "盗難", quantity: qtyToLose, amount: 0, price: 0, timestamp, customName: "盗難による製品ロス", customShortName: "盗難" });
+          
+          const purchasedIns = ledger.filter(tx => tx.category === '保険').reduce((sum, tx) => sum + (Number(tx.quantity) || 0), 0);
+          const usedIns = ledger.filter(tx => tx.category === '特別利益' && tx.customName?.includes('保険金')).length;
+          if (purchasedIns > usedIns && qtyToLose > 0) {
+            const payout = qtyToLose * 10;
+            newTransactions.push({ id: tsGroup + "-theft-ins", groupId: tsGroup, category: "特別利益", quantity: 1, amount: payout, price: payout, timestamp: new Date(Date.now() + 1).toISOString(), customName: "盗難保険金収入", customShortName: "保険金" });
+          }
         } else if (riskAction === 'miss') {
           newTransactions.push({ id: tsGroup + "-miss", groupId: tsGroup, category: "製造ミス", quantity: 1, amount: 0, price: 0, timestamp, customName: "製造ミスによる仕掛品ロス", customShortName: "ミス" });
         } else if (riskAction === 'fire') {
-          newTransactions.push({ id: tsGroup + "-fire", groupId: tsGroup, category: "火災", quantity: 1, amount: 0, price: 0, timestamp, customName: "火災による材料ロス", customShortName: "火災" });
+          const qtyToLose = results?.mat?.endingCount || 0;
+          newTransactions.push({ id: tsGroup + "-fire", groupId: tsGroup, category: "火災", quantity: qtyToLose, amount: 0, price: 0, timestamp, customName: "火災による材料ロス", customShortName: "火災" });
+
+          const purchasedIns = ledger.filter(tx => tx.category === '保険').reduce((sum, tx) => sum + (Number(tx.quantity) || 0), 0);
+          const usedIns = ledger.filter(tx => tx.category === '特別利益' && tx.customName?.includes('保険金')).length;
+          if (purchasedIns > usedIns && qtyToLose > 0) {
+            const payout = qtyToLose * 8;
+            newTransactions.push({ id: tsGroup + "-fire-ins", groupId: tsGroup, category: "特別利益", quantity: 1, amount: payout, price: payout, timestamp: new Date(Date.now() + 1).toISOString(), customName: "火災保険金収入", customShortName: "保険金" });
+          }
         }
       }
       
