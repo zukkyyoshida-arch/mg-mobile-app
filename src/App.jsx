@@ -124,7 +124,7 @@ function App() {
       
       syncPlayerData(roomId, playerId, {
         currentPeriod,
-        totalNetAssets: results?.totalNetAssets || 0,
+        totalNetAssets: results?.bs?.totalNetAssets || 0,
         cash: results?.bs?.cash || 0,
         capital: results?.bs?.capital || 0,
         retainedEarnings: results?.bs?.retainedEarnings || 0,
@@ -154,7 +154,7 @@ function App() {
 
         syncPlayerData(roomId, playerId, {
           currentPeriod,
-          totalNetAssets: results?.totalNetAssets || 0,
+          totalNetAssets: results?.bs?.totalNetAssets || 0,
           cash: results?.bs?.cash || 0,
           capital: results?.bs?.capital || 0,
           retainedEarnings: results?.bs?.retainedEarnings || 0,
@@ -418,7 +418,7 @@ function App() {
 
                     syncPlayerData(roomId, playerId, {
                       currentPeriod,
-                      totalNetAssets: results?.totalNetAssets || 0,
+                      totalNetAssets: results?.bs?.totalNetAssets || 0,
                       cash: results?.bs?.cash || 0,
                       capital: results?.bs?.capital || 0,
                       retainedEarnings: results?.bs?.retainedEarnings || 0,
