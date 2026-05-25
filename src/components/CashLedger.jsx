@@ -545,10 +545,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
     // Q4. 借入時（オ）的自動利息（タ）計算と追加
     if (selectedCategory === 'オ' && finalAmount > 0) {
-      // Determine max loan based on period and net assets
+      // Determine max loan based on net assets (always 2x)
       const maxLoan = (currentPeriod <= 1)
         ? Number.MAX_SAFE_INTEGER
-        : (currentPeriod <= 3 ? 2 : 3) * results.totalNetAssets;
+        : 2 * results.totalNetAssets;
       if (finalAmount > maxLoan) {
         alert(`借入金は上限 ${maxLoan} 万までです。`);
         return;
@@ -943,14 +943,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                       { action: "配置転換", symbol: "配置転換" },
                       { action: "機械売却", symbol: "イ" },
                       { action: "銀行借入", symbol: "オ" },
-                      { action: "最大借入", symbol: "MAX_Loan", onClick: () => { setSelectedCategory('オ'); setAmount(((currentPeriod <= 1) ? 0 : (currentPeriod <= 3 ? 2 : 3) * results.totalNetAssets).toString()); } },
+                      { action: "最大借入", symbol: "MAX_Loan", onClick: () => { setSelectedCategory('オ'); setAmount(((currentPeriod <= 1) ? 0 : 2 * results.totalNetAssets).toString()); } },
                       { action: "借入返済", symbol: "ナ" },
                       { action: "その他出金", symbol: "ス" }
                     ].map(btn => (
                       <button
                         type="button"
                         key={btn.action}
-                        onClick={() => handleCategorySelect(btn.symbol)}
+                        onClick={btn.onClick ? btn.onClick : () => handleCategorySelect(btn.symbol)}
                         className={`btn-premium ${selectedCategory === btn.symbol ? 'btn-primary' : 'btn-secondary'}`}
                         style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', opacity: selectedCategory === btn.symbol ? 1 : 0.8 }}
                       >
@@ -960,7 +960,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                   </div>
 {selectedCategory === 'オ' && (
   <div style={{fontSize:'0.75rem', color:'var(--text-secondary)', marginTop:'4px'}}>
-    最大借入可能額: {(currentPeriod <= 1) ? '∞' : ((currentPeriod <= 3 ? 2 : 3) * results.totalNetAssets)} 万
+    最大借入可能額: {(currentPeriod <= 1) ? '∞' : (2 * results.totalNetAssets)} 万
   </div>
 )}
 
