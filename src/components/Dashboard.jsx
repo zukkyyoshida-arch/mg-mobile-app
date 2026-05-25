@@ -6,20 +6,24 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [roomId, setRoomId] = useState('');
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  // localStorageから前回の状態を復元
+  const [roomId, setRoomId] = useState(() => {
+    try { return localStorage.getItem('dashboard_room_id') || ''; } catch (e) { return ''; }
+  });
+  const [isSubscribed, setIsSubscribed] = useState(() => {
+    try { return localStorage.getItem('dashboard_is_subscribed') === 'true'; } catch (e) { return false; }
+  });
   const [playersData, setPlayersData] = useState({});
   const { width, height } = useWindowSize();
 
-  // URLパラメーターからルームIDを自動取得（例: ?room=mg-test）
+  // 状態が変わるたびにlocalStorageに保存
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const roomParam = params.get('room');
-    if (roomParam) {
-      setRoomId(roomParam);
-      setIsSubscribed(true);
-    }
-  }, []);
+    try { localStorage.setItem('dashboard_room_id', roomId); } catch (e) {}
+  }, [roomId]);
+
+  useEffect(() => {
+    try { localStorage.setItem('dashboard_is_subscribed', isSubscribed); } catch (e) {}
+  }, [isSubscribed]);
 
   useEffect(() => {
     if (!isSubscribed || !roomId) return;
