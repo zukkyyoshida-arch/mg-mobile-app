@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { subscribeToRoom, removePlayer } from '../firebase';
+import { subscribeToRoom, removePlayer, archiveRoom } from '../firebase';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 
@@ -83,6 +83,19 @@ export default function Dashboard() {
           <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>
             ルームID: <strong style={{ color: 'white' }}>{roomId}</strong>
           </span>
+          <button 
+            onClick={() => {
+              if(window.confirm('現在の成績を「アーカイブ（過去の記録）」として永久保存しますか？')) {
+                archiveRoom(roomId, sortedPlayers)
+                  .then(() => alert('✅ 成績をアーカイブに保存しました！'))
+                  .catch(e => alert('保存に失敗しました: ' + e.message));
+              }
+            }} 
+            className="btn-primary"
+            style={{ padding: '8px 16px', fontSize: '1rem', background: 'var(--mg-pink)', border: 'none' }}
+          >
+            💾 成績を永久保存
+          </button>
           <button 
             onClick={() => setIsSubscribed(false)} 
             className="btn-secondary"

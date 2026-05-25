@@ -50,3 +50,15 @@ export const removePlayer = (roomId, playerId) => {
   });
   return Promise.resolve();
 };
+
+// Helper function to archive a room's results permanently
+export const archiveRoom = (roomId, playersArray) => {
+  if (!roomId || !playersArray || playersArray.length === 0) return Promise.reject(new Error("保存するデータがありません"));
+  return import("firebase/firestore").then(({ addDoc, collection }) => {
+    return addDoc(collection(db, "archives"), {
+      roomId,
+      timestamp: new Date().toISOString(),
+      players: playersArray
+    });
+  });
+};
