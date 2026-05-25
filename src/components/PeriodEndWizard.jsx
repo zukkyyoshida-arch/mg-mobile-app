@@ -14,9 +14,8 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const [periodEndWorkers, setPeriodEndWorkers] = useState('');
   const [periodEndSalesmen, setPeriodEndSalesmen] = useState('');
 
-  // Step 3: AR Collection & Loan Borrowing state
+  // Step 3: AR Collection state
   const [arCollection, setArCollection] = useState('');
-  const [loanAmount, setLoanAmount] = useState('');
 
   // Initialize salary state when moving to step 2
   useEffect(() => {
@@ -103,8 +102,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const totalAmount = workerSal + salesmanSal + insurance;
   const currentCash = results.bookEndingCash || 0;
   const arToCollect = Number(arCollection) || 0;
-  const loanToBorrow = Number(loanAmount) || 0;
-  const finalCash = currentCash - totalAmount - remainingRepayment + arToCollect + loanToBorrow;
+  const finalCash = currentCash - totalAmount - remainingRepayment + arToCollect;
 
   const confirmPeriodEnd = () => {
     const newTransactions = [];
@@ -142,10 +140,6 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
 
     if (arToCollect > 0) {
       newTransactions.push({ id: Date.now().toString() + "-ar-col", category: "ア", quantity: 1, amount: arToCollect, price: arToCollect, timestamp: new Date(Date.now() + 8).toISOString(), customName: "期末の売掛金回収", customShortName: "回収" });
-    }
-
-    if (loanToBorrow > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-loan", category: "オ", quantity: 1, amount: loanToBorrow, price: loanToBorrow, timestamp: new Date(Date.now() + 9).toISOString(), customName: "期末の資金借入", customShortName: "借入" });
     }
 
     if (newTransactions.length === 0) {
@@ -459,7 +453,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
               </div>
               
               {results.endingReceivables > 0 && (
-                <div style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '12px', marginBottom: '8px' }}>
+                <div style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '12px', marginBottom: '16px' }}>
                   <label style={{ fontSize: '0.85rem', display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>
                     ➕ 売掛金入金（ア） <span style={{color:'var(--text-muted)'}}>(最大 {results.endingReceivables}万)</span>
                   </label>
@@ -478,25 +472,6 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                   )}
                 </div>
               )}
-
-              <div style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '12px', marginBottom: '16px' }}>
-                <label style={{ fontSize: '0.85rem', display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>
-                  ➕ 銀行からの借入（オ）
-                </label>
-                <input
-                  type="number"
-                  value={loanAmount}
-                  onChange={(e) => setLoanAmount(Math.max(0, Number(e.target.value) || 0))}
-                  placeholder="借入する金額を入力"
-                  className="form-input"
-                  style={{ width: '100%', padding: '10px' }}
-                />
-                {loanToBorrow > 0 && (
-                  <div style={{ textAlign: 'right', marginTop: '4px', color: 'var(--mg-pink)', fontSize: '0.9rem' }}>
-                    借入額: +¥{loanToBorrow}万
-                  </div>
-                )}
-              </div>
               
               <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.2)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontWeight: 'bold' }}>最終現金残高:</span>
@@ -514,7 +489,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
               <div style={{ background: 'rgba(255, 46, 147, 0.1)', border: '1px solid var(--mg-pink)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--mg-pink)' }}>
                   ⚠️ <strong>現金が不足しています！</strong><br/>
-                  このままでは資金ショートしてしまいます。上の入力欄から売掛金を回収するか、銀行から借入を行ってください。
+                  このままでは資金ショートしてしまいます。上の入力欄から売掛金を回収するか、一度「戻る」で閉じてからメイン画面で借入を行ってください。
                 </p>
               </div>
             )}
