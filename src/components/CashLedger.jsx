@@ -1621,8 +1621,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                       };
                       
                       return [
-                        { id: 'pac', name: 'PAC生産性', desc: '生産能力+1' },
                         { id: 'md', name: 'マーチャンダイザー', desc: '材料仕入-2万' },
+                        { id: 'pac', name: 'PAC生産性', desc: '生産能力+1' },
                         { id: 'research', name: 'マーケットリサーチ', desc: '販売力アップ' }
                       ].map(chip => {
                         const isBought = alreadyBought[chip.id];
