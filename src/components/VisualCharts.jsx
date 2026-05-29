@@ -59,6 +59,46 @@ function VisualCharts({ results, carryover }) {
   const prodDisasterCnt = prod.theftCount || 0;
   const prodUnit = prod.unitCost || 0;
 
+  // --- 追加の計算 (資産・間接費・人員・借入・キャッシュ) ---
+  const bs = results.bs || {};
+  const cf = results.cf || {};
+
+  // 借入金
+  const loanBeg = carryover.loans || 0;
+  const loanIn = ledger?.filter(e => e.category === 'ナ').reduce((sum, e) => sum + (Number(e.amount)||0), 0) || 0;
+  const loanOut = ledger?.filter(e => e.category === '二').reduce((sum, e) => sum + (Number(e.amount)||0), 0) || 0;
+  const loanChange = loanIn - loanOut;
+  const loanEnd = bs.loans || (loanBeg + loanChange);
+
+  // キャッシュ
+  const cashBeg = carryover.cash || 0;
+  const cashIn = results.cashInflow || 0;
+  const cashOut = results.cashOutflow || 0;
+  const cashEnd = results.bookEndingCash || 0;
+
+  // 人員
+  const workerBeg = carryover.workers || 0;
+  const workerIn = ledger?.filter(e => e.category === 'メ').reduce((sum, e) => sum + (e.workers||0), 0) || 0;
+  const workerOut = ledger?.filter(e => e.category === '辞').reduce((sum, e) => sum + (e.workers||0), 0) || 0;
+  const workerEnd = workerBeg + workerIn - workerOut;
+
+  const salesmanBeg = carryover.salesmen || 0;
+  const salesmanIn = ledger?.filter(e => e.category === 'メ').reduce((sum, e) => sum + (e.salesmen||0), 0) || 0;
+  const salesmanOut = ledger?.filter(e => e.category === '辞').reduce((sum, e) => sum + (e.salesmen||0), 0) || 0;
+  const salesmanEnd = salesmanBeg + salesmanIn - salesmanOut;
+
+  // 製造間接費
+  const laborCost = pl.workerSalary || 0;
+  const laborSeverance = pl.workerSeverance || 0;
+  const manufacturingFixed = pl.manufacturingFixed || 0;
+  const depreciation = pl.depreciation || 0;
+  const totalManufacturingOverhead = laborCost + laborSeverance + manufacturingFixed + depreciation;
+
+  // 固定資産
+  const macBegVal = carryover.fixedAssets || 0;
+  const macInVal = ledger?.filter(e => e.category === 'ケ').reduce((sum, e) => sum + (Number(e.amount)||0), 0) || 0;
+  const macEndVal = bs.fixedAssets || (macBegVal + macInVal - depreciation);
+
   const renderTAccount = (title, begV, begC, inV, inC, inLabel, outV, outC, outLabel, endV, endC, disV, disC, unit, lossLabel) => {
     const totalV = begV + inV;
     const totalC = begC + inC;
@@ -230,6 +270,63 @@ function VisualCharts({ results, carryover }) {
           <div style={{ textAlign: 'center', color: '#ffb74d', fontSize: '1.2rem', marginTop: '-10px', marginBottom: '-10px' }}>⬇</div>
 
           {renderTAccount('③ 製品 (営業所)', prodBegVal, prodBegCnt, prodInVal, prodInCnt, '当期完成 (サ)', prodOutVal, prodOutCnt, '売上原価 (vPQ)', prodEndVal, prodEndCnt, prodDisasterVal, prodDisasterCnt, prodUnit, '事故・災害 (盗難)')}
+        </div>
+      </div>
+
+      {/* 3. 現金・借入金フロー */}
+      <div className="glass-card" style={{ padding: '20px' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '16px', color: 'var(--text-primary)' }}>🏦 現金・借入金フロー</h3>
+        <div style={{ display: 'flex', gap: '16px' }}>
+          {/* 現金 */}
+          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>💵 現金残高</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>期首残高</span><span style={{ fontWeight: '800' }}>¥{cashBeg.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#64b5f6', fontSize: '0.8rem' }}>入金合計</span><span style={{ fontWeight: '800', color: '#64b5f6' }}>+¥{cashIn.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#ef5350', fontSize: '0.8rem' }}>出金合計</span><span style={{ fontWeight: '800', color: '#ef5350' }}>-¥{cashOut.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>期末残高</span><span style={{ fontWeight: '800', fontSize: '1.2rem' }}>¥{cashEnd.toLocaleString()}</span></div>
+          </div>
+          {/* 借入金 */}
+          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>💳 借入金</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>期首残高</span><span style={{ fontWeight: '800' }}>¥{loanBeg.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#ffb74d', fontSize: '0.8rem' }}>当期借入/返済</span><span style={{ fontWeight: '800', color: '#ffb74d' }}>{loanChange > 0 ? '+' : ''}¥{loanChange.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px', marginTop: 'auto' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>期末残高</span><span style={{ fontWeight: '800', fontSize: '1.2rem' }}>¥{loanEnd.toLocaleString()}</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. 経営リソース (資産・間接費・人員) */}
+      <div className="glass-card" style={{ padding: '20px' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '16px', color: 'var(--text-primary)' }}>🏢 経営リソース概況</h3>
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>⚙️ 固定資産台帳</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>期首額</span><span style={{ fontWeight: '800' }}>¥{macBegVal.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#64b5f6', fontSize: '0.8rem' }}>当期購入</span><span style={{ fontWeight: '800', color: '#64b5f6' }}>+¥{macInVal.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#ef5350', fontSize: '0.8rem' }}>減価償却</span><span style={{ fontWeight: '800', color: '#ef5350' }}>-¥{depreciation.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>期末額</span><span style={{ fontWeight: '800' }}>¥{macEndVal.toLocaleString()}</span></div>
+          </div>
+          
+          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>🏭 製造間接費</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>労務費 (チ)</span><span style={{ fontWeight: '800' }}>¥{laborCost.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>退職金 (辞)</span><span style={{ fontWeight: '800' }}>¥{laborSeverance.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>製造固定費</span><span style={{ fontWeight: '800' }}>¥{manufacturingFixed.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>減価償却費</span><span style={{ fontWeight: '800' }}>¥{depreciation.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>合計</span><span style={{ fontWeight: '800' }}>¥{totalManufacturingOverhead.toLocaleString()}</span></div>
+          </div>
+
+          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>👥 人員状況</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px dotted rgba(255,255,255,0.1)' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>工場(W)</span>
+              <span style={{ fontWeight: '800' }}>{workerBeg} + {workerIn} - {workerOut} = <span style={{color: '#64b5f6'}}>{workerEnd}</span> 人</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>営業(S)</span>
+              <span style={{ fontWeight: '800' }}>{salesmanBeg} + {salesmanIn} - {salesmanOut} = <span style={{color: '#ffb74d'}}>{salesmanEnd}</span> 人</span>
+            </div>
+          </div>
         </div>
       </div>
 

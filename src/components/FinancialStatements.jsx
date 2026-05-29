@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import VisualCharts from './VisualCharts';
-import MgWorksheet from './MgWorksheet';
 
 function FinancialStatements({ results, carryover, currentPeriod, ledger, onShowPerformance }) {
   // Defensive defaults for possible undefined props
@@ -120,12 +119,6 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
           className={`segment-item ${statementTab === 'visual' ? 'active' : ''}`}
         >
           図解 (Visual)
-        </button>
-        <button
-          onClick={() => setStatementTab('worksheet')}
-          className={`segment-item ${statementTab === 'worksheet' ? 'active' : ''}`}
-        >
-          MG公式版
         </button>
       </div>
 
@@ -439,13 +432,6 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
       {statementTab === 'visual' && (
         <div className="tab-panel">
           <VisualCharts results={results} carryover={safeCarry} ledger={ledger} />
-        </div>
-      )}
-
-      {/* ==================== 5. MG公式版 ==================== */}
-      {statementTab === 'worksheet' && (
-        <div className="tab-panel">
-          <MgWorksheet results={results} carryover={safeCarry} currentPeriod={currentPeriod} ledger={ledger} />
         </div>
       )}
 
