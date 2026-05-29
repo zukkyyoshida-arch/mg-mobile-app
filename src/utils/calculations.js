@@ -557,6 +557,8 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   // 各種チップと人員の実効数
   const activeRdChips = Math.max(0, Math.floor(ledgerTotals["チ"].amount / 20) - (ledgerTotals["研究開発失敗"]?.quantity || 0));
   const activeAdChips = Math.floor(ledgerTotals["セ"].amount / 5);
+  const activeGreenChips = (ledgerTotals["緑チップ"]?.quantity || 0) + (ledgerTotals["MD"]?.quantity || 0) + (ledgerTotals["PAC"]?.quantity || 0) + (ledgerTotals["リサーチ"]?.quantity || 0);
+  
   const activeSalesmen = totalSalesmenHired;
   const activeWorkers = totalWorkersHired;
   
@@ -724,6 +726,7 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
     
     activeRdChips,
     activeAdChips,
+    activeGreenChips,
     activeWorkers,
     activeSalesmen,
     
