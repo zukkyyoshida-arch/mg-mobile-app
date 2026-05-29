@@ -198,49 +198,48 @@ function VisualCharts({ results, carryover }) {
             <div style={{ fontSize: '1.3rem', color: '#f8bbd0' }}>¥{PQ.toLocaleString()}</div>
           </div>
 
-          {/* 中央列: vPQ と mPQ */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {/* vPQ */}
+          {/* 右側全体 (vPQ, mPQ, F, G) */}
+          <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            
+            {/* 上段: vPQ (全幅) */}
             <div style={{ height: `${Math.max(0, (vPQPct / 100) * totalHeight - (vPQPct < 100 ? 4 : 0))}px`, minHeight: '40px', backgroundColor: 'rgba(156, 39, 176, 0.2)', border: '2px solid #ab47bc', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
               <span style={{ position: 'absolute', top: '4px', left: '6px', color: '#ce93d8', fontSize: '0.7rem' }}>vPQ(変動費)</span>
               <div style={{ color: '#e1bee7', fontSize: '1.1rem' }}>¥{vPQ.toLocaleString()}</div>
             </div>
-            
-            {/* mPQ */}
-            <div style={{ height: `${Math.max(0, (mPQPct / 100) * totalHeight - (mPQPct < 100 ? 4 : 0))}px`, minHeight: '40px', backgroundColor: 'rgba(33, 150, 243, 0.2)', border: '2px solid #42a5f5', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
-              <span style={{ position: 'absolute', top: '4px', left: '6px', color: '#90caf9', fontSize: '0.7rem' }}>mPQ(限界利益)</span>
-              <div style={{ color: '#bbdefb', fontSize: '1.1rem' }}>¥{mPQ.toLocaleString()}</div>
-            </div>
-          </div>
 
-          {/* 右列: F と G */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
-            {/* 上部のスペーサー（vPQと同じ高さ） */}
-            <div style={{ height: `${Math.max(0, (vPQPct / 100) * totalHeight - (vPQPct < 100 ? 4 : 0))}px`, minHeight: '40px' }}></div>
-            
-            {/* mPQと同じ高さの領域にFとGを配置 */}
-            <div style={{ height: `${Math.max(0, (mPQPct / 100) * totalHeight - (mPQPct < 100 ? 4 : 0))}px`, minHeight: '40px', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
-              {/* F */}
-              <div style={{ height: G >= 0 ? `${Math.max(0, (FPctOfMPQ / 100) * mPQHeight - 4)}px` : '100%', minHeight: '40px', backgroundColor: 'rgba(255, 152, 0, 0.2)', border: '2px solid #ff9800', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 2 }}>
-                <span style={{ position: 'absolute', top: '4px', left: '6px', color: '#ffb74d', fontSize: '0.7rem' }}>F (固定費)</span>
-                <div style={{ color: '#ffe0b2', fontSize: '1.1rem' }}>¥{F.toLocaleString()}</div>
-              </div>
+            {/* 下段: 左(mPQ) と 右(F, G) */}
+            <div style={{ display: 'flex', gap: '8px', height: `${Math.max(0, (mPQPct / 100) * totalHeight - (mPQPct < 100 ? 4 : 0))}px`, minHeight: '40px', position: 'relative' }}>
               
-              {/* G (黒字) */}
-              {G >= 0 && (
-                <div style={{ flex: 1, minHeight: '40px', backgroundColor: 'rgba(76, 175, 80, 0.2)', border: '2px solid #66bb6a', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-                  <span style={{ position: 'absolute', top: '4px', left: '6px', color: '#81c784', fontSize: '0.7rem' }}>G (利益)</span>
-                  <div style={{ color: '#c8e6c9', fontSize: '1.1rem' }}>¥{G.toLocaleString()}</div>
-                </div>
-              )}
+              {/* 下段・左: mPQ */}
+              <div style={{ flex: 1, backgroundColor: 'rgba(33, 150, 243, 0.2)', border: '2px solid #42a5f5', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
+                <span style={{ position: 'absolute', top: '4px', left: '6px', color: '#90caf9', fontSize: '0.7rem' }}>mPQ(限界利益)</span>
+                <div style={{ color: '#bbdefb', fontSize: '1.1rem' }}>¥{mPQ.toLocaleString()}</div>
+              </div>
 
-              {/* G (赤字 - 枠外にぶら下がる) */}
-              {G < 0 && (
-                <div style={{ position: 'absolute', bottom: `-${Math.min(80, (Math.abs(G)/F)*mPQHeight)}px`, left: 0, right: 0, height: `${Math.min(80, (Math.abs(G)/F)*mPQHeight)}px`, minHeight: '40px', backgroundColor: 'rgba(244, 67, 54, 0.2)', border: '2px dashed #ef5350', borderTop: 'none', borderRadius: '0 0 8px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 1 }}>
-                  <span style={{ position: 'absolute', bottom: '4px', left: '6px', color: '#e57373', fontSize: '0.7rem' }}>G (赤字)</span>
-                  <div style={{ color: '#ffcdd2', fontSize: '1.1rem' }}>-¥{Math.abs(G).toLocaleString()}</div>
+              {/* 下段・右: F と G */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
+                {/* F */}
+                <div style={{ height: G >= 0 ? `${Math.max(0, (FPctOfMPQ / 100) * mPQHeight - 4)}px` : '100%', minHeight: '40px', backgroundColor: 'rgba(255, 152, 0, 0.2)', border: '2px solid #ff9800', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 2 }}>
+                  <span style={{ position: 'absolute', top: '4px', left: '6px', color: '#ffb74d', fontSize: '0.7rem' }}>F (固定費)</span>
+                  <div style={{ color: '#ffe0b2', fontSize: '1.1rem' }}>¥{F.toLocaleString()}</div>
                 </div>
-              )}
+                
+                {/* G (黒字) */}
+                {G >= 0 && (
+                  <div style={{ flex: 1, minHeight: '40px', backgroundColor: 'rgba(76, 175, 80, 0.2)', border: '2px solid #66bb6a', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+                    <span style={{ position: 'absolute', top: '4px', left: '6px', color: '#81c784', fontSize: '0.7rem' }}>G (利益)</span>
+                    <div style={{ color: '#c8e6c9', fontSize: '1.1rem' }}>¥{G.toLocaleString()}</div>
+                  </div>
+                )}
+
+                {/* G (赤字 - 枠外にぶら下がる) */}
+                {G < 0 && (
+                  <div style={{ position: 'absolute', bottom: `-${Math.min(80, (Math.abs(G)/F)*mPQHeight)}px`, left: 0, right: 0, height: `${Math.min(80, (Math.abs(G)/F)*mPQHeight)}px`, minHeight: '40px', backgroundColor: 'rgba(244, 67, 54, 0.2)', border: '2px dashed #ef5350', borderTop: 'none', borderRadius: '0 0 8px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 1 }}>
+                    <span style={{ position: 'absolute', bottom: '4px', left: '6px', color: '#e57373', fontSize: '0.7rem' }}>G (赤字)</span>
+                    <div style={{ color: '#ffcdd2', fontSize: '1.1rem' }}>-¥{Math.abs(G).toLocaleString()}</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
