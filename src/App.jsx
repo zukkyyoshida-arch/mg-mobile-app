@@ -41,14 +41,12 @@ function App() {
         console.error("Failed to parse periods data", e);
       }
     }
-    // 初期データ
-    return {
-      1: JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA)),
-      2: JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA)),
-      3: JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA)),
-      4: JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA)),
-      5: JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA))
-    };
+    // 初期データ (1期〜20期)
+    const initialData = {};
+    for (let i = 1; i <= 20; i++) {
+      initialData[i] = JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA));
+    }
+    return initialData;
   });
 
   // 現在の期 (1〜5)
@@ -216,13 +214,10 @@ function App() {
   // 全期リセット機能
   const resetAllData = () => {
     if (window.confirm("全てのデータを初期化して最初から開始しますか？\n（この操作は取り消せません）")) {
-      const freshData = {
-        1: JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA)),
-        2: JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA)),
-        3: JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA)),
-        4: JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA)),
-        5: JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA))
-      };
+      const freshData = {};
+      for (let i = 1; i <= 20; i++) {
+        freshData[i] = JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA));
+      }
       setPeriods(freshData);
       setCurrentPeriod(1);
       setTransactionMode('cash');

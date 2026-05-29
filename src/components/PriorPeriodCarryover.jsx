@@ -31,15 +31,15 @@ function PriorPeriodCarryover({
           </h3>
         </div>
         
-        <div className="grid-3" style={{ gap: '8px', margin: '8px 0' }}>
-          {[1, 2, 3, 4, 5].map((p) => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', margin: '12px 0' }}>
+          {Array.from({ length: 20 }, (_, i) => i + 1).map((p) => (
             <button
               key={p}
               onClick={() => setCurrentPeriod(p)}
               className={`btn-premium ${currentPeriod === p ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ padding: '10px 0', fontSize: '0.88rem' }}
+              style={{ padding: '10px 0', fontSize: '0.85rem' }}
             >
-              第{p}期
+              {p}期
             </button>
           ))}
         </div>
