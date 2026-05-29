@@ -1,11 +1,14 @@
 import React from 'react';
 
 function CompanyBoardMinimap({ results }) {
-  const { mat, wip, prod, machines, bookEndingCash, workers, salesmen } = results;
+  const { mat, wip, prod, machines, bookEndingCash, workers, salesmen, activeAdChips, activeRdChips } = results;
 
   const totalWorkers = workers || 0;
   const totalSalesmen = salesmen || 0;
   let remainingWorkers = totalWorkers;
+
+  const totalInventory = mat.endingCount + wip.endingCount + prod.endingCount;
+  const isInventoryOverLimit = totalInventory > 20;
 
   // 各種在庫の数に応じた配列を作成（レンダリング用）
   const matChips = Array.from({ length: Math.max(0, Math.min(15, mat.endingCount)) }, (_, i) => i);
@@ -50,6 +53,21 @@ function CompanyBoardMinimap({ results }) {
         </h4>
         <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>※盤面上のコマ配置を自動シミュレート</span>
       </div>
+
+      {isInventoryOverLimit && (
+        <div style={{ 
+          marginBottom: '12px', 
+          padding: '8px 12px', 
+          backgroundColor: 'rgba(239, 68, 68, 0.15)', 
+          border: '1px solid rgba(239, 68, 68, 0.4)', 
+          borderRadius: '8px', 
+          color: '#ff8a80', 
+          fontSize: '0.75rem', 
+          fontWeight: '700'
+        }}>
+          ⚠️ 警告: 在庫合計が20個を超えています (現在 {totalInventory}個)。<br/>期末処理までに商品・仕掛・材料の順に廃棄・投げ売りが必要です。
+        </div>
+      )}
 
       {/* 会社盤のグリッドレイアウト */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -296,6 +314,33 @@ function CompanyBoardMinimap({ results }) {
           </div>
 
         </div>
+
+        {/* 下段: 本部 (広告・研究開発) */}
+        {(activeAdChips > 0 || activeRdChips > 0) && (
+          <div style={{ 
+            backgroundColor: 'rgba(33, 150, 243, 0.05)', 
+            border: '1px solid rgba(33, 150, 243, 0.25)', 
+            borderRadius: '12px', 
+            padding: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#2196f3', textTransform: 'uppercase', letterSpacing: '0.5px' }}>本部</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {Array.from({ length: activeAdChips }).map((_, i) => (
+                <div key={`ad-${i}`} style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: 'rgba(33, 150, 243, 0.15)', color: '#64b5f6', borderRadius: '4px', border: '1px solid #2196f3' }}>
+                  広告 📣
+                </div>
+              ))}
+              {Array.from({ length: activeRdChips }).map((_, i) => (
+                <div key={`rd-${i}`} style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: 'rgba(156, 39, 176, 0.15)', color: '#ba68c8', borderRadius: '4px', border: '1px solid #9c27b0' }}>
+                  研究 🔬
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
