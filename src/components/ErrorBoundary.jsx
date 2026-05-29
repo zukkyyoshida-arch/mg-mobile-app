@@ -1,31 +1,31 @@
-import React, { Component } from 'react';
+import React from 'react';
 
-// Simple Error Boundary to catch rendering errors in child components
-export default class ErrorBoundary extends Component {
+export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null, info: null };
   }
 
   static getDerivedStateFromError(error) {
-    // Update state so the next render shows fallback UI
-    return { hasError: true };
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
-    // You could log the error to an external service here
-    console.error('ErrorBoundary caught an error', error, errorInfo);
+  componentDidCatch(error, info) {
+    this.setState({ info });
+    console.error("ErrorBoundary caught an error", error, info);
   }
 
   render() {
     if (this.state.hasError) {
-      // Render fallback UI
-      return <div style={{ color: 'var(--text-primary)', padding: '12px' }}>
-        <h2>何か問題が発生しました。</h2>
-        <p>エラーが検出されました。ページをリロードするか、サポートへお問い合わせください。</p>
-      </div>;
+      return (
+        <div style={{ padding: '20px', background: 'red', color: 'white', zIndex: 99999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'auto' }}>
+          <h1>Something went wrong.</h1>
+          <pre>{this.state.error?.toString()}</pre>
+          <pre>{this.state.info?.componentStack}</pre>
+          <button onClick={() => this.setState({ hasError: false })}>Dismiss</button>
+        </div>
+      );
     }
-    // Render children if no error
     return this.props.children;
   }
 }

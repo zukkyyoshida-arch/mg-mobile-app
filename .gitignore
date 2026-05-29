@@ -30,3 +30,7 @@ dist-ssr
 # Local npm cache
 .npm-cache
 .npm-cache/
+
+# Python virtual environment
+.venv/
+venv/

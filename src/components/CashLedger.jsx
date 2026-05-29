@@ -58,7 +58,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
   const [repaymentAmount, setRepaymentAmount] = useState('');
 
   const [riskTab, setRiskTab] = useState('positive'); // positive, negative
-  const [riskAction, setRiskAction] = useState('special_sale'); 
+  const [riskAction, setRiskAction] = useState('special_sale');
   const [riskQty, setRiskQty] = useState('');
   const [riskPrice, setRiskPrice] = useState('');
   const [riskMarket, setRiskMarket] = useState('sapporo');
@@ -121,7 +121,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     setRepaymentAmount('');
     setRiskTab('positive');
     setRiskAction('special_sale');
-    setRiskSaleType('cash');
+
     setRiskQty('');
     setRiskPrice('');
     setRiskMarket('sapporo');
