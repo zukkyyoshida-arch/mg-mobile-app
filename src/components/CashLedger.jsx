@@ -692,12 +692,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
   const currentCatMeta = CATEGORIES[selectedCategory] || {};
   const isQtyNeeded = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ"].includes(selectedCategory);
 
+  const visibleLedger = ledger.filter(entry => entry.category !== '期首処理');
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* 財務サマリーカード */}
       <div className="glass-card" style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(30, 32, 45, 0.8) 0%, rgba(20, 22, 31, 0.9) 100%)', border: '1px solid rgba(255, 46, 147, 0.15)' }}>
         <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-          第 {ledger.length > 0 ? (ledger.length) : 0} 取引完了
+          第 {visibleLedger.length > 0 ? (visibleLedger.length) : 0} 取引完了
         </span>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '4px', marginBottom: '8px' }}>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>現在の手元現金残高</span>
@@ -809,7 +811,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
           </span>
         </h3>
         
-        {ledger.length === 0 ? (
+        {visibleLedger.length === 0 ? (
           <div className="glass-card" style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-muted)' }}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '48px', height: '48px', margin: '0 auto 12px auto', opacity: 0.5 }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -818,7 +820,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
             右下の「＋」ボタンから最初の出納データを入力してください。
           </div>
         ) : (
-          [...ledger].reverse().map((entry) => {
+          [...visibleLedger].reverse().map((entry) => {
             const catMeta = CATEGORIES[entry.category] || { label: '未定義', color: 'pink', shortName: '不明', actionName: '不明' };
             const badgeClass = `badge badge-${catMeta.color}`;
             const iconText = entry.customShortName || catMeta.shortName || entry.category;
