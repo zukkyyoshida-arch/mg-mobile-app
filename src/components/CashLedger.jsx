@@ -323,10 +323,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       if (repay > 0) {
         newTransactions.push({ id: Date.now().toString() + "-na", category: "ナ", quantity: 1, amount: repay, price: repay, timestamp });
       }
-      if (newTransactions.length === 0) {
-        alert("決済する期首支払いがありません。");
-        return;
-      }
+      
+      // ボタンを消すためのマーカーとして「期首処理」を追加
+      newTransactions.push({ id: Date.now().toString() + "-kisho", category: "期首処理", quantity: 0, amount: 0, price: 0, timestamp });
+      
       onUpdateLedger([...ledger, ...newTransactions]);
       resetForm();
       // Reset to default category and close modal
