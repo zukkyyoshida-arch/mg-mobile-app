@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import VisualCharts from './VisualCharts';
 
 function FinancialStatements({ results, carryover, currentPeriod, onShowPerformance }) {
   // Defensive defaults for possible undefined props
@@ -112,6 +113,12 @@ function FinancialStatements({ results, carryover, currentPeriod, onShowPerforma
           className={`segment-item ${statementTab === 'cf' ? 'active' : ''}`}
         >
           C/F (資金)
+        </button>
+        <button
+          onClick={() => setStatementTab('visual')}
+          className={`segment-item ${statementTab === 'visual' ? 'active' : ''}`}
+        >
+          図解 (Visual)
         </button>
       </div>
 
@@ -418,6 +425,13 @@ function FinancialStatements({ results, carryover, currentPeriod, onShowPerforma
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* ==================== 4. 図解 (Visual) ==================== */}
+      {statementTab === 'visual' && (
+        <div className="tab-panel">
+          <VisualCharts results={results} carryover={safeCarry} />
         </div>
       )}
 
