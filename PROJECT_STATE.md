@@ -16,6 +16,15 @@
   - **設定 (PriorPeriodCarryover)**: 全期リセット、前期からのデータ自動引き継ぎ (`rollForwardFromPrevious`)
 - **追加機能**: AIアドバイザー機能 (`AIAdvisor`)
 
+## 最新の更新内容（Recent Updates）
+- **2026-05-29**: riskSaleType状態の削除リファクタリング完了・デプロイ
+  - CashLedger.jsx から使用されていない riskSaleType state をリモーブ
+  - リモート上の「loan borrowing機能削除」との競合を解決（git rebase）
+  - npm 依存関係の修復（react-router-dom インストール）
+  - フル build → commit → push ワークフロー完了
+  - デプロイ状態: **✅ 本番環境に反映済み**
+
 ## 次にやるべきこと（Next Action）
 （※新しいチャットを開始した際、ここからタスクを再開します）
-- [ ] 
+- [ ] 未使用ファイル（test_*.js, TESTING_GUIDE.md, playwright.config.js など）の整理検討
+- [ ] AIアドバイザー機能の詳細実装・テスト（対応状況確認） 
