@@ -23,48 +23,125 @@ function VisualCharts({ results, carryover }) {
   // Gがマイナスの場合はmPQをはみ出すため、高さを超える表現が必要
   
   // --- 在庫合わせ図の計算 ---
-  const matBeg = carryover.materialsValue || 0;
-  const matIn = (ledger?.filter(e => e.category === 'ツ' || e.category === 'ノ').reduce((a, c) => a + (Number(c.amount)||0), 0)) || 0;
-  const matOut = mat.inputValue || 0; // コ投入
-  const matEnd = mat.endingValue || 0;
-  const matDisaster = mat.fireValue || 0; // 火災など
+  const matBegVal = mat.beginningValue || 0;
+  const matBegCnt = mat.beginningCount || 0;
+  const matInVal = (ledger?.filter(e => e.category === 'ツ' || e.category === 'ノ').reduce((a, c) => a + (Number(c.amount)||0), 0)) || 0;
+  const matInCnt = mat.purchaseCount || 0;
+  const matOutVal = mat.inputValue || 0; 
+  const matOutCnt = mat.inputCount || 0;
+  const matEndVal = mat.endingValue || 0;
+  const matEndCnt = mat.endingCount || 0;
+  const matDisasterVal = mat.fireValue || 0; 
+  const matDisasterCnt = mat.fireCount || 0;
+  const matUnit = mat.unitCost || 0;
 
-  const wipBeg = carryover.wipValue || 0;
-  const wipIn = matOut + (ledger?.filter(e => e.category === 'コ' || e.category === 'サ').reduce((a, c) => a + (Number(c.amount)||0), 0)) || 0; // 投入(コ)＋完成(サ)の加工費
-  const wipOut = wip.completedValue || 0; // 当期完成
-  const wipEnd = wip.endingValue || 0;
-  const wipDisaster = wip.missValue || 0;
+  const wipBegVal = wip.beginningValue || 0;
+  const wipBegCnt = wip.beginningCount || 0;
+  const wipInVal = matOutVal + (ledger?.filter(e => e.category === 'コ' || e.category === 'サ').reduce((a, c) => a + (Number(c.amount)||0), 0)) || 0;
+  const wipInCnt = wip.inputCount || 0;
+  const wipOutVal = wip.completedValue || 0;
+  const wipOutCnt = wip.completedCount || 0;
+  const wipEndVal = wip.endingValue || 0;
+  const wipEndCnt = wip.endingCount || 0;
+  const wipDisasterVal = wip.missValue || 0;
+  const wipDisasterCnt = wip.missCount || 0;
+  const wipUnit = wip.unitCost || 0;
 
-  const prodBeg = carryover.productValue || 0;
-  const prodIn = wipOut;
-  const prodOut = prod.soldValue || 0; // vPQ
-  const prodEnd = prod.endingValue || 0;
-  const prodDisaster = prod.theftValue || 0;
+  const prodBegVal = prod.beginningValue || 0;
+  const prodBegCnt = prod.beginningCount || 0;
+  const prodInVal = wipOutVal;
+  const prodInCnt = prod.completedCount || 0;
+  const prodOutVal = prod.cogsValue || 0; 
+  const prodOutCnt = prod.salesCount || 0;
+  const prodEndVal = prod.endingValue || 0;
+  const prodEndCnt = prod.endingCount || 0;
+  const prodDisasterVal = prod.theftValue || 0;
+  const prodDisasterCnt = prod.theftCount || 0;
+  const prodUnit = prod.unitCost || 0;
 
-  const renderBox = (title, beg, inVal, inLabel, end, outVal, outLabel, disaster) => (
-    <div style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
-      <div style={{ backgroundColor: 'rgba(255,255,255,0.05)', padding: '6px 12px', fontSize: '0.8rem', fontWeight: '800', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        {title} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>(計: ¥{(beg + inVal).toLocaleString()})</span>
-      </div>
-      <div style={{ display: 'flex' }}>
-        <div style={{ flex: 1, padding: '12px', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>期首</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '8px' }}>¥{beg.toLocaleString()}</div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{inLabel}</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#64b5f6' }}>+¥{inVal.toLocaleString()}</div>
+  const renderTAccount = (title, begV, begC, inV, inC, inLabel, outV, outC, outLabel, endV, endC, disV, disC, unit, lossLabel) => {
+    const totalV = begV + inV;
+    const totalC = begC + inC;
+    
+    return (
+      <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+        <div style={{ backgroundColor: 'rgba(255,255,255,0.08)', padding: '8px 16px', fontSize: '0.9rem', fontWeight: '800', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#bbdefb' }}>
+          {title}
         </div>
-        <div style={{ flex: 1, padding: '12px' }}>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{outLabel}</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#ffb74d', marginBottom: '8px' }}>-¥{outVal.toLocaleString()}</div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>期末</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>¥{end.toLocaleString()}</div>
-          {disaster > 0 && (
-            <div style={{ marginTop: '8px', fontSize: '0.7rem', color: '#ef5350' }}>ロス: -¥{disaster.toLocaleString()}</div>
-          )}
+        <div style={{ display: 'flex' }}>
+          {/* 左側 (借方・入) */}
+          <div style={{ flex: 1, padding: '12px', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>期首繰越</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>¥{begV.toLocaleString()}</div>
+              </div>
+              <div style={{ textAlign: 'right', alignSelf: 'flex-end', color: 'var(--text-secondary)' }}>
+                {begC} 個
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{inLabel}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#64b5f6' }}>¥{inV.toLocaleString()}</div>
+              </div>
+              <div style={{ textAlign: 'right', alignSelf: 'flex-end', color: '#90caf9' }}>
+                {inC} 個
+              </div>
+            </div>
+          </div>
+
+          {/* 右側 (貸方・出) */}
+          <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{outLabel}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#ffb74d' }}>¥{outV.toLocaleString()}</div>
+              </div>
+              <div style={{ textAlign: 'right', alignSelf: 'flex-end', color: '#ffcc80' }}>
+                {outC} 個
+              </div>
+            </div>
+
+            {disC > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: '#ef5350' }}>{lossLabel}</div>
+                  <div style={{ fontSize: '1rem', fontWeight: '800', color: '#ef5350' }}>¥{disV.toLocaleString()}</div>
+                </div>
+                <div style={{ textAlign: 'right', alignSelf: 'flex-end', color: '#ef5350' }}>
+                  {disC} 個
+                </div>
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>次期繰越</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>¥{endV.toLocaleString()}</div>
+              </div>
+              <div style={{ textAlign: 'right', alignSelf: 'flex-end', color: 'var(--text-secondary)' }}>
+                {endC} 個
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* フッター (合計・平均単価) */}
+        <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <div>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>合計: </span>
+            <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>¥{totalV.toLocaleString()} ({totalC}個)</span>
+          </div>
+          <div>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>平均単価: </span>
+            <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>¥{unit.toLocaleString()} / 個</span>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingBottom: '24px' }}>
@@ -144,15 +221,15 @@ function VisualCharts({ results, carryover }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-          {renderBox('① 材料 (Materials)', matBeg, matIn, '当期仕入 (ツ・ノ)', matEnd, matOut, '当期投入 (コ)', matDisaster)}
+          {renderTAccount('① 材料 (倉庫)', matBegVal, matBegCnt, matInVal, matInCnt, '当期仕入 (ツ・ノ)', matOutVal, matOutCnt, '当期投入 (コ)', matEndVal, matEndCnt, matDisasterVal, matDisasterCnt, matUnit, '事故・災害 (火災)')}
           
           <div style={{ textAlign: 'center', color: '#ffb74d', fontSize: '1.2rem', marginTop: '-10px', marginBottom: '-10px' }}>⬇</div>
           
-          {renderBox('② 仕掛品 (WIP)', wipBeg, wipIn, '材料投入＋加工費(コ/サ)', wipEnd, wipOut, '当期完成 (サ)', wipDisaster)}
+          {renderTAccount('② 仕掛品 (工場)', wipBegVal, wipBegCnt, wipInVal, wipInCnt, '材料投入＋加工費', wipOutVal, wipOutCnt, '当期完成 (サ)', wipEndVal, wipEndCnt, wipDisasterVal, wipDisasterCnt, wipUnit, '製造ミス')}
 
           <div style={{ textAlign: 'center', color: '#ffb74d', fontSize: '1.2rem', marginTop: '-10px', marginBottom: '-10px' }}>⬇</div>
 
-          {renderBox('③ 商品 (Products)', prodBeg, prodIn, '当期完成 (サ)', prodEnd, prodOut, '売上原価 (vPQ)', prodDisaster)}
+          {renderTAccount('③ 製品 (営業所)', prodBegVal, prodBegCnt, prodInVal, prodInCnt, '当期完成 (サ)', prodOutVal, prodOutCnt, '売上原価 (vPQ)', prodEndVal, prodEndCnt, prodDisasterVal, prodDisasterCnt, prodUnit, '事故・災害 (盗難)')}
         </div>
       </div>
 
