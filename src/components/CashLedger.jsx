@@ -882,7 +882,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
       {/* 新規取引追加フローティングボタン(FAB) */}
       <button 
-        onClick={() => setShowAddModal(true)} 
+        onClick={() => {
+          setSelectedCategory(transactionMode === 'credit' ? 'ノ' : 'ツ');
+          setShowAddModal(true);
+        }} 
         className="fab-btn" 
         style={{ position: 'absolute' }}
         aria-label="Add transaction"
