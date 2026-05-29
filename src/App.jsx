@@ -339,6 +339,7 @@ function App() {
               results={results} 
               carryover={currentData.carryover}
               currentPeriod={currentPeriod}
+              ledger={currentData.ledger}
               onShowPerformance={() => setShowPerformanceReport(true)}
             />
           </div>
