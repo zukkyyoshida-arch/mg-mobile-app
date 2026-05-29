@@ -1273,10 +1273,16 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                         <div className="grid-2" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
                           <div className="form-group">
                             <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span>購入数量 (材料 ツ)</span>
-                              <button type="button" onClick={() => setRiskQty(riskAction === 'special_mat' ? 5 : 3)} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'black', fontWeight: 'bold' }}>MAX</button>
+                              <span>購入数量 <span style={{color: 'var(--text-secondary)', fontSize: '0.75rem'}}>(購入可能: {Math.max(0, (results?.productionCapacity || 0) * 2 - (results?.mat?.endingCount || 0))}個)</span></span>
+                              <button type="button" onClick={() => {
+                                const maxAllowed = Math.max(0, (results?.productionCapacity || 0) * 2 - (results?.mat?.endingCount || 0));
+                                setRiskQty(Math.min(riskAction === 'special_mat' ? 5 : 3, maxAllowed));
+                              }} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'black', fontWeight: 'bold' }}>MAX</button>
                             </label>
-                            <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(Math.min(riskAction === 'special_mat' ? 5 : 3, Math.max(0, Number(e.target.value) || 0)))} />
+                            <input type="number" className="form-input" value={riskQty} onChange={e => {
+                                const maxAllowed = Math.max(0, (results?.productionCapacity || 0) * 2 - (results?.mat?.endingCount || 0));
+                                setRiskQty(Math.min(riskAction === 'special_mat' ? 5 : 3, Math.min(maxAllowed, Math.max(0, Number(e.target.value) || 0))));
+                            }} />
                           </div>
                           <div className="form-group">
                             <label className="form-label">単価 (1個)</label>
@@ -1530,12 +1536,18 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                     totalAmount += q * discountedPrice;
                   });
                   
+                  const maxTotalPurchase = Math.max(0, (results?.productionCapacity || 0) * 2 - (results?.mat?.endingCount || 0));
+                  
                   return (
                     <div style={{ background: 'rgba(76, 175, 80, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(76, 175, 80, 0.3)' }}>
-                      <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-green)', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                      <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-green)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
                         <span>各市場の購入数量を入力</span>
                         {hasMD && <span className="badge badge-blue">MD割引適用中 (-2)</span>}
                       </h4>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '16px', background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '6px' }}>
+                        保管上限: <strong>生産能力({results?.productionCapacity || 0}) × 2 = {(results?.productionCapacity || 0) * 2}個</strong><br/>
+                        現在庫: {results?.mat?.endingCount || 0}個 / <strong>購入可能: {maxTotalPurchase}個</strong>
+                      </p>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginBottom: '16px' }}>
                         {MARKETS.map(m => {
                           const discountedPrice = (hasMD && m.id !== 'stocker') ? m.basePrice - 2 : m.basePrice;
@@ -1561,15 +1573,22 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                                 <button 
                                   type="button"
                                   onClick={() => setMarketQuantities(prev => ({ ...prev, [m.id]: maxLimit !== undefined ? Math.min(maxLimit, qty + 1) : qty + 1 }))}
-                                  style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: maxLimit !== undefined && qty >= maxLimit ? 0.3 : 1 }}
-                                  disabled={maxLimit !== undefined && qty >= maxLimit}
+                                  style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (maxLimit !== undefined && qty >= maxLimit) || totalQty >= maxTotalPurchase ? 0.3 : 1 }}
+                                  disabled={(maxLimit !== undefined && qty >= maxLimit) || totalQty >= maxTotalPurchase}
                                 >+</button>
                                 {maxLimit !== undefined && (
                                   <button
                                     type="button"
-                                    onClick={() => setMarketQuantities(prev => ({ ...prev, [m.id]: maxLimit }))}
-                                    style={{ background: 'var(--color-accent)', border: 'none', color: 'black', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', opacity: qty >= maxLimit ? 0.3 : 1 }}
-                                    disabled={qty >= maxLimit}
+                                    onClick={() => {
+                                      const allowedToAdd = maxTotalPurchase - totalQty;
+                                      const howManyCanAddForThisMarket = maxLimit - qty;
+                                      const actualAdd = Math.min(allowedToAdd, howManyCanAddForThisMarket);
+                                      if (actualAdd > 0) {
+                                        setMarketQuantities(prev => ({ ...prev, [m.id]: qty + actualAdd }));
+                                      }
+                                    }}
+                                    style={{ background: 'var(--color-accent)', border: 'none', color: 'black', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', opacity: (qty >= maxLimit) || totalQty >= maxTotalPurchase ? 0.3 : 1 }}
+                                    disabled={(qty >= maxLimit) || totalQty >= maxTotalPurchase}
                                   >MAX</button>
                                 )}
                               </div>

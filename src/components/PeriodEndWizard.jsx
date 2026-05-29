@@ -17,6 +17,11 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   // Step 3: AR Collection state
   const [arCollection, setArCollection] = useState('');
 
+  // Step 1.5: Disposal state
+  const [fireSaleCount, setFireSaleCount] = useState(0);
+  const [fireSaleType, setFireSaleType] = useState('cash'); // 'cash' or 'credit'
+  const [disposedState, setDisposedState] = useState({ prod: 0, wip: 0, mat: 0, required: false });
+
   // Initialize salary state when moving to step 2
   useEffect(() => {
     if (currentStep === 2) {
@@ -80,6 +85,22 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
       }
     }
 
+    const totalActual = safeMat + safeWip + safeProd;
+    if (totalActual > 20) {
+      const excess = totalActual - 20;
+      let remaining = excess;
+      const reduceProd = Math.min(safeProd, remaining);
+      remaining -= reduceProd;
+      const reduceWip = Math.min(safeWip, remaining);
+      remaining -= reduceWip;
+      const reduceMat = Math.min(safeMat, remaining);
+      
+      setDisposedState({ prod: reduceProd, wip: reduceWip, mat: reduceMat, required: true });
+      setFireSaleCount(reduceProd); // Default to fire sale all possible products
+      setCurrentStep(1.5);
+      return;
+    }
+
     setCurrentStep(2);
   };
 
@@ -102,7 +123,9 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const totalAmount = workerSal + salesmanSal + insurance;
   const currentCash = results.bookEndingCash || 0;
   const arToCollect = Number(arCollection) || 0;
-  const finalCash = currentCash - totalAmount - remainingRepayment + arToCollect;
+  
+  const fireSaleRevenue = (disposedState.required && fireSaleType === 'cash') ? (fireSaleCount * 18) : 0;
+  const finalCash = currentCash - totalAmount - remainingRepayment + arToCollect + fireSaleRevenue;
 
   const confirmPeriodEnd = () => {
     const newTransactions = [];
@@ -130,8 +153,24 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
     if (wipDiff > 0) {
       newTransactions.push({ id: Date.now().toString() + "-loss-wip", category: "棚卸ロス(仕掛品)", quantity: wipDiff, amount: 0, price: 0, timestamp: new Date(Date.now() + 5).toISOString(), customName: "期末棚卸による仕掛品紛失", customShortName: "ロス" });
     }
-    if (prodDiff > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-loss-prod", category: "棚卸ロス(製品)", quantity: prodDiff, amount: 0, price: 0, timestamp: new Date(Date.now() + 6).toISOString(), customName: "期末棚卸による製品紛失", customShortName: "ロス" });
+    
+    const actualLossProd = prodDiff - (disposedState.required ? fireSaleCount : 0);
+    if (actualLossProd > 0) {
+      newTransactions.push({ id: Date.now().toString() + "-loss-prod", category: "棚卸ロス(製品)", quantity: actualLossProd, amount: 0, price: 0, timestamp: new Date(Date.now() + 6).toISOString(), customName: "期末棚卸による製品紛失", customShortName: "ロス" });
+    }
+
+    if (disposedState.required && fireSaleCount > 0) {
+      const isCash = fireSaleType === 'cash';
+      newTransactions.push({ 
+        id: Date.now().toString() + "-fire-sale", 
+        category: isCash ? "キ" : "ネ", 
+        quantity: fireSaleCount, 
+        amount: fireSaleCount * 18, 
+        price: 18, 
+        timestamp: new Date(Date.now() + 6.5).toISOString(), 
+        customName: `期末製品投げ売り(${isCash ? '現金' : '掛売'})`, 
+        customShortName: "投売" 
+      });
     }
 
     if (remainingRepayment > 0) {
@@ -283,6 +322,106 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                 </button>
 
             </div>
+          </div>
+        )}
+
+        {currentStep === 1.5 && (
+          <div className="glass-card">
+            <div className="glass-card-header">
+              <h3 className="glass-card-title" style={{ color: 'var(--mg-pink)' }}>
+                ⚠️ ステップ 1.5: 在庫超過の強制処分
+              </h3>
+            </div>
+            
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '16px', fontWeight: 'bold' }}>
+              在庫合計が20個を超えています (現在: {(actualMaterials === '' ? 0 : actualMaterials) + (actualWip === '' ? 0 : actualWip) + (actualProduct === '' ? 0 : actualProduct)}個)。ルールにより、製品→仕掛品→材料の順で20個以下になるまで処分する必要があります。
+            </p>
+
+            <div style={{ background: 'rgba(255, 46, 147, 0.1)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>処分対象 (合計: {disposedState.prod + disposedState.wip + disposedState.mat}個):</p>
+              {disposedState.prod > 0 && <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem' }}>・製品: {disposedState.prod}個</p>}
+              {disposedState.wip > 0 && <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem' }}>・仕掛品: {disposedState.wip}個 (自動的に廃棄ロス)</p>}
+              {disposedState.mat > 0 && <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem' }}>・材料: {disposedState.mat}個 (自動的に廃棄ロス)</p>}
+            </div>
+
+            {disposedState.prod > 0 && (
+              <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '16px', marginBottom: '16px' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>📦 製品の処分方法</h4>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.85rem', display: 'block', marginBottom: '4px' }}>投げ売りする数 (1個18万)</label>
+                    <input
+                      type="number"
+                      value={fireSaleCount}
+                      onChange={(e) => setFireSaleCount(Math.min(disposedState.prod, Math.max(0, Number(e.target.value) || 0)))}
+                      min="0"
+                      max={disposedState.prod}
+                      className="form-input"
+                      style={{ padding: '8px', width: '100%' }}
+                    />
+                  </div>
+                  
+                  {fireSaleCount > 0 && (
+                    <div>
+                      <label style={{ fontSize: '0.85rem', display: 'block', marginBottom: '4px' }}>投げ売りの売上方法</label>
+                      <select 
+                        value={fireSaleType} 
+                        onChange={(e) => setFireSaleType(e.target.value)}
+                        className="form-input"
+                        style={{ padding: '8px', width: '100%' }}
+                      >
+                        <option value="cash">現金売上 (すぐに入金)</option>
+                        <option value="credit">掛売 (次期回収)</option>
+                      </select>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--mg-blue)' }}>
+                        売上見込: ¥{fireSaleCount * 18}万
+                      </p>
+                    </div>
+                  )}
+
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '6px' }}>
+                    <p style={{ margin: 0, fontSize: '0.85rem' }}>
+                      廃棄処理 (ロス): <strong style={{ color: 'var(--mg-pink)' }}>{disposedState.prod - fireSaleCount}個</strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <button 
+              onClick={() => {
+                const safeMat = actualMaterials === '' ? 0 : actualMaterials;
+                const safeWip = actualWip === '' ? 0 : actualWip;
+                const safeProd = actualProduct === '' ? 0 : actualProduct;
+                const newProd = safeProd - disposedState.prod;
+                const newWip = safeWip - disposedState.wip;
+                const newMat = safeMat - disposedState.mat;
+                
+                setActualProduct(newProd);
+                setActualWip(newWip);
+                setActualMaterials(newMat);
+                
+                onUpdateActuals({
+                  ...actuals,
+                  actualProduct: newProd,
+                  actualWip: newWip,
+                  actualMaterials: newMat
+                });
+                
+                setCurrentStep(2);
+              }} 
+              className="btn-premium" 
+              style={{ 
+                width: '100%',
+                background: 'linear-gradient(135deg, rgba(255, 46, 147, 0.2) 0%, rgba(255, 128, 176, 0.2) 100%)',
+                border: '1px solid rgba(255, 46, 147, 0.4)',
+                color: 'var(--mg-pink)',
+                boxShadow: '0 4px 16px rgba(255, 46, 147, 0.15)'
+              }}
+            >
+              処分を確定して次へ →
+            </button>
           </div>
         )}
 
@@ -451,6 +590,13 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                 <span>➖ 借入金返済(自動20%):</span>
                 <span>-¥{remainingRepayment}万</span>
               </div>
+              
+              {fireSaleRevenue > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', color: 'var(--mg-blue)' }}>
+                  <span>➕ 製品投げ売り(現金):</span>
+                  <span>+¥{fireSaleRevenue}万</span>
+                </div>
+              )}
               
               {results.endingReceivables > 0 && (
                 <div style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '12px', marginBottom: '16px' }}>
