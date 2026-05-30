@@ -19,7 +19,7 @@ function PriorPeriodCarryover({
   };
 
   return (
-    <div style={{ padding: '0 0 24px 0' }}>
+    <div style={{ padding: '0 0 100px 0' }}>
       {/* 期の選択 */}
       <div className="glass-card">
         <div className="glass-card-header">
