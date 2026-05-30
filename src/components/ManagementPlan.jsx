@@ -105,7 +105,7 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
   const activeResult = calcResults[currentScenario];
 
   return (
-    <div style={{ padding: '0 0 24px 0' }}>
+    <div style={{ padding: '0 0 100px 0' }}>
       
       <div className="glass-card" style={{ padding: '14px 16px' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
