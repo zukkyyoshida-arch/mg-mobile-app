@@ -555,9 +555,19 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   const totalNetAssets = endingCapital + endingRetained;
 
   // 各種チップと人員の実効数
-  const activeRdChips = Math.max(0, Math.floor(ledgerTotals["チ"].amount / 20) - (ledgerTotals["研究開発失敗"]?.quantity || 0));
+  const activeRdChips = Math.max(0, Math.floor(ledgerTotals["チ"].amount / 20) - (ledgerTotals["研究開発失敗"]?.quantity || 0) - (ledgerTotals["研究開発成功"]?.quantity || 0));
   const activeAdChips = Math.floor(ledgerTotals["セ"].amount / 5);
-  const activeGreenChips = (ledgerTotals["緑チップ"]?.quantity || 0) + (ledgerTotals["MD"]?.quantity || 0) + (ledgerTotals["PAC"]?.quantity || 0) + (ledgerTotals["リサーチ"]?.quantity || 0);
+  
+  const purchasedIns = ledgerTotals["保険"]?.quantity || 0;
+  const usedIns = ledger.filter(tx => tx.category === '特別利益' && tx.customName?.includes('保険金')).length;
+  const activeInsuranceChips = Math.max(0, purchasedIns - usedIns);
+
+  const activeMdChips = ledgerTotals["MD"]?.quantity || 0;
+  const activePacChips = ledgerTotals["PAC"]?.quantity || 0;
+  const activeResearchChips = ledgerTotals["リサーチ"]?.quantity || 0;
+  const activeGenericGreenChips = ledgerTotals["緑チップ"]?.quantity || 0;
+  
+  const activeGreenChips = activeGenericGreenChips + activeMdChips + activePacChips + activeResearchChips;
   
   const activeSalesmen = totalSalesmenHired;
   const activeWorkers = totalWorkersHired;
@@ -726,6 +736,11 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
     
     activeRdChips,
     activeAdChips,
+    activeInsuranceChips,
+    activeMdChips,
+    activePacChips,
+    activeResearchChips,
+    activeGenericGreenChips,
     activeGreenChips,
     activeWorkers,
     activeSalesmen,

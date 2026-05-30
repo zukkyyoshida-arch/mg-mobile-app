@@ -1,7 +1,11 @@
 import React from 'react';
 
 function CompanyBoardMinimap({ results }) {
-  const { mat, wip, prod, machines, bookEndingCash, workers, salesmen, activeAdChips, activeGreenChips } = results;
+  const { 
+    mat, wip, prod, machines, bookEndingCash, workers, salesmen, 
+    activeAdChips, activeGreenChips,
+    activeInsuranceChips, activeRdChips, activeMdChips, activePacChips, activeResearchChips, activeGenericGreenChips
+  } = results;
 
   const totalWorkers = workers || 0;
   const totalSalesmen = salesmen || 0;
@@ -315,8 +319,8 @@ function CompanyBoardMinimap({ results }) {
 
         </div>
 
-        {/* 下段: 黄色チップ・緑チップ (本部機能) */}
-        {(activeAdChips > 0 || activeGreenChips > 0) && (
+        {/* 下段: チップ類 (本部機能) */}
+        {(activeAdChips > 0 || activeInsuranceChips > 0 || activeRdChips > 0 || activeGreenChips > 0) && (
           <div style={{ 
             backgroundColor: 'rgba(33, 150, 243, 0.05)', 
             border: '1px solid rgba(33, 150, 243, 0.25)', 
@@ -324,18 +328,44 @@ function CompanyBoardMinimap({ results }) {
             padding: '10px',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px'
+            gap: '12px',
+            flexWrap: 'wrap'
           }}>
             <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#2196f3', textTransform: 'uppercase', letterSpacing: '0.5px' }}>本部</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {Array.from({ length: activeAdChips }).map((_, i) => (
-                <div key={`ad-${i}`} style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#fff59d', color: '#f57f17', borderRadius: '4px', border: '1px solid #fbc02d' }}>
-                  黄色チップ (広告) 📣
+              {Array.from({ length: activeAdChips || 0 }).map((_, i) => (
+                <div key={`ad-${i}`} style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '4px', border: '1px solid #ef5350' }}>
+                  赤チップ (広告) 📣
                 </div>
               ))}
-              {Array.from({ length: activeGreenChips }).map((_, i) => (
+              {Array.from({ length: activeInsuranceChips || 0 }).map((_, i) => (
+                <div key={`ins-${i}`} style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#fff59d', color: '#f57f17', borderRadius: '4px', border: '1px solid #fbc02d' }}>
+                  黄色チップ (保険) 🛡️
+                </div>
+              ))}
+              {Array.from({ length: activeRdChips || 0 }).map((_, i) => (
+                <div key={`rd-${i}`} style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#e3f2fd', color: '#1565c0', borderRadius: '4px', border: '1px solid #42a5f5' }}>
+                  青チップ (研究開発) 🔬
+                </div>
+              ))}
+              {Array.from({ length: activeMdChips || 0 }).map((_, i) => (
+                <div key={`md-${i}`} style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', border: '1px solid #66bb6a' }}>
+                  緑チップ (MD) 🟢
+                </div>
+              ))}
+              {Array.from({ length: activePacChips || 0 }).map((_, i) => (
+                <div key={`pac-${i}`} style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', border: '1px solid #66bb6a' }}>
+                  緑チップ (PAC) 🟢
+                </div>
+              ))}
+              {Array.from({ length: activeResearchChips || 0 }).map((_, i) => (
+                <div key={`res-${i}`} style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', border: '1px solid #66bb6a' }}>
+                  緑チップ (リサーチ) 🟢
+                </div>
+              ))}
+              {Array.from({ length: activeGenericGreenChips || 0 }).map((_, i) => (
                 <div key={`gr-${i}`} style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', border: '1px solid #66bb6a' }}>
-                  緑チップ 🟢
+                  緑チップ (その他) 🟢
                 </div>
               ))}
             </div>
