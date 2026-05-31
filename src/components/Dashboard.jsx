@@ -132,7 +132,7 @@ export default function Dashboard() {
             {/* テーブルヘッダー */}
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: '90px 1fr 70px 120px 120px 120px 80px 100px 120px 40px', 
+              gridTemplateColumns: '90px 1fr 70px 120px 120px 80px 100px 120px 40px', 
               gap: '16px', 
               padding: '0 24px', 
               color: 'var(--text-secondary)', 
@@ -146,7 +146,6 @@ export default function Dashboard() {
               <div>プレイヤー名</div>
               <div style={{ textAlign: 'center' }}>期</div>
               <div style={{ textAlign: 'right', color: 'var(--mg-blue)' }}>純資産(サ)</div>
-              <div style={{ textAlign: 'right' }}>現金(ア)</div>
               <div style={{ textAlign: 'right', color: 'var(--mg-yellow)' }}>売上(PQ)</div>
               <div style={{ textAlign: 'right', color: 'var(--mg-yellow)' }}>販売数</div>
               <div style={{ textAlign: 'right', color: 'var(--mg-yellow)' }}>平均単価</div>
@@ -180,7 +179,7 @@ export default function Dashboard() {
                   className="glass-card" 
                   style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: '90px 1fr 70px 120px 120px 120px 80px 100px 120px', 
+                    gridTemplateColumns: '90px 1fr 70px 120px 120px 80px 100px 120px 40px', 
                     gap: '16px', 
                     alignItems: 'center', 
                     padding: '20px 24px', 
@@ -206,9 +205,6 @@ export default function Dashboard() {
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '1.6rem', fontWeight: '900', color: 'var(--mg-blue)' }}>
                     {(player.totalNetAssets || 0).toLocaleString()}
-                  </div>
-                  <div style={{ textAlign: 'right', fontSize: '1.4rem', fontFamily: 'monospace' }}>
-                    {(player.cash || 0).toLocaleString()}
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '1.4rem', fontFamily: 'monospace', color: 'var(--mg-yellow)' }}>
                     {(player.sales || 0).toLocaleString()}

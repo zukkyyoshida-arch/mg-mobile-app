@@ -116,7 +116,7 @@ function App() {
   useEffect(() => {
     if (roomId && playerId) {
       setSyncStatus('同期中...');
-      const salesCount = results?.cost?.salesCount || 0;
+      const salesCount = results?.prod?.salesCount || 0;
       const salesRevenue = results?.pl?.salesRevenue || 0;
       const avgPrice = salesCount > 0 ? Math.round(salesRevenue / salesCount) : 0;
       
@@ -127,7 +127,7 @@ function App() {
         capital: results?.bs?.capital || 0,
         retainedEarnings: results?.bs?.retainedEarnings || 0,
         sales: salesRevenue,
-        profit: results?.pl?.recurringProfit || 0,
+        profit: results?.pl?.operatingProfit || 0,
         salesQty: salesCount,
         averagePrice: avgPrice,
         lastUpdated: Date.now()
@@ -146,7 +146,7 @@ function App() {
     () => {
       if (roomId && playerId) {
         setSyncStatus('同期中...');
-        const salesCount = results?.cost?.salesCount || 0;
+        const salesCount = results?.prod?.salesCount || 0;
         const salesRevenue = results?.pl?.salesRevenue || 0;
         const avgPrice = salesCount > 0 ? Math.round(salesRevenue / salesCount) : 0;
 
@@ -157,7 +157,7 @@ function App() {
           capital: results?.bs?.capital || 0,
           retainedEarnings: results?.bs?.retainedEarnings || 0,
           sales: salesRevenue,
-          profit: results?.pl?.recurringProfit || 0,
+          profit: results?.pl?.operatingProfit || 0,
           salesQty: salesCount,
           averagePrice: avgPrice,
           lastUpdated: Date.now()
@@ -408,7 +408,7 @@ function App() {
                 onClick={() => {
                   if (roomId && playerId) {
                     setSyncStatus('同期中...');
-                    const salesCount = results?.cost?.salesCount || 0;
+                    const salesCount = results?.prod?.salesCount || 0;
                     const salesRevenue = results?.pl?.salesRevenue || 0;
                     const avgPrice = salesCount > 0 ? Math.round(salesRevenue / salesCount) : 0;
 
@@ -419,7 +419,7 @@ function App() {
                       capital: results?.bs?.capital || 0,
                       retainedEarnings: results?.bs?.retainedEarnings || 0,
                       sales: salesRevenue,
-                      profit: results?.pl?.recurringProfit || 0,
+                      profit: results?.pl?.operatingProfit || 0,
                       salesQty: salesCount,
                       averagePrice: avgPrice,
                       lastUpdated: Date.now()
