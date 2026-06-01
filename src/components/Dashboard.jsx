@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [isSubscribed, setIsSubscribed] = useState(() => {
     try { return localStorage.getItem('dashboard_is_subscribed') === 'true'; } catch (e) { return false; }
   });
+  const [selectedTab, setSelectedTab] = useState('overall');
   const [playersData, setPlayersData] = useState({});
   const { width, height } = useWindowSize();
 
@@ -37,10 +38,60 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [roomId, isSubscribed]);
 
-  // プレイヤーデータを配列に変換し、自己資本（純資産）で降順ソート
-  const sortedPlayers = Object.entries(playersData)
-    .map(([id, data]) => ({ id, ...data }))
-    .sort((a, b) => (b.totalNetAssets || 0) - (a.totalNetAssets || 0));
+  // タブに応じたプレイヤーデータの生成
+  const getProcessedPlayers = () => {
+    const rawPlayers = Object.entries(playersData).map(([id, data]) => ({ id, ...data }));
+    
+    return rawPlayers.map(player => {
+      if (selectedTab === 'overall') {
+        let sales = 0, profit = 0, salesQty = 0;
+        if (player.periods) {
+          [1, 2, 3, 4, 5].forEach(p => {
+            if (player.periods[p]) {
+              sales += (player.periods[p].sales || 0);
+              profit += (player.periods[p].profit || 0);
+              salesQty += (player.periods[p].salesQty || 0);
+            }
+          });
+        } else {
+          sales = player.sales || 0;
+          profit = player.profit || 0;
+          salesQty = player.salesQty || 0;
+        }
+        return {
+          ...player,
+          displayPeriod: '総合',
+          sales,
+          profit,
+          salesQty,
+          averagePrice: salesQty > 0 ? Math.round(sales / salesQty) : 0
+        };
+      } else {
+        const periodNum = parseInt(selectedTab);
+        if (player.periods && player.periods[periodNum]) {
+          const pData = player.periods[periodNum];
+          return {
+            ...player,
+            displayPeriod: periodNum,
+            totalNetAssets: pData.totalNetAssets || 0,
+            sales: pData.sales || 0,
+            profit: pData.profit || 0,
+            salesQty: pData.salesQty || 0,
+            averagePrice: pData.averagePrice || 0
+          };
+        } else if (player.currentPeriod === periodNum && !player.periods) {
+          return {
+            ...player,
+            displayPeriod: periodNum
+          };
+        } else {
+          return null; // この期のデータがない
+        }
+      }
+    }).filter(p => p !== null).sort((a, b) => (b.totalNetAssets || 0) - (a.totalNetAssets || 0));
+  };
+
+  const sortedPlayers = getProcessedPlayers();
 
   if (!isSubscribed) {
     return (
@@ -129,6 +180,29 @@ export default function Dashboard() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* タブUI */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              {['1', '2', '3', '4', '5', 'overall'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setSelectedTab(tab)}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: selectedTab === tab ? 'var(--mg-blue)' : 'rgba(255,255,255,0.1)',
+                    color: selectedTab === tab ? '#fff' : 'var(--text-secondary)',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {tab === 'overall' ? '総合' : `第${tab}期`}
+                </button>
+              ))}
+            </div>
+
             {/* テーブルヘッダー */}
             <div style={{ 
               display: 'grid', 
@@ -200,7 +274,7 @@ export default function Dashboard() {
                   </div>
                   <div style={{ textAlign: 'center' }}>
                     <span className="badge badge-pink" style={{ fontSize: '1rem', padding: '4px 8px' }}>
-                      第{player.currentPeriod || 1}期
+                      {player.displayPeriod === '総合' ? '総合' : `第${player.displayPeriod}期`}
                     </span>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '1.6rem', fontWeight: '900', color: 'var(--mg-blue)' }}>

@@ -112,26 +112,52 @@ function App() {
   // リアルタイム財務計算を実行
   const results = calculateFinancials(currentData.carryover, currentData.ledger, currentData.actuals, currentPeriod);
 
+  // ダッシュボード用の同期ペイロード生成
+  const generateSyncPayload = () => {
+    const periodsData = {};
+    [1, 2, 3, 4, 5].forEach(p => {
+      const pData = periods[p];
+      if (pData) {
+        const pResults = calculateFinancials(pData.carryover, pData.ledger, pData.actuals, p);
+        const pSalesCount = pResults?.prod?.salesCount || 0;
+        const pSalesRevenue = pResults?.pl?.salesRevenue || 0;
+        periodsData[p] = {
+          totalNetAssets: pResults?.bs?.totalNetAssets || 0,
+          sales: pSalesRevenue,
+          profit: pResults?.pl?.operatingProfit || 0,
+          salesQty: pSalesCount,
+          averagePrice: pSalesCount > 0 ? Math.round(pSalesRevenue / pSalesCount) : 0,
+          cash: pResults?.bs?.cash || 0,
+          capital: pResults?.bs?.capital || 0,
+          retainedEarnings: pResults?.bs?.retainedEarnings || 0
+        };
+      }
+    });
+
+    const currentSalesCount = results?.prod?.salesCount || 0;
+    const currentSalesRevenue = results?.pl?.salesRevenue || 0;
+    const currentAvgPrice = currentSalesCount > 0 ? Math.round(currentSalesRevenue / currentSalesCount) : 0;
+
+    return {
+      currentPeriod,
+      totalNetAssets: results?.bs?.totalNetAssets || 0,
+      cash: results?.bs?.cash || 0,
+      capital: results?.bs?.capital || 0,
+      retainedEarnings: results?.bs?.retainedEarnings || 0,
+      sales: currentSalesRevenue,
+      profit: results?.pl?.operatingProfit || 0,
+      salesQty: currentSalesCount,
+      averagePrice: currentAvgPrice,
+      lastUpdated: Date.now(),
+      periods: periodsData
+    };
+  };
+
   // 初回接続時（またはリロード時）に即座に同期してダッシュボードに表示させる
   useEffect(() => {
     if (roomId && playerId) {
       setSyncStatus('同期中...');
-      const salesCount = results?.prod?.salesCount || 0;
-      const salesRevenue = results?.pl?.salesRevenue || 0;
-      const avgPrice = salesCount > 0 ? Math.round(salesRevenue / salesCount) : 0;
-      
-      syncPlayerData(roomId, playerId, {
-        currentPeriod,
-        totalNetAssets: results?.bs?.totalNetAssets || 0,
-        cash: results?.bs?.cash || 0,
-        capital: results?.bs?.capital || 0,
-        retainedEarnings: results?.bs?.retainedEarnings || 0,
-        sales: salesRevenue,
-        profit: results?.pl?.operatingProfit || 0,
-        salesQty: salesCount,
-        averagePrice: avgPrice,
-        lastUpdated: Date.now()
-      }).then(() => {
+      syncPlayerData(roomId, playerId, generateSyncPayload()).then(() => {
         setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
       }).catch(err => {
         console.error(err);
@@ -146,22 +172,7 @@ function App() {
     () => {
       if (roomId && playerId) {
         setSyncStatus('同期中...');
-        const salesCount = results?.prod?.salesCount || 0;
-        const salesRevenue = results?.pl?.salesRevenue || 0;
-        const avgPrice = salesCount > 0 ? Math.round(salesRevenue / salesCount) : 0;
-
-        syncPlayerData(roomId, playerId, {
-          currentPeriod,
-          totalNetAssets: results?.bs?.totalNetAssets || 0,
-          cash: results?.bs?.cash || 0,
-          capital: results?.bs?.capital || 0,
-          retainedEarnings: results?.bs?.retainedEarnings || 0,
-          sales: salesRevenue,
-          profit: results?.pl?.operatingProfit || 0,
-          salesQty: salesCount,
-          averagePrice: avgPrice,
-          lastUpdated: Date.now()
-        }).then(() => {
+        syncPlayerData(roomId, playerId, generateSyncPayload()).then(() => {
           setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
         }).catch(err => {
           console.error("Firebase sync error:", err);
@@ -408,22 +419,7 @@ function App() {
                 onClick={() => {
                   if (roomId && playerId) {
                     setSyncStatus('同期中...');
-                    const salesCount = results?.prod?.salesCount || 0;
-                    const salesRevenue = results?.pl?.salesRevenue || 0;
-                    const avgPrice = salesCount > 0 ? Math.round(salesRevenue / salesCount) : 0;
-
-                    syncPlayerData(roomId, playerId, {
-                      currentPeriod,
-                      totalNetAssets: results?.bs?.totalNetAssets || 0,
-                      cash: results?.bs?.cash || 0,
-                      capital: results?.bs?.capital || 0,
-                      retainedEarnings: results?.bs?.retainedEarnings || 0,
-                      sales: salesRevenue,
-                      profit: results?.pl?.operatingProfit || 0,
-                      salesQty: salesCount,
-                      averagePrice: avgPrice,
-                      lastUpdated: Date.now()
-                    }).then(() => {
+                    syncPlayerData(roomId, playerId, generateSyncPayload()).then(() => {
                       setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
                       alert('手動での強制同期が完了しました');
                     }).catch(err => {
