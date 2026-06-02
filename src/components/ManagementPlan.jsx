@@ -72,7 +72,7 @@ const cardStyle = {
   background: '#ffffff',
   border: '1px solid #e5e7eb',
   borderRadius: '14px',
-  padding: '16px',
+  padding: '14px',
   boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)'
 };
 
@@ -195,31 +195,31 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
 
   const renderInput = (field, opts = {}) => (
     <div style={{ display: 'grid', gap: '6px' }}>
-      <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{opts.label}</label>
+      <label style={{ fontSize: '0.74rem', lineHeight: 1.35, color: 'var(--text-secondary)', fontWeight: '600' }}>{opts.label}</label>
       <input
         type="number"
         value={activeScenario[field] ?? ''}
         onChange={(e) => handleChange(field, e.target.value)}
         className="form-input"
-        style={{ textAlign: 'right', fontWeight: '700' }}
+        style={{ textAlign: 'right', fontWeight: '700', fontSize: '0.95rem', padding: '10px 12px' }}
       />
     </div>
   );
 
   const renderCostGroup = (group) => (
-    <div key={group.key} style={{ ...cardStyle, padding: '14px' }}>
+    <div key={group.key} style={{ ...cardStyle, padding: '12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <div>
-          <div style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--text-primary)' }}>{group.label}</div>
+          <div style={{ fontSize: '0.86rem', fontWeight: '800', color: 'var(--text-primary)' }}>{group.label}</div>
           <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>必要な項目だけ順番に入力</div>
         </div>
-        <div style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--mg-blue)' }}>¥{activeResult[group.key].toLocaleString()}万</div>
+        <div style={{ fontSize: '0.82rem', fontWeight: '800', color: 'var(--mg-blue)' }}>¥{activeResult[group.key].toLocaleString()}万</div>
       </div>
       <div style={{ display: 'grid', gap: '10px' }}>
         {group.rows.map((row) => (
           <div key={row.key} style={{ padding: '10px', background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '10px' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '8px' }}>{row.label}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: row.unitField || row.rateField ? '1fr 1fr' : '1fr', gap: '8px' }}>
+            <div style={{ fontSize: '0.78rem', lineHeight: 1.35, fontWeight: '700', marginBottom: '8px' }}>{row.label}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
               {renderInput(row.key, { label: row.suffix ? `数量 (${row.suffix})` : '数量' })}
               {row.unitField && renderInput(row.unitField, { label: `${row.unitLabel} (${row.unitSuffix || ''})` })}
               {row.rateField && renderInput(row.rateField, { label: `金利 (${row.rateSuffix || '%'})` })}
@@ -266,7 +266,7 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
               type="button"
               onClick={() => setCurrentScenario(key)}
               className={currentScenario === key ? 'btn-primary' : 'btn-secondary'}
-              style={{ width: '100%', padding: '10px 0', fontWeight: '800' }}
+              style={{ width: '100%', padding: '9px 0', fontWeight: '800', fontSize: '0.9rem' }}
             >
               {key}予算
             </button>
@@ -320,10 +320,10 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
         </div>
       </div>
 
-      <div className="glass-card" style={{ margin: '0 16px', padding: '16px' }}>
+      <div className="glass-card" style={{ margin: '0 16px', padding: '14px' }}>
         <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>6. 予算サマリー</div>
         <div style={{ display: 'grid', gap: '8px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '72px 72px 1fr', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
             <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>P</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedP}</div></div>
             <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>vP</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedVP}</div></div>
             <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>mP / Q</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedMP.toLocaleString()} / {activeResult.requiredQ}</div></div>
