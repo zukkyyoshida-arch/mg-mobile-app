@@ -380,7 +380,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                     </div>
                   )}
 
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '6px' }}>
+                  <div style={{ background: 'rgba(0,0,0,0.04)', padding: '10px', borderRadius: '6px' }}>
                     <p style={{ margin: 0, fontSize: '0.85rem' }}>
                       廃棄処理 (ロス): <strong style={{ color: 'var(--mg-pink)' }}>{disposedState.prod - fireSaleCount}個</strong>
                     </p>
@@ -599,7 +599,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
               )}
               
               {results.endingReceivables > 0 && (
-                <div style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '12px', marginBottom: '16px' }}>
+                <div style={{ borderTop: '1px dashed rgba(0,0,0,0.05)', paddingTop: '12px', marginBottom: '16px' }}>
                   <label style={{ fontSize: '0.85rem', display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>
                     ➕ 売掛金入金（ア） <span style={{color:'var(--text-muted)'}}>(最大 {results.endingReceivables}万)</span>
                   </label>

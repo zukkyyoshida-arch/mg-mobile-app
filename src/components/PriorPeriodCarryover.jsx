@@ -107,7 +107,7 @@ function PriorPeriodCarryover({
                   value={carryover.cash || ''}
                   readOnly
                   className="form-input"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.2)', color: 'var(--text-muted)' }}
+                  style={{ backgroundColor: 'rgba(0,0,0,0.04)', color: 'var(--text-muted)' }}
                 />
               </div>
 

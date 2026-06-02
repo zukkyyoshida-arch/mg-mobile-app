@@ -156,7 +156,7 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
         </div>
 
         {/* 1. 労務費 */}
-        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+        <div style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '16px', marginBottom: '16px' }}>
           <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>1. 労務費</h4>
           <div className="grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -172,7 +172,7 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
         </div>
 
         {/* 2. 製造経費 */}
-        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+        <div style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '16px', marginBottom: '16px' }}>
           <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>2. 製造経費</h4>
           <div className="grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -198,7 +198,7 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
         </div>
 
         {/* 3. 減価償却費 */}
-        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+        <div style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '16px', marginBottom: '16px' }}>
           <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>3. 減価償却費</h4>
           <div className="grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -218,7 +218,7 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
         </div>
 
         {/* 4. 販売費 */}
-        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+        <div style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '16px', marginBottom: '16px' }}>
           <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>4. 販売費</h4>
           <div className="grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -248,7 +248,7 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
         </div>
 
         {/* 5. 一般管理費 */}
-        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+        <div style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '16px', marginBottom: '16px' }}>
           <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>5. 一般管理費</h4>
           <div className="grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -284,7 +284,7 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
         </div>
 
         {/* 6. 営業外費用 */}
-        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+        <div style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '16px', marginBottom: '16px' }}>
           <h4 style={{ color: 'var(--mg-blue)', marginBottom: '8px' }}>6. 営業外費用 (金利)</h4>
           <div className="grid-2">
             <div className="form-group" style={{ marginBottom: 0 }}>

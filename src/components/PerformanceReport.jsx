@@ -19,27 +19,27 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       background: 'rgba(11, 12, 16, 0.95)',
       zIndex: 9999, overflowY: 'auto', padding: '20px',
-      color: 'white', display: 'flex', flexDirection: 'column',
+      color: 'var(--text-primary)', display: 'flex', flexDirection: 'column',
       animation: 'fadeIn 0.3s ease-out'
     }}>
       <style>
         {`
           @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-          .report-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; margin-bottom: 16px; }
+          .report-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(0,0,0,0.05); border-radius: 12px; padding: 12px; margin-bottom: 16px; }
           .report-title { font-size: 1.1rem; color: var(--color-accent); margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
           .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-          .kpi-card { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; text-align: center; }
+          .kpi-card { background: rgba(0,0,0,0.06); padding: 10px; border-radius: 8px; text-align: center; }
           .kpi-value { font-size: 1.25rem; font-weight: bold; color: var(--text-primary); margin: 6px 0 2px; }
           .kpi-label { font-size: 0.7rem; color: var(--text-secondary); }
           .rank-badge { font-size: 2.5rem; font-weight: 900; background-clip: text; -webkit-background-clip: text; color: transparent; display: inline-block; }
-          .bar-container { width: 100%; height: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; display: flex; margin-top: 6px; }
+          .bar-container { width: 100%; height: 20px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden; display: flex; margin-top: 6px; }
           .bar-fill { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold; color: rgba(255,255,255,0.9); }
         `}
       </style>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'white' }}>第{currentPeriod}期 経営成績</h2>
-        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.85rem' }}>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>第{currentPeriod}期 経営成績</h2>
+        <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.85rem' }}>
           閉じる
         </button>
       </div>
@@ -49,30 +49,30 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
         <div className="report-section" style={{ background: 'rgba(33, 150, 243, 0.05)', border: '1px solid rgba(33, 150, 243, 0.3)' }}>
           <h3 className="report-title" style={{ color: '#64B5F6' }}>📊 前期との比較レポート (YoY)</h3>
           
-          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
             <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>🏢 会社の成長（自己資本と利益）</div>
             <p style={{ margin: '0 0 6px 0' }}>
               自己資本: ¥{analytics.simulation.currentNetAssets}万 (前期比 <span style={{ color: analytics.comparison.diffNetAssets > 0 ? '#4caf50' : analytics.comparison.diffNetAssets < 0 ? '#ff5252' : 'inherit' }}>{analytics.comparison.diffNetAssets > 0 ? '+' : ''}{analytics.comparison.diffNetAssets}万</span>)<br/>
               経常利益: ¥{analytics.financials.G}万 (前期比 <span style={{ color: analytics.comparison.diffG > 0 ? '#4caf50' : analytics.comparison.diffG < 0 ? '#ff5252' : 'inherit' }}>{analytics.comparison.diffG > 0 ? '+' : ''}{analytics.comparison.diffG}万</span>)
             </p>
-            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#90CAF9' }}>
+            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.06)', borderRadius: '6px', color: '#90CAF9' }}>
               {analytics.comparison.growthAdvice}
             </div>
           </div>
 
-          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
             <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>📈 利益構造（P・V・M・Q）の変化</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '4px' }}>
+              <div style={{ background: 'rgba(0,0,0,0.04)', padding: '6px', borderRadius: '4px' }}>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>単価(P)の変化</div>
                 <div style={{ fontWeight: 'bold', color: analytics.comparison.diffP > 0 ? '#4caf50' : analytics.comparison.diffP < 0 ? '#ff5252' : 'inherit' }}>{analytics.comparison.diffP > 0 ? '+' : ''}{analytics.comparison.diffP.toFixed(1)}万</div>
               </div>
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '4px' }}>
+              <div style={{ background: 'rgba(0,0,0,0.04)', padding: '6px', borderRadius: '4px' }}>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>数量(Q)の変化</div>
                 <div style={{ fontWeight: 'bold', color: analytics.comparison.diffQ > 0 ? '#4caf50' : analytics.comparison.diffQ < 0 ? '#ff5252' : 'inherit' }}>{analytics.comparison.diffQ > 0 ? '+' : ''}{analytics.comparison.diffQ}個</div>
               </div>
             </div>
-            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#90CAF9' }}>
+            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.06)', borderRadius: '6px', color: '#90CAF9' }}>
               {analytics.comparison.pvmqAdvice}
             </div>
           </div>
@@ -83,7 +83,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
               固定費(F): ¥{analytics.financials.F}万 (前期比 <span style={{ color: analytics.comparison.diffF > 0 ? '#ffb74d' : analytics.comparison.diffF < 0 ? '#4caf50' : 'inherit' }}>{analytics.comparison.diffF > 0 ? '+' : ''}{analytics.comparison.diffF}万</span>)<br/>
               現預金残高: ¥{analytics.simulation.currentCash}万 (前期比 <span style={{ color: analytics.comparison.diffCash > 0 ? '#4caf50' : analytics.comparison.diffCash < 0 ? '#ff5252' : 'inherit' }}>{analytics.comparison.diffCash > 0 ? '+' : ''}{analytics.comparison.diffCash}万</span>)
             </p>
-            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#90CAF9' }}>
+            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.06)', borderRadius: '6px', color: '#90CAF9' }}>
               {analytics.comparison.investmentAdvice}
             </div>
           </div>
@@ -96,7 +96,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
         <div className="rank-badge" style={{ backgroundImage: getRankColor(analytics.rank) }}>
           Rank {analytics.rank}
         </div>
-        <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', fontSize: '1.1rem' }}>
+        <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', fontSize: '1.1rem' }}>
           あなたの利益エンジン：
           <strong style={{ color: 'var(--mg-pink)', fontSize: '1.3rem', marginLeft: '8px' }}>[ M: ¥{Math.round(analytics.M)}万 ] × [ Q: {analytics.Q}個 ]</strong>
         </div>
@@ -107,14 +107,14 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
         <h3 className="report-title" style={{ color: '#FFD700' }}>💡 コンサルタントのアドバイス</h3>
         {/* 1. 利益目標と安全余裕度 */}
         {analytics.financials.G <= 0 ? (
-          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
             <div style={{ marginBottom: '8px', color: '#ff5252', fontWeight: 'bold' }}>⚠️ {analytics.financials.G === 0 ? '利益ゼロのトントン決算でした' : '赤字決算でした'}（営業利益: {analytics.financials.G}万）</div>
             {analytics.M > 0 && analytics.simulation.bepQty !== null ? (
               <>
                 <p style={{ margin: '0 0 8px 0' }}>
                   今の1個あたりの粗利(M: {analytics.M.toFixed(1)}万)で、固定費(F: {analytics.financials.F}万)を回収するためには、<strong>最低 {analytics.simulation.bepQty} 個</strong>売る必要がありました。（損益分岐点）
                 </p>
-                <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#ffcc80' }}>
+                <div style={{ padding: '8px', background: 'rgba(0,0,0,0.06)', borderRadius: '6px', color: '#ffcc80' }}>
                   👉 あと <strong>{analytics.simulation.remainingForBEP > 0 ? analytics.simulation.remainingForBEP : 1} 個</strong> 多く売れていれば確実な黒字でした！次期は販売数量を増やすか、販売単価を上げてMを改善しましょう。
                 </div>
               </>
@@ -125,12 +125,12 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
             )}
           </div>
         ) : (
-          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
             <div style={{ marginBottom: '8px', color: '#4caf50', fontWeight: 'bold' }}>🎉 黒字達成おめでとうございます！（営業利益: +{analytics.financials.G}万）</div>
             <p style={{ margin: '0 0 8px 0' }}>
               損益分岐点（最低販売数）は <strong>{analytics.simulation.bepQty} 個</strong> でした。それを超えてしっかりと売上を作れています。
             </p>
-            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', color: '#81c784' }}>
+            <div style={{ padding: '8px', background: 'rgba(0,0,0,0.06)', borderRadius: '6px', color: '#81c784' }}>
               👉 あなたの安全余裕額は <strong>{analytics.simulation.safetyMargin} 万</strong> です。<br/>
               つまり、今期あとこれだけ追加で投資していても赤字にはなりませんでした。次期はさらに強気でチップを買いに行っても大丈夫です！
             </div>
@@ -138,7 +138,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
         )}
 
         {/* 2. キャッシュフロー・資金繰り診断 */}
-        <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
           <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>💰 資金繰り（キャッシュフロー）診断</div>
           <p style={{ margin: '0 0 8px 0' }}>
             現在の現金残高: ¥{analytics.simulation.currentCash}万 / 次期首の必須支払額: ¥{analytics.simulation.nextPeriodInitialCosts}万
@@ -156,7 +156,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
         </div>
 
         {/* 3. 在庫の「死に金」警告 */}
-        <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
           <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>📦 在庫の滞留（死に金）チェック</div>
           {analytics.simulation.deadStockValue > 0 ? (
             <div style={{ padding: '8px', background: 'rgba(255, 152, 0, 0.15)', borderLeft: '4px solid #ff9800', borderRadius: '4px', color: '#ffcc80' }}>
@@ -215,7 +215,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
           </div>
         </div>
 
-        <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+        <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.04)', borderRadius: '8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
             <span style={{ fontSize: '0.85rem' }}>🏭 工場稼働率（生産スピード）</span>
             <span style={{ fontWeight: 'bold' }}>{analytics.operations.capacityUtilization}%</span>
@@ -239,7 +239,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* 広告 */}
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', borderLeft: '4px solid var(--mg-yellow)' }}>
+          <div style={{ background: 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '8px', borderLeft: '4px solid var(--mg-yellow)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: 'bold', color: 'var(--mg-yellow)' }}>広告投資 (セ)</span>
               <span>投資額: ¥{analytics.investments.ads.amount}万</span>
@@ -253,7 +253,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
           </div>
 
           {/* 研究開発 */}
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', borderLeft: '4px solid var(--mg-blue)' }}>
+          <div style={{ background: 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '8px', borderLeft: '4px solid var(--mg-blue)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: 'bold', color: 'var(--mg-blue)' }}>研究開発 (チ)</span>
               <span>投資額: ¥{analytics.investments.rd.amount}万</span>
@@ -267,7 +267,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
           </div>
           
           {/* 設備 */}
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', borderLeft: '4px solid var(--mg-green)' }}>
+          <div style={{ background: 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '8px', borderLeft: '4px solid var(--mg-green)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: 'bold', color: 'var(--mg-green)' }}>設備投資 (ケ)</span>
               <span>投資額: ¥{analytics.investments.equipment.amount}万</span>

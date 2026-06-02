@@ -412,8 +412,8 @@ function App() {
                 <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>ネットワーク設定</h3>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <div style={{ color: 'var(--text-secondary)' }}>
-                    <div>ルームID: <strong style={{ color: 'white' }}>{roomId || '未参加'}</strong></div>
-                    <div>プレイヤー名: <strong style={{ color: 'white' }}>{playerId || '未設定'}</strong></div>
+                    <div>ルームID: <strong style={{ color: 'var(--text-primary)' }}>{roomId || '未参加'}</strong></div>
+                    <div>プレイヤー名: <strong style={{ color: 'var(--text-primary)' }}>{playerId || '未設定'}</strong></div>
                     {isOffline && <div style={{ color: 'var(--mg-yellow)' }}>現在オフラインモードです</div>}
                   </div>
                   <button 
@@ -596,7 +596,7 @@ function App() {
             </button>
             <button 
               className="btn-secondary" 
-              style={{ width: '100%', marginTop: '12px', padding: '12px', fontSize: '1rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)' }}
+              style={{ width: '100%', marginTop: '12px', padding: '12px', fontSize: '1rem', background: 'transparent', border: '1px solid var(--border-glass-focused)' }}
               onClick={() => {
                 safeStorage.setItem('mg_offline_mode', 'true');
                 setIsOffline(true);

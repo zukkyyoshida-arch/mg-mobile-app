@@ -104,14 +104,14 @@ function VisualCharts({ results, carryover }) {
     const totalC = begC + inC;
     
     return (
-      <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
-        <div style={{ backgroundColor: 'rgba(255,255,255,0.08)', padding: '8px 16px', fontSize: '0.9rem', fontWeight: '800', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#bbdefb' }}>
+      <div style={{ backgroundColor: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '12px', overflow: 'hidden' }}>
+        <div style={{ backgroundColor: 'rgba(255,255,255,0.08)', padding: '8px 16px', fontSize: '0.9rem', fontWeight: '800', borderBottom: '1px solid rgba(0,0,0,0.05)', color: '#bbdefb' }}>
           {title}
         </div>
         <div style={{ display: 'flex' }}>
           {/* 左側 (借方・入) */}
-          <div style={{ flex: 1, padding: '12px', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
+          <div style={{ flex: 1, padding: '12px', borderRight: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(0,0,0,0.05)', paddingBottom: '4px' }}>
               <div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>期首繰越</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>¥{begV.toLocaleString()}</div>
@@ -121,7 +121,7 @@ function VisualCharts({ results, carryover }) {
               </div>
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(0,0,0,0.05)', paddingBottom: '4px' }}>
               <div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{inLabel}</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#64b5f6' }}>¥{inV.toLocaleString()}</div>
@@ -134,7 +134,7 @@ function VisualCharts({ results, carryover }) {
 
           {/* 右側 (貸方・出) */}
           <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(0,0,0,0.05)', paddingBottom: '4px' }}>
               <div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{outLabel}</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#ffb74d' }}>¥{outV.toLocaleString()}</div>
@@ -145,7 +145,7 @@ function VisualCharts({ results, carryover }) {
             </div>
 
             {disC > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(0,0,0,0.05)', paddingBottom: '4px' }}>
                 <div>
                   <div style={{ fontSize: '0.7rem', color: '#ef5350' }}>{lossLabel}</div>
                   <div style={{ fontSize: '1rem', fontWeight: '800', color: '#ef5350' }}>¥{disV.toLocaleString()}</div>
@@ -156,7 +156,7 @@ function VisualCharts({ results, carryover }) {
               </div>
             )}
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(0,0,0,0.05)', paddingBottom: '4px' }}>
               <div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>次期繰越</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>¥{endV.toLocaleString()}</div>
@@ -169,7 +169,7 @@ function VisualCharts({ results, carryover }) {
         </div>
         
         {/* フッター (合計・平均単価) */}
-        <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
           <div>
             <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>合計: </span>
             <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>¥{totalV.toLocaleString()} ({totalC}個)</span>
@@ -190,7 +190,7 @@ function VisualCharts({ results, carryover }) {
       <div className="glass-card" style={{ padding: '20px' }}>
         <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '16px', color: 'var(--text-primary)' }}>📊 STRAC図（ストラック表）</h3>
         
-        <div style={{ display: 'flex', height: `${totalHeight + (G < 0 ? Math.min(80, (Math.abs(G)/F)*mPQHeight) : 0)}px`, width: '100%', gap: '8px', color: 'white', fontWeight: '800', fontSize: '0.85rem' }}>
+        <div style={{ display: 'flex', height: `${totalHeight + (G < 0 ? Math.min(80, (Math.abs(G)/F)*mPQHeight) : 0)}px`, width: '100%', gap: '8px', color: 'var(--text-primary)', fontWeight: '800', fontSize: '0.85rem' }}>
           
           {/* 左列: PQ (100%) */}
           <div style={{ flex: 1.2, height: `${totalHeight}px`, backgroundColor: 'rgba(236, 64, 122, 0.2)', border: '2px solid #ec407a', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
@@ -277,19 +277,19 @@ function VisualCharts({ results, carryover }) {
         <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '16px', color: 'var(--text-primary)' }}>🏦 現金・借入金フロー</h3>
         <div style={{ display: 'flex', gap: '16px' }}>
           {/* 現金 */}
-          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>💵 現金残高</div>
+          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '4px' }}>💵 現金残高</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>期首残高</span><span style={{ fontWeight: '800' }}>¥{cashBeg.toLocaleString()}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#64b5f6', fontSize: '0.8rem' }}>入金合計</span><span style={{ fontWeight: '800', color: '#64b5f6' }}>+¥{cashIn.toLocaleString()}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#ef5350', fontSize: '0.8rem' }}>出金合計</span><span style={{ fontWeight: '800', color: '#ef5350' }}>-¥{cashOut.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>期末残高</span><span style={{ fontWeight: '800', fontSize: '1.2rem' }}>¥{cashEnd.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>期末残高</span><span style={{ fontWeight: '800', fontSize: '1.2rem' }}>¥{cashEnd.toLocaleString()}</span></div>
           </div>
           {/* 借入金 */}
-          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>💳 借入金</div>
+          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '4px' }}>💳 借入金</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>期首残高</span><span style={{ fontWeight: '800' }}>¥{loanBeg.toLocaleString()}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#ffb74d', fontSize: '0.8rem' }}>当期借入/返済</span><span style={{ fontWeight: '800', color: '#ffb74d' }}>{loanChange > 0 ? '+' : ''}¥{loanChange.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px', marginTop: 'auto' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>期末残高</span><span style={{ fontWeight: '800', fontSize: '1.2rem' }}>¥{loanEnd.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px', marginTop: 'auto' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>期末残高</span><span style={{ fontWeight: '800', fontSize: '1.2rem' }}>¥{loanEnd.toLocaleString()}</span></div>
           </div>
         </div>
       </div>
@@ -298,26 +298,26 @@ function VisualCharts({ results, carryover }) {
       <div className="glass-card" style={{ padding: '20px' }}>
         <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '16px', color: 'var(--text-primary)' }}>🏢 経営リソース概況</h3>
         <div style={{ display: 'flex', gap: '16px' }}>
-          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>⚙️ 固定資産台帳</div>
+          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '4px' }}>⚙️ 固定資産台帳</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>期首額</span><span style={{ fontWeight: '800' }}>¥{macBegVal.toLocaleString()}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#64b5f6', fontSize: '0.8rem' }}>当期購入</span><span style={{ fontWeight: '800', color: '#64b5f6' }}>+¥{macInVal.toLocaleString()}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#ef5350', fontSize: '0.8rem' }}>減価償却</span><span style={{ fontWeight: '800', color: '#ef5350' }}>-¥{depreciation.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>期末額</span><span style={{ fontWeight: '800' }}>¥{macEndVal.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>期末額</span><span style={{ fontWeight: '800' }}>¥{macEndVal.toLocaleString()}</span></div>
           </div>
           
-          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>🏭 製造間接費</div>
+          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '4px' }}>🏭 製造間接費</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>労務費 (チ)</span><span style={{ fontWeight: '800' }}>¥{laborCost.toLocaleString()}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>退職金 (辞)</span><span style={{ fontWeight: '800' }}>¥{laborSeverance.toLocaleString()}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>製造固定費</span><span style={{ fontWeight: '800' }}>¥{manufacturingFixed.toLocaleString()}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>減価償却費</span><span style={{ fontWeight: '800' }}>¥{depreciation.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>合計</span><span style={{ fontWeight: '800' }}>¥{totalManufacturingOverhead.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>合計</span><span style={{ fontWeight: '800' }}>¥{totalManufacturingOverhead.toLocaleString()}</span></div>
           </div>
 
-          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>👥 人員状況</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px dotted rgba(255,255,255,0.1)' }}>
+          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '4px' }}>👥 人員状況</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px dotted rgba(0,0,0,0.05)' }}>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>工場(W)</span>
               <span style={{ fontWeight: '800' }}>{workerBeg} + {workerIn} - {workerOut} = <span style={{color: '#64b5f6'}}>{workerEnd}</span> 人</span>
             </div>

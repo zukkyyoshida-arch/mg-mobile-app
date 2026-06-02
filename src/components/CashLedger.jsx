@@ -1061,10 +1061,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                     </button>
                   </div>
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '12px', background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '6px' }}>
-                    <div>生産能力: <span style={{ color: 'white', fontWeight: 'bold' }}>{results?.productionCapacity || 0}</span></div>
-                    <div>材料在庫: <span style={{ color: 'white', fontWeight: 'bold' }}>{results?.mat?.endingCount || 0}</span></div>
-                    <div>仕掛在庫: <span style={{ color: 'white', fontWeight: 'bold' }}>{results?.wip?.endingCount || 0}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '12px', background: 'rgba(0,0,0,0.04)', padding: '8px', borderRadius: '6px' }}>
+                    <div>生産能力: <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>{results?.productionCapacity || 0}</span></div>
+                    <div>材料在庫: <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>{results?.mat?.endingCount || 0}</span></div>
+                    <div>仕掛在庫: <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>{results?.wip?.endingCount || 0}</span></div>
                   </div>
 
                   <div className="grid-2">
@@ -1124,21 +1124,21 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                   </div>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                       <span style={{ color: 'var(--mg-pink)', fontWeight: 'bold' }}>前期売掛金回収 (ア)</span>
                       <span style={{ fontWeight: 'bold', color: 'var(--mg-pink)' }}>+{carryover?.receivables || 0} 万</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>買掛金支払 (ヌ)</span>
                       <span style={{ fontWeight: 'bold' }}>-{carryover?.payables || 0} 万</span>
                     </div>
                     {currentPeriod > 1 && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                         <span style={{ color: 'var(--text-secondary)' }}>法人税等支払 (ニ)</span>
                         <span style={{ fontWeight: 'bold' }}>-{carryover?.taxes || 0} 万</span>
                       </div>
                     )}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>金利支払 (タ) <span style={{ fontSize: '0.7rem' }}>※借入残高 {carryover?.loan || 0}万 の {(currentPeriod >= 4 ? 5 : 10)}%</span></span>
                       <span style={{ fontWeight: 'bold' }}>-{Math.round((carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10))} 万</span>
                     </div>
@@ -1175,8 +1175,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                   
                   {/* Tabs */}
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                    <button type="button" onClick={() => setRiskTab('positive')} className="btn-secondary" style={{ flex: 1, padding: '8px', borderRadius: '8px', background: riskTab === 'positive' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(255,255,255,0.05)', color: riskTab === 'positive' ? '#4caf50' : 'white', border: riskTab === 'positive' ? '1px solid #4caf50' : 'none' }}>ポジティブ</button>
-                    <button type="button" onClick={() => setRiskTab('negative')} className="btn-secondary" style={{ flex: 1, padding: '8px', borderRadius: '8px', background: riskTab === 'negative' ? 'rgba(255, 82, 82, 0.3)' : 'rgba(255,255,255,0.05)', color: riskTab === 'negative' ? '#ff5252' : 'white', border: riskTab === 'negative' ? '1px solid #ff5252' : 'none' }}>ネガティブ</button>
+                    <button type="button" onClick={() => setRiskTab('positive')} className="btn-secondary" style={{ flex: 1, padding: '8px', borderRadius: '8px', background: riskTab === 'positive' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(0,0,0,0.02)', color: riskTab === 'positive' ? '#4caf50' : 'white', border: riskTab === 'positive' ? '1px solid #4caf50' : 'none' }}>ポジティブ</button>
+                    <button type="button" onClick={() => setRiskTab('negative')} className="btn-secondary" style={{ flex: 1, padding: '8px', borderRadius: '8px', background: riskTab === 'negative' ? 'rgba(255, 82, 82, 0.3)' : 'rgba(0,0,0,0.02)', color: riskTab === 'negative' ? '#ff5252' : 'white', border: riskTab === 'negative' ? '1px solid #ff5252' : 'none' }}>ネガティブ</button>
                   </div>
 
                   {riskTab === 'positive' ? (
@@ -1202,14 +1202,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                             className={`btn-premium ${riskAction === btn.id ? 'btn-primary' : 'btn-secondary'}`}
                             style={{ padding: '8px', fontSize: '0.75rem', borderRadius: '8px', opacity: riskAction === btn.id ? 1 : 0.7, textAlign: 'left', display: 'flex', flexDirection: 'column' }}
                           >
-                            <span style={{ fontWeight: 'bold', marginBottom: '4px', color: 'white' }}>{btn.label}</span>
+                            <span style={{ fontWeight: 'bold', marginBottom: '4px', color: 'var(--text-primary)' }}>{btn.label}</span>
                             <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)' }}>{btn.desc}</span>
                           </button>
                         ))}
                       </div>
 
                       {(riskAction === 'monopoly_salesman' || riskAction === 'rd_success') && (
-                        <div className="grid-2" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
+                        <div className="grid-2" style={{ background: 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '8px' }}>
                           <div className="form-group">
                             <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
                               <span>販売数量</span>
@@ -1227,7 +1227,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                           </div>
                           <div className="form-group" style={{ gridColumn: 'span 2' }}>
                             <label className="form-label">売上計上先</label>
-                            <div style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                            <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
                               {transactionMode === 'credit' ? '売掛販売 (ネ)' : '現金販売 (キ)'}
                             </div>
                           </div>
@@ -1235,10 +1235,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                       )}
 
                       {riskAction === 'monopoly_ad' && (
-                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
+                        <div style={{ background: 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                             <span>各市場の販売数量 (上限価格固定)</span>
-                            <span>販売可能: <strong style={{ color: 'white' }}>{Math.min((results?.activeAdChips || 0) * 2, results?.prod?.endingCount || 0)}個</strong></span>
+                            <span>販売可能: <strong style={{ color: 'var(--text-primary)' }}>{Math.min((results?.activeAdChips || 0) * 2, results?.prod?.endingCount || 0)}個</strong></span>
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                             {[
@@ -1249,7 +1249,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                               { id: 'osaka', name: '大阪', maxPrice: 24 },
                               { id: 'fukuoka', name: '福岡', maxPrice: 20 }
                             ].map(m => (
-                              <div key={m.id} className="form-group" style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '8px' }}>
+                              <div key={m.id} className="form-group" style={{ background: 'rgba(0,0,0,0.02)', padding: '8px', borderRadius: '8px' }}>
                                 <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                   <span>{m.name}</span>
                                   <span style={{ color: 'var(--mg-pink)' }}>{m.maxPrice}万</span>
@@ -1264,18 +1264,18 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                           </div>
                           <div className="form-group">
                             <label className="form-label">売上計上先</label>
-                            <div style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                            <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
                               {transactionMode === 'credit' ? '売掛販売 (ネ)' : '現金販売 (キ)'}
                             </div>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.85rem' }}>
-                            <span style={{ color: 'var(--text-secondary)' }}>合計数量: <strong style={{ color: 'white', fontSize: '1rem' }}>{Object.values(riskMonopolyAdQtys).reduce((a, b) => a + b, 0)} 個</strong></span>
+                            <span style={{ color: 'var(--text-secondary)' }}>合計数量: <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{Object.values(riskMonopolyAdQtys).reduce((a, b) => a + b, 0)} 個</strong></span>
                             <span style={{ color: 'var(--text-secondary)' }}>合計金額: <strong style={{ color: 'var(--mg-pink)', fontSize: '1.1rem' }}>{Object.entries(riskMonopolyAdQtys).reduce((sum, [id, qty]) => sum + qty * { sapporo: 40, sendai: 36, tokyo: 32, nagoya: 28, osaka: 24, fukuoka: 20 }[id], 0)} 万</strong></span>
                           </div>
                         </div>
                       )}
                       {(riskAction === 'special_mat' || riskAction === 'common_mat') && (
-                        <div className="grid-2" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
+                        <div className="grid-2" style={{ background: 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '8px' }}>
                           <div className="form-group">
                             <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
                               <span>購入数量 <span style={{color: 'var(--text-secondary)', fontSize: '0.75rem'}}>(購入可能: {Math.max(0, (results?.productionCapacity || 0) * 2 - (results?.mat?.endingCount || 0))}個)</span></span>
@@ -1296,7 +1296,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                         </div>
                       )}
                       {(riskAction === 'special_ad') && (
-                        <div className="grid-2" style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
+                        <div className="grid-2" style={{ background: 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '8px' }}>
                           <div className="form-group">
                             <label className="form-label">購入口数 (広告 セ)</label>
                             <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
@@ -1329,7 +1329,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                             className={`btn-premium ${riskAction === btn.id ? 'btn-primary' : 'btn-secondary'}`}
                             style={{ padding: '8px', fontSize: '0.75rem', borderRadius: '8px', opacity: riskAction === btn.id ? 1 : 0.7, textAlign: 'left', display: 'flex', flexDirection: 'column' }}
                           >
-                            <span style={{ fontWeight: 'bold', marginBottom: '4px', color: 'white' }}>{btn.label}</span>
+                            <span style={{ fontWeight: 'bold', marginBottom: '4px', color: 'var(--text-primary)' }}>{btn.label}</span>
                             <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)' }}>{btn.desc}</span>
                           </button>
                         ))}
@@ -1341,7 +1341,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                 <div style={{ background: 'rgba(233, 30, 99, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-pink)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-pink)', margin: 0 }}>期中 売掛割引（手数料5%）</h4>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>売掛金残高: <strong style={{ color: 'white', fontSize: '1rem' }}>{results?.endingReceivables || 0}</strong>万</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>売掛金残高: <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{results?.endingReceivables || 0}</strong>万</span>
                   </div>
 
                   <div className="form-group" style={{ marginBottom: '16px' }}>
@@ -1355,12 +1355,12 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                     />
                   </div>
 
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', fontSize: '0.8rem' }}>
+                  <div style={{ background: 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '8px', fontSize: '0.8rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>割引手数料 (5%・タ):</span>
                       <span style={{ color: '#ff5252', fontWeight: 'bold' }}>{Math.round((Number(factoringAmount) || 0) * 0.05)} 万</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>現金手取額 (95%):</span>
                       <span style={{ color: 'var(--mg-pink)', fontWeight: 'bold', fontSize: '1.1rem' }}>{(Number(factoringAmount) || 0) - Math.round((Number(factoringAmount) || 0) * 0.05)} 万</span>
                     </div>
@@ -1372,7 +1372,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                     <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-blue)', margin: 0 }}>採用情報の入力</h4>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>採用単価:</span>
-                      <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', background: 'rgba(0,0,0,0.02)', borderRadius: '6px', overflow: 'hidden' }}>
                         <button
                           type="button"
                           onClick={() => setHirePrice(5)}
@@ -1487,14 +1487,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                     <button
                       type="button"
                       onClick={() => setRdPrice(20)}
-                      style={{ flex: 1, padding: '12px', fontSize: '1rem', fontWeight: 'bold', border: 'none', borderRadius: '8px', background: rdPrice === 20 ? 'var(--mg-blue)' : 'rgba(255,255,255,0.05)', color: rdPrice === 20 ? 'white' : 'var(--text-secondary)' }}
+                      style={{ flex: 1, padding: '12px', fontSize: '1rem', fontWeight: 'bold', border: 'none', borderRadius: '8px', background: rdPrice === 20 ? 'var(--mg-blue)' : 'rgba(0,0,0,0.02)', color: rdPrice === 20 ? 'white' : 'var(--text-secondary)' }}
                     >
                       20万
                     </button>
                     <button
                       type="button"
                       onClick={() => setRdPrice(40)}
-                      style={{ flex: 1, padding: '12px', fontSize: '1rem', fontWeight: 'bold', border: 'none', borderRadius: '8px', background: rdPrice === 40 ? 'var(--mg-blue)' : 'rgba(255,255,255,0.05)', color: rdPrice === 40 ? 'white' : 'var(--text-secondary)' }}
+                      style={{ flex: 1, padding: '12px', fontSize: '1rem', fontWeight: 'bold', border: 'none', borderRadius: '8px', background: rdPrice === 40 ? 'var(--mg-blue)' : 'rgba(0,0,0,0.02)', color: rdPrice === 40 ? 'white' : 'var(--text-secondary)' }}
                     >
                       40万
                     </button>
@@ -1549,7 +1549,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                         <span>各市場の購入数量を入力</span>
                         {hasMD && <span className="badge badge-blue">MD割引適用中 (-2)</span>}
                       </h4>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '16px', background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '6px' }}>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '16px', background: 'rgba(0,0,0,0.04)', padding: '8px', borderRadius: '6px' }}>
                         保管上限: <strong>生産能力({results?.productionCapacity || 0}) × 2 = {(results?.productionCapacity || 0) * 2}個</strong><br/>
                         現在庫: {results?.mat?.endingCount || 0}個 / <strong>購入可能: {maxTotalPurchase}個</strong>
                       </p>
@@ -1561,7 +1561,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                           const maxLimit = marketLimits[m.id];
                           
                           return (
-                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px' }}>
+                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--mg-green)' }}>
@@ -1572,13 +1572,13 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                                 <button 
                                   type="button"
                                   onClick={() => setMarketQuantities(prev => ({ ...prev, [m.id]: Math.max(0, qty - 1) }))}
-                                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >-</button>
                                 <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
                                 <button 
                                   type="button"
                                   onClick={() => setMarketQuantities(prev => ({ ...prev, [m.id]: maxLimit !== undefined ? Math.min(maxLimit, qty + 1) : qty + 1 }))}
-                                  style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (maxLimit !== undefined && qty >= maxLimit) || totalQty >= maxTotalPurchase ? 0.3 : 1 }}
+                                  style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (maxLimit !== undefined && qty >= maxLimit) || totalQty >= maxTotalPurchase ? 0.3 : 1 }}
                                   disabled={(maxLimit !== undefined && qty >= maxLimit) || totalQty >= maxTotalPurchase}
                                 >+</button>
                                 {maxLimit !== undefined && (
@@ -1601,8 +1601,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                           );
                         })}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'white', fontSize: '1rem' }}>{totalQty}個</strong></span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.04)', borderRadius: '8px' }}>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{totalQty}個</strong></span>
                         <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計金額: <strong style={{ color: 'var(--mg-green)', fontSize: '1.1rem' }}>{totalAmount}万</strong></span>
                       </div>
                     </div>
@@ -1629,7 +1629,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                         const qty = isBought ? 0 : (greenChips[chip.id] || 0);
                         
                         return (
-                          <div key={chip.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: '8px', opacity: isBought ? 0.6 : 1 }}>
+                          <div key={chip.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.04)', padding: '8px 12px', borderRadius: '8px', opacity: isBought ? 0.6 : 1 }}>
                             <div>
                               <div style={{ fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 {chip.name}
@@ -1642,14 +1642,14 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                                 type="button"
                                 disabled={isBought}
                                 onClick={() => setGreenChips(prev => ({ ...prev, [chip.id]: Math.max(0, qty - 1) }))}
-                                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isBought ? 0.5 : 1 }}
+                                style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isBought ? 0.5 : 1 }}
                               >-</button>
                               <span style={{ fontSize: '1.1rem', fontWeight: 'bold', width: '24px', textAlign: 'center' }}>{qty}</span>
                               <button 
                                 type="button"
                                 disabled={isBought || qty >= 1}
                                 onClick={() => setGreenChips(prev => ({ ...prev, [chip.id]: Math.min(1, qty + 1) }))}
-                                style={{ background: isBought || qty >= 1 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isBought || qty >= 1 ? 0.5 : 1 }}
+                                style={{ background: isBought || qty >= 1 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isBought || qty >= 1 ? 0.5 : 1 }}
                               >+</button>
                             </div>
                           </div>
@@ -1659,7 +1659,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                   </div>
                   
                   <div style={{ marginTop: '16px', textAlign: 'right', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    合計金額: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'white' }}>{((greenChips.pac + greenChips.md + greenChips.research) * 10)}</span> 万
+                    合計金額: <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{((greenChips.pac + greenChips.md + greenChips.research) * 10)}</span> 万
                   </div>
                 </div>
               ) : selectedCategory === "ケ" ? (
@@ -1682,7 +1682,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                           const qty = machineQuantities[m.id] || 0;
                           
                           return (
-                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px' }}>
+                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--mg-purple)' }}>単価: {m.basePrice}</span>
@@ -1691,21 +1691,21 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                                 <button 
                                   type="button"
                                   onClick={() => setMachineQuantities(prev => ({ ...prev, [m.id]: Math.max(0, qty - 1) }))}
-                                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >-</button>
                                 <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
                                 <button 
                                   type="button"
                                   onClick={() => setMachineQuantities(prev => ({ ...prev, [m.id]: qty + 1 }))}
-                                  style={{ background: 'rgba(156, 39, 176, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ background: 'rgba(156, 39, 176, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >+</button>
                               </div>
                             </div>
                           );
                         })}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'white', fontSize: '1rem' }}>{totalQty}個</strong></span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.04)', borderRadius: '8px' }}>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{totalQty}個</strong></span>
                         <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計金額: <strong style={{ color: 'var(--mg-purple)', fontSize: '1.1rem' }}>{totalAmount}万</strong></span>
                       </div>
                     </div>
@@ -1731,7 +1731,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                           const qty = adQuantities[m.id] || 0;
                           
                           return (
-                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px' }}>
+                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--mg-blue)' }}>単価: {m.basePrice}</span>
@@ -1740,21 +1740,21 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                                 <button 
                                   type="button"
                                   onClick={() => setAdQuantities(prev => ({ ...prev, [m.id]: Math.max(0, qty - 1) }))}
-                                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >-</button>
                                 <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
                                 <button 
                                   type="button"
                                   onClick={() => setAdQuantities(prev => ({ ...prev, [m.id]: qty + 1 }))}
-                                  style={{ background: 'rgba(33, 150, 243, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ background: 'rgba(33, 150, 243, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >+</button>
                               </div>
                             </div>
                           );
                         })}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'white', fontSize: '1rem' }}>{totalQty}個</strong></span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.04)', borderRadius: '8px' }}>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{totalQty}個</strong></span>
                         <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計金額: <strong style={{ color: 'var(--mg-blue)', fontSize: '1.1rem' }}>{totalAmount}万</strong></span>
                       </div>
                     </div>
@@ -1778,7 +1778,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                           販売する市場・数量・単価を入力
                         </h4>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                          手持在庫 (完成品): <strong style={{ color: 'white', fontSize: '1rem' }}>{results?.prod?.endingCount || 0}</strong> 個
+                          手持在庫 (完成品): <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{results?.prod?.endingCount || 0}</strong> 個
                         </span>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginBottom: '16px' }}>
@@ -1788,7 +1788,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                           const maxPrice = MARKET_MAX_PRICES[m.id] || 40;
                           
                           return (
-                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px' }}>
+                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
                               <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                                 <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
@@ -1802,7 +1802,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                                       if (val !== '' && val > maxPrice) val = maxPrice;
                                       setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], price: val } }));
                                     }}
-                                    style={{ width: '80px', padding: '8px 8px', fontSize: '1.1rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', color: 'white', textAlign: 'center' }}
+                                    style={{ width: '80px', padding: '8px 8px', fontSize: '1.1rem', fontWeight: 'bold', background: 'rgba(0,0,0,0.05)', border: '1px solid var(--border-glass)', borderRadius: '6px', color: 'var(--text-primary)', textAlign: 'center' }}
                                   />
                                   <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>MAX: {maxPrice}</span>
                                 </div>
@@ -1813,7 +1813,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                                   <button 
                                     type="button"
                                     onClick={() => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: Math.max(0, qty - 1) } }))}
-                                    style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                   >-</button>
                                   <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
                                   <button 
@@ -1824,7 +1824,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                                         setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: qty + 1 } }));
                                       }
                                     }}
-                                    style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'white', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: ((results?.prod?.endingCount || 0) - totalQty > 0 && qty < m.max) ? 1 : 0.5 }}
+                                    style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: ((results?.prod?.endingCount || 0) - totalQty > 0 && qty < m.max) ? 1 : 0.5 }}
                                   >+</button>
                                 </div>
                               </div>
@@ -1832,8 +1832,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                           );
                         })}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'white', fontSize: '1rem' }}>{totalQty}個</strong></span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.04)', borderRadius: '8px' }}>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{totalQty}個</strong></span>
                         <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計金額: <strong style={{ color: 'var(--mg-pink)', fontSize: '1.1rem' }}>{totalAmount}万</strong></span>
                       </div>
                     </div>
@@ -1898,7 +1898,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                 {showCalculator && (
                   <div className="glass-card" style={{ padding: '10px', marginTop: '8px', border: '1px solid var(--border-glass-focused)', background: 'var(--bg-glass-heavy)' }}>
                     {/* 電卓用インプット表示 */}
-                    <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: '8px', textAlign: 'right', fontSize: '1.2rem', fontFamily: 'monospace', fontWeight: '700', marginBottom: '8px', height: '38px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    <div style={{ backgroundColor: 'rgba(0,0,0,0.06)', padding: '8px 12px', borderRadius: '8px', textAlign: 'right', fontSize: '1.2rem', fontFamily: 'monospace', fontWeight: '700', marginBottom: '8px', height: '38px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                       {calcInput || '0'}
                     </div>
                     {/* 電卓キーパッド */}
@@ -1906,7 +1906,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                       {['7', '8', '9', '/'].map(k => <button type="button" key={k} onClick={() => handleCalcBtnClick(k)} className="btn-premium btn-secondary" style={{ padding: '8px 0', fontSize: '1rem', borderRadius: '8px' }}>{k}</button>)}
                       {['4', '5', '6', '*'].map(k => <button type="button" key={k} onClick={() => handleCalcBtnClick(k)} className="btn-premium btn-secondary" style={{ padding: '8px 0', fontSize: '1rem', borderRadius: '8px' }}>{k}</button>)}
                       {['1', '2', '3', '-'].map(k => <button type="button" key={k} onClick={() => handleCalcBtnClick(k)} className="btn-premium btn-secondary" style={{ padding: '8px 0', fontSize: '1rem', borderRadius: '8px' }}>{k}</button>)}
-                      {['0', '.', 'C', '+'].map(k => <button type="button" key={k} onClick={() => handleCalcBtnClick(k)} className="btn-premium btn-secondary" style={{ padding: '8px 0', fontSize: '1rem', borderRadius: '8px', backgroundColor: k === 'C' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)', color: k === 'C' ? '#ef4444' : 'inherit' }}>{k}</button>)}
+                      {['0', '.', 'C', '+'].map(k => <button type="button" key={k} onClick={() => handleCalcBtnClick(k)} className="btn-premium btn-secondary" style={{ padding: '8px 0', fontSize: '1rem', borderRadius: '8px', backgroundColor: k === 'C' ? 'rgba(239,68,68,0.15)' : 'rgba(0,0,0,0.02)', color: k === 'C' ? '#ef4444' : 'inherit' }}>{k}</button>)}
                     </div>
                     <button type="button" onClick={() => handleCalcBtnClick('=')} className="btn-premium btn-primary" style={{ width: '100%', padding: '10px', marginTop: '6px', fontSize: '1rem', borderRadius: '8px' }}>
                       ＝ 決定して金額へ反映
