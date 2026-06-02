@@ -10,6 +10,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { syncPlayerData, removePlayer } from './firebase';
 import { useDebounce } from 'react-use';
 import { useNavigate } from 'react-router-dom';
+import { BookOpen, FileText, CalendarCheck, Target, Settings, Sun, Moon } from 'lucide-react';
 
 // 安全な localStorage ラッパー
 const safeStorage = {
@@ -303,6 +304,13 @@ function App() {
 
   return (
     <div className="phone-shell">
+      {/* Animated Mesh Background */}
+      <div className="bg-mesh">
+        <div className="bg-mesh-blob1"></div>
+        <div className="bg-mesh-blob2"></div>
+        <div className="bg-mesh-blob3"></div>
+      </div>
+
       {/* アプリ共通ヘッダー */}
       <header className="app-header glass-bg">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -316,13 +324,9 @@ function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button onClick={toggleTheme} className="theme-switch" aria-label="Toggle theme">
             {theme === 'dark' ? (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 01-8 0z" />
-              </svg>
+              <Sun size={20} />
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
+              <Moon size={20} />
             )}
           </button>
         </div>
@@ -481,9 +485,7 @@ function App() {
           onClick={() => setActiveTab('ledger')} 
           className={`nav-item ${activeTab === 'ledger' ? 'active' : ''}`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-          </svg>
+          <BookOpen size={24} style={{ marginBottom: '4px', transition: 'transform 0.2s' }} />
           出納帳
         </button>
 
@@ -491,9 +493,7 @@ function App() {
           onClick={() => setActiveTab('statements')} 
           className={`nav-item ${activeTab === 'statements' ? 'active' : ''}`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
-          </svg>
+          <FileText size={24} style={{ marginBottom: '4px', transition: 'transform 0.2s' }} />
           決算書
         </button>
 
@@ -501,9 +501,7 @@ function App() {
           onClick={() => setActiveTab('periodEnd')} 
           className={`nav-item ${activeTab === 'periodEnd' ? 'active' : ''}`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <CalendarCheck size={24} style={{ marginBottom: '4px', transition: 'transform 0.2s' }} />
           期末処理
         </button>
 
@@ -511,9 +509,7 @@ function App() {
           onClick={() => setActiveTab('plan')} 
           className={`nav-item ${activeTab === 'plan' ? 'active' : ''}`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-          </svg>
+          <Target size={24} style={{ marginBottom: '4px', transition: 'transform 0.2s' }} />
           計画表
         </button>
 
@@ -521,10 +517,7 @@ function App() {
           onClick={() => setActiveTab('settings')} 
           className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
+          <Settings size={24} style={{ marginBottom: '4px', transition: 'transform 0.2s' }} />
           設定
         </button>
       </nav>
