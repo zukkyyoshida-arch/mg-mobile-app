@@ -11,6 +11,7 @@ import { syncPlayerData, removePlayer } from './firebase';
 import { useDebounce } from 'react-use';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, FileText, CalendarCheck, Target, Settings, Sun, Moon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // 安全な localStorage ラッパー
 const safeStorage = {
@@ -333,132 +334,169 @@ function App() {
       </header>
 
       {/* アプリコンテンツ（スクロール可能） */}
-      <main className="app-content">
-        {activeTab === 'ledger' && (
-          <div className="tab-panel">
-            <CashLedger 
-              carryover={currentData.carryover}
-              ledger={currentData.ledger} 
-              onUpdateLedger={(newLedger) => updatePeriodData('ledger', newLedger)}
-              results={results}
-              currentPeriod={currentPeriod}
-              transactionMode={transactionMode}
-              setTransactionMode={setTransactionMode}
-            />
-          </div>
-        )}
-        
-        {activeTab === 'statements' && (
-          <div className="tab-panel">
-            <FinancialStatements 
-              results={results} 
-              carryover={currentData.carryover}
-              currentPeriod={currentPeriod}
-              ledger={currentData.ledger}
-              onShowPerformance={() => setShowPerformanceReport(true)}
-            />
-          </div>
-        )}
+      <main className="app-content" style={{ overflowX: 'hidden' }}>
+        <AnimatePresence mode="wait">
+          {activeTab === 'ledger' && (
+            <motion.div
+              key="ledger"
+              initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="tab-panel"
+            >
+              <CashLedger 
+                carryover={currentData.carryover}
+                ledger={currentData.ledger} 
+                onUpdateLedger={(newLedger) => updatePeriodData('ledger', newLedger)}
+                results={results}
+                currentPeriod={currentPeriod}
+                transactionMode={transactionMode}
+                setTransactionMode={setTransactionMode}
+              />
+            </motion.div>
+          )}
+          
+          {activeTab === 'statements' && (
+            <motion.div
+              key="statements"
+              initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="tab-panel"
+            >
+              <FinancialStatements 
+                results={results} 
+                carryover={currentData.carryover}
+                currentPeriod={currentPeriod}
+                ledger={currentData.ledger}
+                onShowPerformance={() => setShowPerformanceReport(true)}
+              />
+            </motion.div>
+          )}
 
-        {activeTab === 'periodEnd' && (
-          <div className="tab-panel">
-            <PeriodEndWizard 
-              carryover={currentData.carryover}
-              ledger={currentData.ledger}
-              actuals={currentData.actuals}
-              onUpdateActuals={(newActuals) => updatePeriodData('actuals', newActuals)}
-              onUpdateLedger={(newLedger) => updatePeriodData('ledger', newLedger)}
-              currentPeriod={currentPeriod}
-              results={results}
-              onShowPerformance={() => setShowPerformanceReport(true)}
-            />
-          </div>
-        )}
+          {activeTab === 'periodEnd' && (
+            <motion.div
+              key="periodEnd"
+              initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="tab-panel"
+            >
+              <PeriodEndWizard 
+                carryover={currentData.carryover}
+                ledger={currentData.ledger}
+                actuals={currentData.actuals}
+                onUpdateActuals={(newActuals) => updatePeriodData('actuals', newActuals)}
+                onUpdateLedger={(newLedger) => updatePeriodData('ledger', newLedger)}
+                currentPeriod={currentPeriod}
+                results={results}
+                onShowPerformance={() => setShowPerformanceReport(true)}
+              />
+            </motion.div>
+          )}
 
-        {activeTab === 'plan' && (
-          <div className="tab-panel">
-            <ManagementPlan 
-              budget={currentData.budget}
-              carryover={currentData.carryover}
-              onUpdateBudget={(newBudget) => updatePeriodData('budget', newBudget)}
-              results={results}
-            />
-          </div>
-        )}
+          {activeTab === 'plan' && (
+            <motion.div
+              key="plan"
+              initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="tab-panel"
+            >
+              <ManagementPlan 
+                budget={currentData.budget}
+                carryover={currentData.carryover}
+                onUpdateBudget={(newBudget) => updatePeriodData('budget', newBudget)}
+                results={results}
+              />
+            </motion.div>
+          )}
 
-        {activeTab === 'settings' && (
-          <div className="tab-panel">
-            <div className="glass-card" style={{ padding: '20px', marginBottom: '20px' }}>
-              <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>ネットワーク設定</h3>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ color: 'var(--text-secondary)' }}>
-                  <div>ルームID: <strong style={{ color: 'white' }}>{roomId || '未参加'}</strong></div>
-                  <div>プレイヤー名: <strong style={{ color: 'white' }}>{playerId || '未設定'}</strong></div>
-                  {isOffline && <div style={{ color: 'var(--mg-yellow)' }}>現在オフラインモードです</div>}
+          {activeTab === 'settings' && (
+            <motion.div
+              key="settings"
+              initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="tab-panel"
+            >
+              <div className="glass-card" style={{ padding: '20px', marginBottom: '20px' }}>
+                <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>ネットワーク設定</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ color: 'var(--text-secondary)' }}>
+                    <div>ルームID: <strong style={{ color: 'white' }}>{roomId || '未参加'}</strong></div>
+                    <div>プレイヤー名: <strong style={{ color: 'white' }}>{playerId || '未設定'}</strong></div>
+                    {isOffline && <div style={{ color: 'var(--mg-yellow)' }}>現在オフラインモードです</div>}
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if(window.confirm('ルーム設定を変更しますか？（参加画面に戻ります）')){
+                        // Firestoreからプレイヤー情報を削除
+                        if (roomId && playerId) {
+                          removePlayer(roomId, playerId);
+                        }
+                        safeStorage.setItem('mg_room_id', '');
+                        safeStorage.setItem('mg_player_id', '');
+                        safeStorage.setItem('mg_offline_mode', 'false');
+                        setRoomId('');
+                        setPlayerId('');
+                        setIsOffline(false);
+                        setSyncStatus('未同期');
+                        setShowLogin(true);
+                      }
+                    }}
+                    style={{ padding: '8px 16px', backgroundColor: '#ff4444', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}
+                  >
+                    退出する
+                  </button>
                 </div>
                 <button 
+                  className="btn-secondary"
                   onClick={() => {
-                    if(window.confirm('ルーム設定を変更しますか？（参加画面に戻ります）')){
-                      // Firestoreからプレイヤー情報を削除
-                      if (roomId && playerId) {
-                        removePlayer(roomId, playerId);
-                      }
-                      safeStorage.setItem('mg_room_id', '');
-                      safeStorage.setItem('mg_player_id', '');
-                      safeStorage.setItem('mg_offline_mode', 'false');
-                      setRoomId('');
-                      setPlayerId('');
-                      setIsOffline(false);
-                      setSyncStatus('未同期');
-                      setShowLogin(true);
+                    if (roomId && playerId) {
+                      setSyncStatus('同期中...');
+                      syncPlayerData(roomId, playerId, generateSyncPayload()).then(() => {
+                        setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
+                        alert('手動での強制同期が完了しました');
+                      }).catch(err => {
+                        setSyncStatus('同期エラー');
+                        alert("エラー: " + err.message);
+                      });
+                    } else {
+                      alert("ルームに参加していません");
                     }
                   }}
-                  style={{ padding: '8px 16px', backgroundColor: '#ff4444', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}
+                  style={{ width: '100%', padding: '12px' }}
                 >
-                  退出する
+                  手動で強制同期する
+                </button>
+                
+                <button 
+                  className="btn-secondary"
+                  onClick={() => navigate('/dashboard')}
+                  style={{ width: '100%', padding: '12px', marginTop: '12px', border: '1px solid var(--mg-blue)', color: 'var(--mg-blue)', background: 'transparent' }}
+                >
+                  📊 プロジェクター用ダッシュボードを開く
                 </button>
               </div>
-              <button 
-                className="btn-secondary"
-                onClick={() => {
-                  if (roomId && playerId) {
-                    setSyncStatus('同期中...');
-                    syncPlayerData(roomId, playerId, generateSyncPayload()).then(() => {
-                      setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
-                      alert('手動での強制同期が完了しました');
-                    }).catch(err => {
-                      setSyncStatus('同期エラー');
-                      alert("エラー: " + err.message);
-                    });
-                  } else {
-                    alert("ルームに参加していません");
-                  }
-                }}
-                style={{ width: '100%', padding: '12px' }}
-              >
-                手動で強制同期する
-              </button>
-              
-              <button 
-                className="btn-secondary"
-                onClick={() => navigate('/dashboard')}
-                style={{ width: '100%', padding: '12px', marginTop: '12px', border: '1px solid var(--mg-blue)', color: 'var(--mg-blue)', background: 'transparent' }}
-              >
-                📊 プロジェクター用ダッシュボードを開く
-              </button>
-            </div>
 
-            <PriorPeriodCarryover 
-              carryover={currentData.carryover}
-              onUpdateCarryover={(newCarryover) => updatePeriodData('carryover', newCarryover)}
-              currentPeriod={currentPeriod}
-              periods={periods}
-              setCurrentPeriod={setCurrentPeriod}
-              rollForwardFromPrevious={rollForwardFromPrevious}
-              resetAllData={resetAllData}
-            />
-          </div>
-        )}
+              <PriorPeriodCarryover 
+                carryover={currentData.carryover}
+                onUpdateCarryover={(newCarryover) => updatePeriodData('carryover', newCarryover)}
+                currentPeriod={currentPeriod}
+                periods={periods}
+                setCurrentPeriod={setCurrentPeriod}
+                rollForwardFromPrevious={rollForwardFromPrevious}
+                resetAllData={resetAllData}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {showPerformanceReport && (() => {
           const prevData = currentPeriod > 1 ? periods[currentPeriod - 1] : null;
