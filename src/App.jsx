@@ -305,31 +305,14 @@ function App() {
 
   return (
     <div className="phone-shell">
-      {/* Animated Mesh Background */}
-      <div className="bg-mesh">
-        <div className="bg-mesh-blob1"></div>
-        <div className="bg-mesh-blob2"></div>
-        <div className="bg-mesh-blob3"></div>
-      </div>
-
       {/* アプリ共通ヘッダー */}
-      <header className="app-header glass-bg">
+      <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <h1 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 'bold' }}>戦略MG</h1>
+          <h1 className="app-title" style={{ fontSize: '1.2rem', margin: 0 }}>戦略MG</h1>
           <span className="badge badge-blue">第{currentPeriod}期</span>
-          <span style={{ fontSize: '0.8rem', color: syncStatus.includes('エラー') ? '#ff4444' : 'var(--text-secondary)' }}>
+          <span style={{ fontSize: '0.8rem', color: syncStatus.includes('エラー') ? '#DC2626' : 'var(--text-secondary)' }}>
             ☁️ {syncStatus}
           </span>
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button onClick={toggleTheme} className="theme-switch" aria-label="Toggle theme">
-            {theme === 'dark' ? (
-              <Sun size={20} />
-            ) : (
-              <Moon size={20} />
-            )}
-          </button>
         </div>
       </header>
 
@@ -518,7 +501,7 @@ function App() {
       </main>
 
       {/* スマホ用ボトムナビゲーション */}
-      <nav className="bottom-nav glass-bg">
+      <nav className="bottom-nav">
         <button 
           onClick={() => setActiveTab('ledger')} 
           className={`nav-item ${activeTab === 'ledger' ? 'active' : ''}`}
