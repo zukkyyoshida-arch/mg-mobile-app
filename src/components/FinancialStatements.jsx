@@ -127,7 +127,7 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
         <div className="tab-panel">
           
           {/* MQ / G ハイライトカード */}
-          <div className="glass-card" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fef2f8 100%)', borderColor: 'rgba(255, 46, 147, 0.25)', padding: '20px' }}>
+          <div className="glass-card" style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>MQ 付加価値額</span>
