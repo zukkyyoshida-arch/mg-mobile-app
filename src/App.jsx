@@ -408,18 +408,73 @@ function App() {
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="tab-panel"
             >
-              <div className="glass-card" style={{ padding: '20px', marginBottom: '20px' }}>
-                <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>ネットワーク設定</h3>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <div style={{ color: 'var(--text-secondary)' }}>
-                    <div>ルームID: <strong style={{ color: 'var(--text-primary)' }}>{roomId || '未参加'}</strong></div>
-                    <div>プレイヤー名: <strong style={{ color: 'var(--text-primary)' }}>{playerId || '未設定'}</strong></div>
-                    {isOffline && <div style={{ color: 'var(--text-secondary)' }}>現在オフラインモードです</div>}
+              <div className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem' }}>ネットワーク設定</h3>
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: '700',
+                      padding: '6px 10px',
+                      borderRadius: '999px',
+                      background: isOffline ? '#f8fafc' : syncStatus.includes('エラー') ? '#fef2f2' : '#f8fafc',
+                      border: `1px solid ${syncStatus.includes('エラー') ? '#fecaca' : '#e5e7eb'}`,
+                      color: syncStatus.includes('エラー') ? '#b91c1c' : 'var(--text-secondary)'
+                    }}
+                  >
+                    {isOffline ? 'オフライン' : syncStatus}
+                  </span>
+                </div>
+
+                <div style={{ display: 'grid', gap: '10px', marginBottom: '16px' }}>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '12px' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px' }}>ルームID</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{roomId || '未参加'}</div>
                   </div>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '12px' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px' }}>プレイヤー名</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{playerId || '未設定'}</div>
+                  </div>
+                  {isOffline && (
+                    <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      現在オフラインモードです。同期やルーム連携は行われません。
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'grid', gap: '10px' }}>
+                  <button 
+                    className="btn-secondary"
+                    onClick={() => {
+                      if (roomId && playerId) {
+                        setSyncStatus('同期中...');
+                        syncPlayerData(roomId, playerId, generateSyncPayload()).then(() => {
+                          setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
+                          alert('手動での強制同期が完了しました');
+                        }).catch(err => {
+                          setSyncStatus('同期エラー');
+                          alert("エラー: " + err.message);
+                        });
+                      } else {
+                        alert("ルームに参加していません");
+                      }
+                    }}
+                    style={{ width: '100%', padding: '12px' }}
+                  >
+                    手動で強制同期する
+                  </button>
+                  
+                  <button 
+                    className="btn-secondary"
+                    onClick={() => navigate('/dashboard')}
+                    style={{ width: '100%', padding: '12px' }}
+                  >
+                    プロジェクター用ダッシュボードを開く
+                  </button>
+
                   <button 
                     onClick={() => {
                       if(window.confirm('ルーム設定を変更しますか？（参加画面に戻ります）')){
-                        // Firestoreからプレイヤー情報を削除
                         if (roomId && playerId) {
                           removePlayer(roomId, playerId);
                         }
@@ -433,39 +488,12 @@ function App() {
                         setShowLogin(true);
                       }
                     }}
-                    style={{ padding: '8px 16px', backgroundColor: '#ff4444', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}
+                    className="btn-danger"
+                    style={{ width: '100%', padding: '12px', fontWeight: '700' }}
                   >
-                    退出する
+                    ルーム設定を変更する
                   </button>
                 </div>
-                <button 
-                  className="btn-secondary"
-                  onClick={() => {
-                    if (roomId && playerId) {
-                      setSyncStatus('同期中...');
-                      syncPlayerData(roomId, playerId, generateSyncPayload()).then(() => {
-                        setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
-                        alert('手動での強制同期が完了しました');
-                      }).catch(err => {
-                        setSyncStatus('同期エラー');
-                        alert("エラー: " + err.message);
-                      });
-                    } else {
-                      alert("ルームに参加していません");
-                    }
-                  }}
-                  style={{ width: '100%', padding: '12px' }}
-                >
-                  手動で強制同期する
-                </button>
-                
-                <button 
-                  className="btn-secondary"
-                  onClick={() => navigate('/dashboard')}
-                  style={{ width: '100%', padding: '12px', marginTop: '12px', border: '1px solid var(--mg-blue)', color: 'var(--mg-blue)', background: 'transparent' }}
-                >
-                  📊 プロジェクター用ダッシュボードを開く
-                </button>
               </div>
 
               <PriorPeriodCarryover 
