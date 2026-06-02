@@ -77,9 +77,9 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
           style={{
             width: '100%',
             marginBottom: '16px',
-            background: '#f5f5f5',
+            background: '#f5f5f5 !important',
             border: '1px solid #cbd5e1',
-            color: '#000000',
+            color: '#000000 !important',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
