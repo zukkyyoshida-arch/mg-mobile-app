@@ -697,7 +697,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* 財務サマリーカード */}
-      <div className="glass-card" style={{ padding: '16px', background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)', border: '1px solid var(--border-glass)' }}>
+      <div className="glass-card" style={{ padding: '16px' }}>
         <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
           第 {visibleLedger.length > 0 ? (visibleLedger.length) : 0} 取引完了
         </span>
