@@ -8,84 +8,77 @@ const fixedCostGroups = [
     key: 'laborBudget',
     label: '労務費',
     rows: [
-      { key: 'laborWorkers', label: 'ワーカー', suffix: '人', unitField: 'laborUnitPrice', unitLabel: '期末処理単価', unitSuffix: '万' }
+      { key: 'laborWorkers', label: 'ワーカー人数', unitField: 'laborUnitPrice', unitLabel: '期末処理単価', suffix: '人', unitSuffix: '万' }
     ]
   },
   {
     key: 'manufacturingBudget',
     label: '製造経費',
     rows: [
-      { key: 'mfgMachines', label: '機械', suffix: '台', unitField: 'mfgUnitPrice', unitLabel: '期末処理単価', unitSuffix: '万' },
-      { key: 'mfgPacCount', label: 'PAC生産性', suffix: '枚', multiplier: 10 },
-      { key: 'mfgRepairCount', label: '修理改修費', suffix: '回', multiplier: 5 }
+      { key: 'mfgMachines', label: '機械台数', unitField: 'mfgUnitPrice', unitLabel: '期末処理単価', suffix: '台', unitSuffix: '万' },
+      { key: 'mfgPacCount', label: 'PAC生産性', multiplier: 10, suffix: '枚' },
+      { key: 'mfgRepairCount', label: '修理改修費', multiplier: 5, suffix: '回' }
     ]
   },
   {
     key: 'depreciationBudget',
     label: '減価償却費',
     rows: [
-      { key: 'depLarge', label: '大型40', suffix: '台', multiplier: 20 },
-      { key: 'depAttach', label: 'アタッチメント4', suffix: '台', multiplier: 2 },
-      { key: 'depSmall', label: '小型20', suffix: '台', multiplier: 10 }
+      { key: 'depLarge', label: '大型40', multiplier: 20, suffix: '台' },
+      { key: 'depAttach', label: 'アタッチメント4', multiplier: 2, suffix: '台' },
+      { key: 'depSmall', label: '小型20', multiplier: 10, suffix: '台' }
     ]
   },
   {
     key: 'salesBudget',
     label: '販売費',
     rows: [
-      { key: 'salesSalesmen', label: 'セールスマン', suffix: '人', unitField: 'salesUnitPrice', unitLabel: '期末処理単価', unitSuffix: '万' },
-      { key: 'salesResearchCount', label: 'マーケットリサーチ', suffix: '枚', multiplier: 10 },
-      { key: 'salesAdCount', label: '広告', suffix: '枚', multiplier: 10 },
-      { key: 'salesClaimCount', label: 'クレーム処理', suffix: '回', multiplier: 5 }
+      { key: 'salesSalesmen', label: 'セールスマン人数', unitField: 'salesUnitPrice', unitLabel: '期末処理単価', suffix: '人', unitSuffix: '万' },
+      { key: 'salesResearchCount', label: 'マーケットリサーチ', multiplier: 10, suffix: '枚' },
+      { key: 'salesAdCount', label: '広告', multiplier: 10, suffix: '枚' },
+      { key: 'salesClaimCount', label: 'クレーム処理', multiplier: 5, suffix: '回' }
     ]
   },
   {
     key: 'adminBudget',
     label: '一般管理費',
     rows: [
-      { key: 'adminStaffTotal', label: 'ワーカー+セールスマン', suffix: '人', unitField: 'adminUnitPrice', unitLabel: '期末処理単価', unitSuffix: '万' },
-      { key: 'adminMdCount', label: 'マーチャンダイザー', suffix: '枚', multiplier: 10 },
-      { key: 'adminInsuranceCount', label: '保険', suffix: '枚', multiplier: 5 },
-      { key: 'adminTransferCount', label: '配置転換及び退職', suffix: '回', multiplier: 5 },
-      { key: 'adminHireCount', label: '研究所リース料', suffix: '回', multiplier: 20 }
+      { key: 'adminStaffTotal', label: 'ワーカー+セールスマン', unitField: 'adminUnitPrice', unitLabel: '期末処理単価', suffix: '人', unitSuffix: '万' },
+      { key: 'adminMdCount', label: 'マーチャンダイザー', multiplier: 10, suffix: '枚' },
+      { key: 'adminInsuranceCount', label: '保険', multiplier: 5, suffix: '枚' },
+      { key: 'adminTransferCount', label: '配置転換及び退職', multiplier: 5, suffix: '回' },
+      { key: 'adminHireCount', label: '研究所リース料', multiplier: 20, suffix: '回' }
     ]
   },
   {
     key: 'nonOperatingBudget',
     label: '営業外費用',
     rows: [
-      { key: 'nonOpStartBalance', label: '期首残高', suffix: '万', rateField: 'nonOpStartRate' },
-      { key: 'nonOpMidBalance', label: '期中借入', suffix: '万', rateField: 'nonOpMidRate' }
+      { key: 'nonOpStartBalance', label: '期首残高', rateField: 'nonOpStartRate', suffix: '万', rateSuffix: '%' },
+      { key: 'nonOpMidBalance', label: '期中借入', rateField: 'nonOpMidRate', suffix: '万', rateSuffix: '%' }
     ]
   },
   {
     key: 'rdBudget',
     label: '研究開発費',
     rows: [
-      { key: 'rdSpecialCount', label: '特急', suffix: '枚', multiplier: 40 },
-      { key: 'rdNormalCount', label: '通常', suffix: '枚', multiplier: 20 }
+      { key: 'rdSpecialCount', label: '特急', multiplier: 40, suffix: '枚' },
+      { key: 'rdNormalCount', label: '通常', multiplier: 20, suffix: '枚' }
     ]
   }
 ];
 
-const summaryCardStyle = {
+const cardStyle = {
   background: '#ffffff',
   border: '1px solid #e5e7eb',
-  borderRadius: '12px',
-  padding: '14px 16px',
+  borderRadius: '14px',
+  padding: '16px',
   boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)'
 };
 
-const metricCellStyle = {
-  border: '1px solid #cbd5e1',
-  background: '#ffffff',
-  minHeight: '54px',
-  padding: '8px'
-};
-
-function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
+function ManagementPlan({ carryover, onUpdateBudget, results }) {
   const period = Number(results?.currentPeriod || results?.period || 1);
-
+  const [currentScenario, setCurrentScenario] = useState('A');
   const [meta, setMeta] = useState({ companyName: '', presidentName: '' });
 
   const [scenarios, setScenarios] = useState(() => {
@@ -137,52 +130,48 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
     };
   });
 
-  const deriveTotals = (scenario) => {
-    const normalized = {
-      ...scenario,
-      laborBudget: (scenario.laborWorkers || 0) * (scenario.laborUnitPrice || 0),
-      manufacturingBudget:
-        (scenario.mfgMachines || 0) * (scenario.mfgUnitPrice || 0) +
-        (scenario.mfgPacCount || 0) * 10 +
-        (scenario.mfgRepairCount || 0) * 5,
-      depreciationBudget:
-        (scenario.depLarge || 0) * 20 +
-        (scenario.depSmall || 0) * 10 +
-        (scenario.depAttach || 0) * 2,
-      salesBudget:
-        (scenario.salesSalesmen || 0) * (scenario.salesUnitPrice || 0) +
-        (scenario.salesResearchCount || 0) * 10 +
-        (scenario.salesAdCount || 0) * 10 +
-        (scenario.salesClaimCount || 0) * 5,
-      adminBudget:
-        (scenario.adminStaffTotal || 0) * (scenario.adminUnitPrice || 0) +
-        (scenario.adminMdCount || 0) * 10 +
-        (scenario.adminInsuranceCount || 0) * 5 +
-        (scenario.adminTransferCount || 0) * 5 +
-        (scenario.adminHireCount || 0) * 20,
-      nonOperatingBudget:
-        Math.round((scenario.nonOpStartBalance || 0) * (scenario.nonOpStartRate || 0) / 100) +
-        Math.round((scenario.nonOpMidBalance || 0) * (scenario.nonOpMidRate || 0) / 100),
-      rdBudget:
-        (scenario.rdSpecialCount || 0) * 40 +
-        (scenario.rdNormalCount || 0) * 20
-    };
+  const deriveTotals = (scenario) => ({
+    ...scenario,
+    laborBudget: (scenario.laborWorkers || 0) * (scenario.laborUnitPrice || 0),
+    manufacturingBudget:
+      (scenario.mfgMachines || 0) * (scenario.mfgUnitPrice || 0) +
+      (scenario.mfgPacCount || 0) * 10 +
+      (scenario.mfgRepairCount || 0) * 5,
+    depreciationBudget:
+      (scenario.depLarge || 0) * 20 +
+      (scenario.depSmall || 0) * 10 +
+      (scenario.depAttach || 0) * 2,
+    salesBudget:
+      (scenario.salesSalesmen || 0) * (scenario.salesUnitPrice || 0) +
+      (scenario.salesResearchCount || 0) * 10 +
+      (scenario.salesAdCount || 0) * 10 +
+      (scenario.salesClaimCount || 0) * 5,
+    adminBudget:
+      (scenario.adminStaffTotal || 0) * (scenario.adminUnitPrice || 0) +
+      (scenario.adminMdCount || 0) * 10 +
+      (scenario.adminInsuranceCount || 0) * 5 +
+      (scenario.adminTransferCount || 0) * 5 +
+      (scenario.adminHireCount || 0) * 20,
+    nonOperatingBudget:
+      Math.round((scenario.nonOpStartBalance || 0) * (scenario.nonOpStartRate || 0) / 100) +
+      Math.round((scenario.nonOpMidBalance || 0) * (scenario.nonOpMidRate || 0) / 100),
+    rdBudget:
+      (scenario.rdSpecialCount || 0) * 40 +
+      (scenario.rdNormalCount || 0) * 20
+  });
 
-    return normalized;
-  };
-
-  const calculatedScenarios = useMemo(() => {
-    return SCENARIOS.reduce((acc, scenarioKey) => {
-      const withTotals = deriveTotals(scenarios[scenarioKey]);
-      const budgetResult = calculateBudget(withTotals, carryover);
-      const plannedMP = Math.max(0, (withTotals.plannedP || 0) - (withTotals.plannedVP || 0));
+  const calculated = useMemo(() => {
+    return SCENARIOS.reduce((acc, key) => {
+      const full = deriveTotals(scenarios[key]);
+      const budgetResult = calculateBudget(full, carryover);
+      const plannedMP = Math.max(0, (full.plannedP || 0) - (full.plannedVP || 0));
       const requiredQ = plannedMP > 0 ? Math.ceil(budgetResult.requiredMQ / plannedMP) : 0;
-      const plannedSales = requiredQ * (withTotals.plannedP || 0);
-      const plannedVariableCost = requiredQ * (withTotals.plannedVP || 0);
+      const plannedSales = requiredQ * (full.plannedP || 0);
+      const plannedVariableCost = requiredQ * (full.plannedVP || 0);
       const fmRatio = budgetResult.requiredMQ > 0 ? Math.round((budgetResult.fixedCostTotal / budgetResult.requiredMQ) * 100) : 0;
 
-      acc[scenarioKey] = {
-        ...withTotals,
+      acc[key] = {
+        ...full,
         ...budgetResult,
         plannedMP,
         requiredQ,
@@ -194,230 +183,162 @@ function ManagementPlan({ budget, carryover, onUpdateBudget, results }) {
     }, {});
   }, [carryover, scenarios]);
 
-  const handleScenarioChange = (scenarioKey, field, value) => {
+  const activeScenario = scenarios[currentScenario];
+  const activeResult = calculated[currentScenario];
+
+  const handleChange = (field, value) => {
     const parsed = value === '' ? 0 : Number(value);
-    const next = {
-      ...scenarios[scenarioKey],
-      [field]: parsed
-    };
-
-    setScenarios((prev) => ({
-      ...prev,
-      [scenarioKey]: next
-    }));
-
-    if (scenarioKey === 'A') {
-      onUpdateBudget(deriveTotals(next));
-    }
+    const next = { ...activeScenario, [field]: parsed };
+    setScenarios((prev) => ({ ...prev, [currentScenario]: next }));
+    if (currentScenario === 'A') onUpdateBudget(deriveTotals(next));
   };
 
-  const renderScenarioInput = (scenarioKey, field, opts = {}) => (
-    <input
-      type="number"
-      value={scenarios[scenarioKey][field] ?? ''}
-      onChange={(e) => handleScenarioChange(scenarioKey, field, e.target.value)}
-      className="form-input"
-      style={{
-        minWidth: 0,
-        textAlign: 'right',
-        padding: '8px 10px',
-        fontSize: opts.emphasis ? '0.95rem' : '0.85rem',
-        fontWeight: opts.emphasis ? '700' : '600'
-      }}
-    />
+  const renderInput = (field, opts = {}) => (
+    <div style={{ display: 'grid', gap: '6px' }}>
+      <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{opts.label}</label>
+      <input
+        type="number"
+        value={activeScenario[field] ?? ''}
+        onChange={(e) => handleChange(field, e.target.value)}
+        className="form-input"
+        style={{ textAlign: 'right', fontWeight: '700' }}
+      />
+    </div>
+  );
+
+  const renderCostGroup = (group) => (
+    <div key={group.key} style={{ ...cardStyle, padding: '14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <div>
+          <div style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--text-primary)' }}>{group.label}</div>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>必要な項目だけ順番に入力</div>
+        </div>
+        <div style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--mg-blue)' }}>¥{activeResult[group.key].toLocaleString()}万</div>
+      </div>
+      <div style={{ display: 'grid', gap: '10px' }}>
+        {group.rows.map((row) => (
+          <div key={row.key} style={{ padding: '10px', background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '10px' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '8px' }}>{row.label}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: row.unitField || row.rateField ? '1fr 1fr' : '1fr', gap: '8px' }}>
+              {renderInput(row.key, { label: row.suffix ? `数量 (${row.suffix})` : '数量' })}
+              {row.unitField && renderInput(row.unitField, { label: `${row.unitLabel} (${row.unitSuffix || ''})` })}
+              {row.rateField && renderInput(row.rateField, { label: `金利 (${row.rateSuffix || '%'})` })}
+            </div>
+            {row.multiplier && (
+              <div style={{ marginTop: '8px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                1件あたり {row.multiplier}万で計算
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 
   return (
-    <div style={{ padding: '0 0 100px 0' }}>
-      <div className="glass-card" style={{ padding: '18px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginBottom: '20px' }}>
-          <div>
-            <h2 style={{ fontSize: '1.15rem', marginBottom: '6px', color: 'var(--mg-blue)' }}>第{period}期 MG経営計画</h2>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>シニアルールに合わせて A/B/C 予算を一枚で比較できる計画表</p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '80px 180px', border: '1px solid #cbd5e1', background: '#ffffff' }}>
-            <div style={{ padding: '10px 12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', fontWeight: '700', color: 'var(--text-secondary)' }}>社名</div>
-            <input value={meta.companyName} onChange={(e) => setMeta((prev) => ({ ...prev, companyName: e.target.value }))} className="form-input" style={{ border: 'none', borderRadius: 0 }} />
-            <div style={{ padding: '10px 12px', borderRight: '1px solid #cbd5e1', fontWeight: '700', color: 'var(--text-secondary)' }}>社長名</div>
-            <input value={meta.presidentName} onChange={(e) => setMeta((prev) => ({ ...prev, presidentName: e.target.value }))} className="form-input" style={{ border: 'none', borderRadius: 0 }} />
-          </div>
+    <div style={{ padding: '0 0 100px 0', display: 'grid', gap: '14px' }}>
+      <div className="glass-card" style={{ padding: '16px' }}>
+        <div style={{ marginBottom: '12px' }}>
+          <h2 style={{ fontSize: '1.1rem', color: 'var(--mg-blue)', marginBottom: '4px' }}>第{period}期 MG経営計画</h2>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>スマホで上から順番に埋めていける縦長レイアウト</p>
         </div>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          <input
+            value={meta.companyName}
+            onChange={(e) => setMeta((prev) => ({ ...prev, companyName: e.target.value }))}
+            className="form-input"
+            placeholder="社名"
+          />
+          <input
+            value={meta.presidentName}
+            onChange={(e) => setMeta((prev) => ({ ...prev, presidentName: e.target.value }))}
+            className="form-input"
+            placeholder="社長名"
+          />
+        </div>
+      </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1.2fr) repeat(3, minmax(92px, 1fr))', gap: '0', borderTop: '1px solid #cbd5e1', borderLeft: '1px solid #cbd5e1' }}>
-          <div style={{ padding: '10px 12px', background: '#f8fafc', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', fontWeight: '800', color: 'var(--text-primary)' }}>項目</div>
-          {SCENARIOS.map((scenarioKey) => (
-            <div key={`head-${scenarioKey}`} style={{ padding: '10px 12px', background: '#eff6ff', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', fontWeight: '800', textAlign: 'center', color: 'var(--mg-blue)' }}>
-              {scenarioKey}予算
-            </div>
-          ))}
-
-          <div style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-            <div style={{ fontWeight: '700', marginBottom: '4px' }}>1. 必要Gを決める</div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>必要目標利益</div>
-          </div>
-          {SCENARIOS.map((scenarioKey) => (
-            <div key={`g-${scenarioKey}`} style={{ padding: '8px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-              {renderScenarioInput(scenarioKey, 'targetG', { emphasis: true })}
-            </div>
-          ))}
-
-          <div style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', background: '#f8fafc' }}>
-            <div style={{ fontWeight: '700', marginBottom: '2px' }}>2. 固定費Fを決める</div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>各項目を入力して固定費合計を算出</div>
-          </div>
-          {SCENARIOS.map((scenarioKey) => (
-            <div key={`blank-f-${scenarioKey}`} style={{ borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', background: '#f8fafc' }} />
-          ))}
-
-          {fixedCostGroups.map((group) => (
-            <React.Fragment key={group.key}>
-              <div style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-                <div style={{ fontWeight: '700', marginBottom: '8px', color: 'var(--text-primary)' }}>{group.label}</div>
-                <div style={{ display: 'grid', gap: '8px' }}>
-                  {group.rows.map((row) => (
-                    <div key={row.key} style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                      {row.label}
-                      {row.multiplier ? ` (${row.multiplier}万)` : ''}
-                      {row.unitField ? ` / ${row.unitLabel}` : ''}
-                      {row.rateField ? ' / 金利' : ''}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {SCENARIOS.map((scenarioKey) => (
-                <div key={`${group.key}-${scenarioKey}`} style={{ padding: '8px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-                  <div style={{ display: 'grid', gap: '8px' }}>
-                    {group.rows.map((row) => (
-                      <div key={`${scenarioKey}-${row.key}`} style={{ display: 'grid', gap: '6px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: row.unitField || row.rateField ? '1fr 1fr' : '1fr', gap: '6px' }}>
-                          {renderScenarioInput(scenarioKey, row.key)}
-                          {row.unitField && renderScenarioInput(scenarioKey, row.unitField)}
-                          {row.rateField && renderScenarioInput(scenarioKey, row.rateField)}
-                        </div>
-                      </div>
-                    ))}
-                    <div style={{ ...summaryCardStyle, padding: '10px 12px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>小計</div>
-                      <div style={{ fontWeight: '800', textAlign: 'right' }}>¥{calculatedScenarios[scenarioKey][group.key].toLocaleString()}万</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </React.Fragment>
-          ))}
-
-          <div style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', background: '#f8fafc', fontWeight: '800' }}>固定費合計 F</div>
-          {SCENARIOS.map((scenarioKey) => (
-            <div key={`total-f-${scenarioKey}`} style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', background: '#f8fafc', fontWeight: '900', textAlign: 'right', color: 'var(--mg-blue)' }}>
-              ¥{calculatedScenarios[scenarioKey].fixedCostTotal.toLocaleString()}万
-            </div>
-          ))}
-
-          <div style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-            <div style={{ fontWeight: '700' }}>3. 必要mPQを計算する</div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>必要G + 計算F = 必要mPQ</div>
-          </div>
-          {SCENARIOS.map((scenarioKey) => (
-            <div key={`mq-${scenarioKey}`} style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', fontWeight: '900', textAlign: 'right' }}>
-              ¥{calculatedScenarios[scenarioKey].requiredMQ.toLocaleString()}万
-            </div>
-          ))}
-
-          <div style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-            <div style={{ fontWeight: '700', marginBottom: '4px' }}>4. 予定P、予定vPを決める</div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>予定P / 予定vP(材料単価+投入費+完成費)</div>
-          </div>
-          {SCENARIOS.map((scenarioKey) => (
-            <div key={`pv-${scenarioKey}`} style={{ padding: '8px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', display: 'grid', gap: '6px' }}>
-              {renderScenarioInput(scenarioKey, 'plannedP')}
-              {renderScenarioInput(scenarioKey, 'plannedVP')}
-            </div>
-          ))}
-
-          <div style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-            <div style={{ fontWeight: '700' }}>5. 予定mPを計算する</div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>予定mP = 予定P - 予定vP</div>
-          </div>
-          {SCENARIOS.map((scenarioKey) => (
-            <div key={`mp-${scenarioKey}`} style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', fontWeight: '900', textAlign: 'right' }}>
-              ¥{calculatedScenarios[scenarioKey].plannedMP.toLocaleString()}万
-            </div>
-          ))}
-
-          <div style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-            <div style={{ fontWeight: '700' }}>6. 売上に必要Qを出す</div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>必要mPQ / 予定mP = 必要Q</div>
-          </div>
-          {SCENARIOS.map((scenarioKey) => (
-            <div key={`q-${scenarioKey}`} style={{ padding: '12px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', fontWeight: '900', textAlign: 'right' }}>
-              {calculatedScenarios[scenarioKey].requiredQ.toLocaleString()}
-            </div>
+      <div className="glass-card" style={{ padding: '12px 16px', position: 'sticky', top: '8px', zIndex: 5 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+          {SCENARIOS.map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setCurrentScenario(key)}
+              className={currentScenario === key ? 'btn-primary' : 'btn-secondary'}
+              style={{ width: '100%', padding: '10px 0', fontWeight: '800' }}
+            >
+              {key}予算
+            </button>
           ))}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px', margin: '0 16px' }}>
-        {SCENARIOS.map((scenarioKey) => {
-          const scenario = calculatedScenarios[scenarioKey];
-          return (
-            <div key={`summary-${scenarioKey}`} className="glass-card" style={{ margin: 0, padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontWeight: '800', color: 'var(--mg-blue)' }}>{scenarioKey}予算</span>
-                <span className="saas-pill">Q {scenario.requiredQ}</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr', gap: '10px', alignItems: 'start' }}>
-                <div style={{ display: 'grid', gridTemplateRows: 'repeat(3, minmax(52px, auto))', gap: '8px' }}>
-                  <div style={metricCellStyle}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>P</div>
-                    <div style={{ fontWeight: '800', marginTop: '6px' }}>¥{scenario.plannedP}</div>
-                  </div>
-                  <div style={metricCellStyle}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>vP</div>
-                    <div style={{ fontWeight: '800', marginTop: '6px' }}>¥{scenario.plannedVP}</div>
-                  </div>
-                  <div style={metricCellStyle}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>mP</div>
-                    <div style={{ fontWeight: '800', marginTop: '6px', color: 'var(--mg-blue)' }}>¥{scenario.plannedMP}</div>
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr 64px', gridTemplateRows: '52px 52px 52px', gap: '8px' }}>
-                  <div style={metricCellStyle}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Q</div>
-                    <div style={{ fontWeight: '800', marginTop: '6px' }}>{scenario.requiredQ}</div>
-                  </div>
-                  <div style={{ ...metricCellStyle, gridRow: '1 / span 3' }}>
-                    <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr 1fr', height: '100%', gap: '8px' }}>
-                      <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>vPQ</div>
-                        <div style={{ fontWeight: '800', marginTop: '6px' }}>¥{scenario.plannedVariableCost.toLocaleString()}</div>
-                      </div>
-                      <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>mPQ</div>
-                        <div style={{ fontWeight: '800', marginTop: '6px', color: 'var(--mg-blue)' }}>¥{scenario.requiredMQ.toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>PQ</div>
-                        <div style={{ fontWeight: '800', marginTop: '6px' }}>¥{scenario.plannedSales.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={metricCellStyle}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>F</div>
-                    <div style={{ fontWeight: '800', marginTop: '6px' }}>¥{scenario.fixedCostTotal.toLocaleString()}</div>
-                  </div>
-                  <div style={{ ...metricCellStyle, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>f/m</div>
-                    <div style={{ fontWeight: '800', marginTop: '4px' }}>{scenario.fmRatio}%</div>
-                  </div>
-                  <div style={metricCellStyle}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>G</div>
-                    <div style={{ fontWeight: '800', marginTop: '6px' }}>¥{scenario.targetG.toLocaleString()}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      <div style={{ ...cardStyle, margin: '0 16px' }}>
+        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>1. 必要Gを決める</div>
+        {renderInput('targetG', { label: '必要目標利益 G (万)' })}
+      </div>
+
+      <div style={{ ...cardStyle, margin: '0 16px', padding: '14px' }}>
+        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>2. 固定費 F を積み上げる</div>
+        <div style={{ display: 'grid', gap: '12px' }}>
+          {fixedCostGroups.map(renderCostGroup)}
+        </div>
+        <div style={{ marginTop: '12px', padding: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontWeight: '800' }}>固定費合計 F</span>
+          <span style={{ fontSize: '1.05rem', fontWeight: '900', color: 'var(--mg-blue)' }}>¥{activeResult.fixedCostTotal.toLocaleString()}万</span>
+        </div>
+      </div>
+
+      <div style={{ ...cardStyle, margin: '0 16px' }}>
+        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>3. 必要mPQを計算する</div>
+        <div style={{ padding: '12px', background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+          <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>必要G + 計算F</div>
+          <div style={{ marginTop: '6px', fontSize: '1.1rem', fontWeight: '900' }}>¥{activeResult.requiredMQ.toLocaleString()}万</div>
+        </div>
+      </div>
+
+      <div style={{ ...cardStyle, margin: '0 16px' }}>
+        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>4. 予定P / 予定vP を決める</div>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          {renderInput('plannedP', { label: '予定P (販売単価)' })}
+          {renderInput('plannedVP', { label: '予定vP (材料+投入+完成)' })}
+        </div>
+      </div>
+
+      <div style={{ ...cardStyle, margin: '0 16px' }}>
+        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>5. 予定mP / 必要Q を確認する</div>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>予定mP</span>
+            <strong style={{ color: 'var(--mg-blue)' }}>¥{activeResult.plannedMP.toLocaleString()}万</strong>
+          </div>
+          <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>必要Q</span>
+            <strong>{activeResult.requiredQ.toLocaleString()}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-card" style={{ margin: '0 16px', padding: '16px' }}>
+        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>6. 予算サマリー</div>
+        <div style={{ display: 'grid', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '72px 72px 1fr', gap: '8px' }}>
+            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>P</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedP}</div></div>
+            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>vP</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedVP}</div></div>
+            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>mP / Q</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedMP.toLocaleString()} / {activeResult.requiredQ}</div></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>PQ</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedSales.toLocaleString()}</div></div>
+            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>vPQ</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedVariableCost.toLocaleString()}</div></div>
+            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>mPQ</div><div style={{ fontWeight: '800', marginTop: '6px', color: 'var(--mg-blue)' }}>¥{activeResult.requiredMQ.toLocaleString()}</div></div>
+            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>F / G</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.fixedCostTotal.toLocaleString()} / ¥{activeResult.targetG.toLocaleString()}</div></div>
+          </div>
+          <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>f/m</span>
+            <strong>{activeResult.fmRatio}%</strong>
+          </div>
+        </div>
       </div>
     </div>
   );
