@@ -93,7 +93,7 @@ function CompanyBoardMinimap({ results }) {
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#ff9800', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>材料倉庫</div>
               
-              <div style={{ fontSize: '0.62rem', color: '#ffb74d', fontWeight: '700', marginBottom: '4px' }}>材料:</div>
+              <div style={{ fontSize: '0.62rem', color: 'var(--text-primary)', fontWeight: '700', marginBottom: '4px' }}>材料:</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                 {matChips.map((i) => (
                   <div 

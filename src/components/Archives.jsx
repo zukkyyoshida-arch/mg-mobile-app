@@ -40,9 +40,9 @@ export default function Archives() {
     .slice(0, 10); // トップ10のみ取得
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0b0c10', color: 'white', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
-      <header style={{ padding: '20px 40px', background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ padding: '20px 40px', background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: '2rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <span style={{ fontSize: '2.5rem' }}>🏆</span> 歴代ランキング＆過去の記録
         </h1>
@@ -62,7 +62,7 @@ export default function Archives() {
           <>
             {/* 殿堂入り（Hall of Fame）セクション */}
             <section>
-              <h2 style={{ fontSize: '2rem', color: '#FFD700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <h2 style={{ fontSize: '2rem', color: 'var(--text-primary)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 👑 歴代 純資産トップ10 (Hall of Fame)
               </h2>
               {allTimePlayers.length === 0 ? (
@@ -77,7 +77,7 @@ export default function Archives() {
                     color: 'var(--text-secondary)', 
                     fontSize: '1rem', 
                     fontWeight: 'bold',
-                    borderBottom: '2px solid rgba(255,255,255,0.1)',
+                    borderBottom: '2px solid #e5e7eb',
                     paddingBottom: '12px',
                     marginBottom: '8px'
                   }}>
@@ -86,7 +86,7 @@ export default function Archives() {
                     <div style={{ textAlign: 'center' }}>ルーム/日付</div>
                     <div style={{ textAlign: 'right', color: 'var(--mg-blue)' }}>純資産(サ)</div>
                     <div style={{ textAlign: 'right' }}>現金(ア)</div>
-                    <div style={{ textAlign: 'right', color: 'var(--mg-yellow)' }}>販売数</div>
+                    <div style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>販売数</div>
                     <div style={{ textAlign: 'right', color: 'var(--mg-pink)' }}>利益(G)</div>
                   </div>
 
@@ -99,7 +99,7 @@ export default function Archives() {
                     let rankText = `${index + 1}位`;
                     
                     if (isTop) {
-                      rankStyle = { fontSize: '1.8rem', fontWeight: 'bold', color: '#FFD700', textShadow: '0 0 15px rgba(255, 215, 0, 0.8)', whiteSpace: 'nowrap' };
+                      rankStyle = { fontSize: '1.8rem', fontWeight: 'bold', color: '#D97706', whiteSpace: 'nowrap' };
                       rankText = '👑 1位';
                     } else if (isSecond) {
                       rankStyle = { fontSize: '1.5rem', fontWeight: 'bold', color: '#C0C0C0', textShadow: '0 0 10px rgba(192, 192, 192, 0.5)', whiteSpace: 'nowrap' };
@@ -120,8 +120,8 @@ export default function Archives() {
                           alignItems: 'center', 
                           padding: '16px 24px', 
                           borderRadius: '12px',
-                          border: isTop ? '2px solid rgba(255, 215, 0, 0.5)' : '1px solid rgba(255,255,255,0.05)',
-                          background: isTop ? 'rgba(255,215,0,0.1)' : 'rgba(255, 255, 255, 0.03)',
+                          border: isTop ? '2px solid rgba(245, 158, 11, 0.45)' : '1px solid #e5e7eb',
+                          background: isTop ? '#fffbeb' : '#ffffff',
                         }}
                       >
                         <div style={rankStyle}>{rankText}</div>
@@ -138,7 +138,7 @@ export default function Archives() {
                         <div style={{ textAlign: 'right', fontSize: '1.2rem', fontFamily: 'monospace' }}>
                           {(player.cash || 0).toLocaleString()}
                         </div>
-                        <div style={{ textAlign: 'right', fontSize: '1.2rem', fontFamily: 'monospace', color: 'var(--mg-yellow)' }}>
+                        <div style={{ textAlign: 'right', fontSize: '1.2rem', fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                           {player.salesQty || 0} 個
                         </div>
                         <div style={{ textAlign: 'right', fontSize: '1.3rem', fontWeight: 'bold', fontFamily: 'monospace', color: 'var(--mg-pink)' }}>
@@ -153,7 +153,7 @@ export default function Archives() {
 
             {/* 過去の記録一覧セクション */}
             <section>
-              <h2 style={{ fontSize: '1.8rem', color: 'white', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
+              <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '2px solid #e5e7eb', paddingBottom: '10px' }}>
                 📁 過去の研修記録一覧
               </h2>
               {archives.length === 0 ? (
@@ -161,13 +161,13 @@ export default function Archives() {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
                   {archives.map((archive) => (
-                    <div key={archive.id} className="glass-card" style={{ padding: '20px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.03)' }}>
+                    <div key={archive.id} className="glass-card" style={{ padding: '20px', borderRadius: '12px', background: '#ffffff' }}>
                       <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem', color: 'var(--mg-blue)' }}>{archive.roomId}</h3>
                       <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '15px' }}>
                         保存日時: {new Date(archive.timestamp).toLocaleString('ja-JP')}
                       </div>
-                      <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
-                        <div style={{ fontSize: '0.9rem', marginBottom: '8px', color: '#ccc' }}>トップ3プレイヤー:</div>
+                      <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '10px' }}>
+                        <div style={{ fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>トップ3プレイヤー:</div>
                         {([...(archive.players || [])]
                           .sort((a, b) => (b.totalNetAssets || 0) - (a.totalNetAssets || 0))
                           .slice(0, 3)

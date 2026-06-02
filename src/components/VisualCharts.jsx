@@ -99,6 +99,24 @@ function VisualCharts({ results, carryover }) {
   const macInVal = ledger?.filter(e => e.category === 'ケ').reduce((sum, e) => sum + (Number(e.amount)||0), 0) || 0;
   const macEndVal = bs.fixedAssets || (macBegVal + macInVal - depreciation);
 
+  const resourceCardStyle = {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e7eb',
+    borderRadius: '14px',
+    padding: '16px',
+    minWidth: 0
+  };
+
+  const resourceRowStyle = {
+    display: 'grid',
+    gridTemplateColumns: '1fr auto',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '10px 0',
+    borderBottom: '1px solid rgba(0,0,0,0.05)'
+  };
+
   const renderTAccount = (title, begV, begC, inV, inC, inLabel, outV, outC, outLabel, endV, endC, disV, disC, unit, lossLabel) => {
     const totalV = begV + inV;
     const totalC = begC + inC;
@@ -137,9 +155,9 @@ function VisualCharts({ results, carryover }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dotted rgba(0,0,0,0.05)', paddingBottom: '4px' }}>
               <div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{outLabel}</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#ffb74d' }}>¥{outV.toLocaleString()}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary)' }}>¥{outV.toLocaleString()}</div>
               </div>
-              <div style={{ textAlign: 'right', alignSelf: 'flex-end', color: '#ffcc80' }}>
+              <div style={{ textAlign: 'right', alignSelf: 'flex-end', color: 'var(--text-secondary)' }}>
                 {outC} 個
               </div>
             </div>
@@ -220,7 +238,7 @@ function VisualCharts({ results, carryover }) {
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
                 {/* F */}
                 <div style={{ height: G >= 0 ? `${Math.max(0, (FPctOfMPQ / 100) * mPQHeight - 4)}px` : '100%', minHeight: '40px', backgroundColor: 'rgba(255, 152, 0, 0.2)', border: '2px solid #ff9800', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative', zIndex: 2 }}>
-                  <span style={{ position: 'absolute', top: '4px', left: '6px', color: '#ffb74d', fontSize: '0.7rem' }}>F (固定費)</span>
+                  <span style={{ position: 'absolute', top: '4px', left: '6px', color: 'var(--text-primary)', fontSize: '0.7rem' }}>F (固定費)</span>
                   <div style={{ color: '#ffe0b2', fontSize: '1.1rem' }}>¥{F.toLocaleString()}</div>
                 </div>
                 
@@ -262,11 +280,11 @@ function VisualCharts({ results, carryover }) {
 
           {renderTAccount('① 材料 (倉庫)', matBegVal, matBegCnt, matInVal, matInCnt, '当期仕入 (ツ・ノ)', matOutVal, matOutCnt, '当期投入 (コ)', matEndVal, matEndCnt, matDisasterVal, matDisasterCnt, matUnit, '事故・災害 (火災)')}
           
-          <div style={{ textAlign: 'center', color: '#ffb74d', fontSize: '1.2rem', marginTop: '-10px', marginBottom: '-10px' }}>⬇</div>
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1.2rem', marginTop: '-10px', marginBottom: '-10px' }}>⬇</div>
           
           {renderTAccount('② 仕掛品 (工場)', wipBegVal, wipBegCnt, wipInVal, wipInCnt, '材料投入＋加工費', wipOutVal, wipOutCnt, '当期完成 (サ)', wipEndVal, wipEndCnt, wipDisasterVal, wipDisasterCnt, wipUnit, '製造ミス')}
 
-          <div style={{ textAlign: 'center', color: '#ffb74d', fontSize: '1.2rem', marginTop: '-10px', marginBottom: '-10px' }}>⬇</div>
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1.2rem', marginTop: '-10px', marginBottom: '-10px' }}>⬇</div>
 
           {renderTAccount('③ 製品 (営業所)', prodBegVal, prodBegCnt, prodInVal, prodInCnt, '当期完成 (サ)', prodOutVal, prodOutCnt, '売上原価 (vPQ)', prodEndVal, prodEndCnt, prodDisasterVal, prodDisasterCnt, prodUnit, '事故・災害 (盗難)')}
         </div>
@@ -288,7 +306,7 @@ function VisualCharts({ results, carryover }) {
           <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '12px', padding: '16px' }}>
             <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '4px' }}>💳 借入金</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>期首残高</span><span style={{ fontWeight: '800' }}>¥{loanBeg.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#ffb74d', fontSize: '0.8rem' }}>当期借入/返済</span><span style={{ fontWeight: '800', color: '#ffb74d' }}>{loanChange > 0 ? '+' : ''}¥{loanChange.toLocaleString()}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>当期借入/返済</span><span style={{ fontWeight: '800', color: 'var(--text-primary)' }}>{loanChange > 0 ? '+' : ''}¥{loanChange.toLocaleString()}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px', marginTop: 'auto' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>期末残高</span><span style={{ fontWeight: '800', fontSize: '1.2rem' }}>¥{loanEnd.toLocaleString()}</span></div>
           </div>
         </div>
@@ -297,33 +315,66 @@ function VisualCharts({ results, carryover }) {
       {/* 4. 経営リソース (資産・間接費・人員) */}
       <div className="glass-card" style={{ padding: '20px' }}>
         <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '16px', color: 'var(--text-primary)' }}>🏢 経営リソース概況</h3>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '12px', padding: '16px' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '4px' }}>⚙️ 固定資産台帳</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>期首額</span><span style={{ fontWeight: '800' }}>¥{macBegVal.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#64b5f6', fontSize: '0.8rem' }}>当期購入</span><span style={{ fontWeight: '800', color: '#64b5f6' }}>+¥{macInVal.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#ef5350', fontSize: '0.8rem' }}>減価償却</span><span style={{ fontWeight: '800', color: '#ef5350' }}>-¥{depreciation.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>期末額</span><span style={{ fontWeight: '800' }}>¥{macEndVal.toLocaleString()}</span></div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+          <div style={resourceCardStyle}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '14px', paddingBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>⚙️ 固定資産台帳</div>
+            <div style={resourceRowStyle}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>期首額</span>
+              <span style={{ fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>¥{macBegVal.toLocaleString()}</span>
+            </div>
+            <div style={resourceRowStyle}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>当期購入</span>
+              <span style={{ fontWeight: '800', color: 'var(--mg-blue)', fontVariantNumeric: 'tabular-nums' }}>+¥{macInVal.toLocaleString()}</span>
+            </div>
+            <div style={{ ...resourceRowStyle, borderBottom: 'none' }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>減価償却</span>
+              <span style={{ fontWeight: '800', color: '#dc2626', fontVariantNumeric: 'tabular-nums' }}>-¥{depreciation.toLocaleString()}</span>
+            </div>
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.08)', display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', alignItems: 'center' }}>
+              <span style={{ color: 'var(--text-primary)', fontSize: '0.86rem', fontWeight: '700' }}>期末額</span>
+              <span style={{ fontWeight: '900', fontSize: '1.08rem', fontVariantNumeric: 'tabular-nums' }}>¥{macEndVal.toLocaleString()}</span>
+            </div>
           </div>
           
-          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '12px', padding: '16px' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '4px' }}>🏭 製造間接費</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>労務費 (チ)</span><span style={{ fontWeight: '800' }}>¥{laborCost.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>退職金 (辞)</span><span style={{ fontWeight: '800' }}>¥{laborSeverance.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>製造固定費</span><span style={{ fontWeight: '800' }}>¥{manufacturingFixed.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>減価償却費</span><span style={{ fontWeight: '800' }}>¥{depreciation.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px' }}><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>合計</span><span style={{ fontWeight: '800' }}>¥{totalManufacturingOverhead.toLocaleString()}</span></div>
+          <div style={resourceCardStyle}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '14px', paddingBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>🏭 製造間接費</div>
+            <div style={resourceRowStyle}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>労務費 (チ)</span>
+              <span style={{ fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>¥{laborCost.toLocaleString()}</span>
+            </div>
+            <div style={resourceRowStyle}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>退職金 (辞)</span>
+              <span style={{ fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>¥{laborSeverance.toLocaleString()}</span>
+            </div>
+            <div style={resourceRowStyle}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>製造固定費</span>
+              <span style={{ fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>¥{manufacturingFixed.toLocaleString()}</span>
+            </div>
+            <div style={{ ...resourceRowStyle, borderBottom: 'none' }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>減価償却費</span>
+              <span style={{ fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>¥{depreciation.toLocaleString()}</span>
+            </div>
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.08)', display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', alignItems: 'center' }}>
+              <span style={{ color: 'var(--text-primary)', fontSize: '0.86rem', fontWeight: '700' }}>合計</span>
+              <span style={{ fontWeight: '900', fontSize: '1.08rem', fontVariantNumeric: 'tabular-nums' }}>¥{totalManufacturingOverhead.toLocaleString()}</span>
+            </div>
           </div>
 
-          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '12px', padding: '16px' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '4px' }}>👥 人員状況</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px dotted rgba(0,0,0,0.05)' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>工場(W)</span>
-              <span style={{ fontWeight: '800' }}>{workerBeg} + {workerIn} - {workerOut} = <span style={{color: '#64b5f6'}}>{workerEnd}</span> 人</span>
+          <div style={resourceCardStyle}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '14px', paddingBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>👥 人員状況</div>
+            <div style={resourceRowStyle}>
+              <div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '4px' }}>工場(W)</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem', fontVariantNumeric: 'tabular-nums' }}>{workerBeg} + {workerIn} - {workerOut}</div>
+              </div>
+              <span style={{ fontWeight: '900', fontSize: '1.08rem', color: 'var(--mg-blue)', fontVariantNumeric: 'tabular-nums' }}>{workerEnd} 人</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>営業(S)</span>
-              <span style={{ fontWeight: '800' }}>{salesmanBeg} + {salesmanIn} - {salesmanOut} = <span style={{color: '#ffb74d'}}>{salesmanEnd}</span> 人</span>
+            <div style={{ ...resourceRowStyle, borderBottom: 'none' }}>
+              <div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '4px' }}>営業(S)</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem', fontVariantNumeric: 'tabular-nums' }}>{salesmanBeg} + {salesmanIn} - {salesmanOut}</div>
+              </div>
+              <span style={{ fontWeight: '900', fontSize: '1.08rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{salesmanEnd} 人</span>
             </div>
           </div>
         </div>

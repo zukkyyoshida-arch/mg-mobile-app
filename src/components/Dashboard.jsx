@@ -95,7 +95,7 @@ export default function Dashboard() {
 
   if (!isSubscribed) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0b0c10', color: 'white', padding: '20px' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', padding: '20px' }}>
         <h1 style={{ fontSize: '3rem', marginBottom: '40px', color: 'var(--mg-blue)' }}>プロジェクター用ダッシュボード</h1>
         <div className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: '40px', borderRadius: '16px' }}>
           <div className="form-group">
@@ -125,21 +125,21 @@ export default function Dashboard() {
   const topPlayer = sortedPlayers.length > 0 ? sortedPlayers[0] : null;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0b0c10', color: 'white', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column' }}>
       {/* 第5期でトッププレイヤーがいる場合は紙吹雪 */}
       {topPlayer && topPlayer.currentPeriod >= 5 && (
         <Confetti width={width} height={height} numberOfPieces={200} recycle={false} />
       )}
       
       {/* ヘッダー */}
-      <header style={{ padding: '20px 40px', background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ padding: '20px 40px', background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: '2rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <span style={{ fontSize: '2.5rem' }}>📊</span> 戦略MG リアルタイム成績表
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>
-            ルームID: <strong style={{ color: 'white' }}>{roomId}</strong>
-          </span>
+            <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', padding: '8px 12px', background: 'var(--surface-subtle)', border: '1px solid var(--border-glass)', borderRadius: '999px' }}>
+              ルームID: <strong style={{ color: 'var(--text-primary)' }}>{roomId}</strong>
+            </span>
           <button 
             onClick={() => {
               if(window.confirm('現在の成績を「アーカイブ（過去の記録）」として永久保存しますか？')) {
@@ -156,7 +156,7 @@ export default function Dashboard() {
           <button 
             onClick={() => navigate('/archives')} 
             className="btn-secondary"
-            style={{ padding: '8px 16px', fontSize: '1rem', background: 'transparent', border: '1px solid #FFD700', color: '#FFD700' }}
+            style={{ padding: '8px 16px', fontSize: '1rem', background: '#ffffff', border: '1px solid #e5e7eb', color: 'var(--text-primary)' }}
           >
             🏆 歴代ランキングを見る
           </button>
@@ -193,8 +193,9 @@ export default function Dashboard() {
                     borderRadius: '8px',
                     border: 'none',
                     cursor: 'pointer',
-                    background: selectedTab === tab ? 'var(--mg-blue)' : 'rgba(255,255,255,0.1)',
+                    background: selectedTab === tab ? 'var(--mg-blue)' : 'var(--surface-subtle)',
                     color: selectedTab === tab ? '#fff' : 'var(--text-secondary)',
+                    border: selectedTab === tab ? '1px solid var(--mg-blue)' : '1px solid var(--border-glass)',
                     transition: 'all 0.2s'
                   }}
                 >
@@ -212,7 +213,7 @@ export default function Dashboard() {
               color: 'var(--text-secondary)', 
               fontSize: '1rem', 
               fontWeight: 'bold',
-              borderBottom: '2px solid rgba(255,255,255,0.1)',
+              borderBottom: '2px solid #e5e7eb',
               paddingBottom: '12px',
               marginBottom: '8px'
             }}>
@@ -220,9 +221,9 @@ export default function Dashboard() {
               <div>プレイヤー名</div>
               <div style={{ textAlign: 'center' }}>期</div>
               <div style={{ textAlign: 'right', color: 'var(--mg-blue)' }}>純資産(サ)</div>
-              <div style={{ textAlign: 'right', color: 'var(--mg-yellow)' }}>売上(PQ)</div>
-              <div style={{ textAlign: 'right', color: 'var(--mg-yellow)' }}>販売数</div>
-              <div style={{ textAlign: 'right', color: 'var(--mg-yellow)' }}>平均単価</div>
+              <div style={{ textAlign: 'right', color: 'var(--mg-blue)' }}>売上(PQ)</div>
+              <div style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>販売数</div>
+              <div style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>平均単価</div>
               <div style={{ textAlign: 'right', color: 'var(--mg-pink)' }}>利益(G)</div>
               <div style={{ textAlign: 'center' }}></div>
             </div>
@@ -237,10 +238,10 @@ export default function Dashboard() {
               let rankText = `${index + 1}位`;
               
               if (isTop) {
-                rankStyle = { fontSize: '1.8rem', fontWeight: 'bold', color: '#FFD700', textShadow: '0 0 15px rgba(255, 215, 0, 0.8)', whiteSpace: 'nowrap' };
+                rankStyle = { fontSize: '1.8rem', fontWeight: 'bold', color: '#D97706', whiteSpace: 'nowrap' };
                 rankText = '👑 1位';
               } else if (isSecond) {
-                rankStyle = { fontSize: '1.5rem', fontWeight: 'bold', color: '#C0C0C0', textShadow: '0 0 10px rgba(192, 192, 192, 0.5)', whiteSpace: 'nowrap' };
+                rankStyle = { fontSize: '1.5rem', fontWeight: 'bold', color: '#6B7280', whiteSpace: 'nowrap' };
                 rankText = '🥈 2位';
               } else if (isThird) {
                 rankStyle = { fontSize: '1.3rem', fontWeight: 'bold', color: '#CD7F32', whiteSpace: 'nowrap' };
@@ -258,18 +259,18 @@ export default function Dashboard() {
                     alignItems: 'center', 
                     padding: '20px 24px', 
                     borderRadius: '16px',
-                    border: isTop ? '2px solid rgba(255, 215, 0, 0.8)' : '1px solid rgba(255,255,255,0.05)',
+                    border: isTop ? '2px solid rgba(245, 158, 11, 0.45)' : '1px solid #e5e7eb',
                     background: isTop 
-                      ? 'linear-gradient(90deg, rgba(255,215,0,0.15) 0%, rgba(255,215,0,0.05) 100%)' 
-                      : 'rgba(255, 255, 255, 0.03)',
-                    boxShadow: isTop ? '0 8px 32px rgba(255, 215, 0, 0.15)' : 'none',
-                    transform: isTop ? 'scale(1.02)' : 'scale(1)',
+                      ? '#fffbeb'
+                      : '#ffffff',
+                    boxShadow: isTop ? '0 8px 24px rgba(245, 158, 11, 0.12)' : 'none',
+                    transform: isTop ? 'scale(1.01)' : 'scale(1)',
                     transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                     zIndex: isTop ? 10 : 1
                   }}
                 >
                   <div style={rankStyle}>{rankText}</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textShadow: isTop ? '0 0 10px rgba(255,255,255,0.3)' : 'none' }}>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {player.id}
                   </div>
                   <div style={{ textAlign: 'center' }}>
@@ -280,13 +281,13 @@ export default function Dashboard() {
                   <div style={{ textAlign: 'right', fontSize: '1.6rem', fontWeight: '900', color: 'var(--mg-blue)' }}>
                     {(player.totalNetAssets || 0).toLocaleString()}
                   </div>
-                  <div style={{ textAlign: 'right', fontSize: '1.4rem', fontFamily: 'monospace', color: 'var(--mg-yellow)' }}>
+                  <div style={{ textAlign: 'right', fontSize: '1.4rem', fontFamily: 'monospace', color: 'var(--mg-blue)' }}>
                     {(player.sales || 0).toLocaleString()}
                   </div>
-                  <div style={{ textAlign: 'right', fontSize: '1.3rem', fontFamily: 'monospace', color: '#ffeb3b', opacity: 0.9 }}>
+                  <div style={{ textAlign: 'right', fontSize: '1.3rem', fontFamily: 'monospace', color: 'var(--text-primary)', opacity: 0.9 }}>
                     {player.salesQty || 0} 個
                   </div>
-                  <div style={{ textAlign: 'right', fontSize: '1.2rem', fontFamily: 'monospace', color: '#ffeb3b', opacity: 0.8 }}>
+                  <div style={{ textAlign: 'right', fontSize: '1.2rem', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: 0.9 }}>
                     @{(player.averagePrice || 0).toLocaleString()}
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '1.5rem', fontWeight: 'bold', fontFamily: 'monospace', color: 'var(--mg-pink)' }}>

@@ -29,7 +29,7 @@
   --mg-pink: #2A84FF;       /* 入金系: 青系で統一するか、区別のため残すか。今回は青基調にしつつ他を調整 */
   --mg-green: #10B981;      /* 出金系A */
   --mg-blue: #3B82F6;       /* 出金系B */
-  --mg-yellow: #F59E0B;     /* 出金系C */
+  --mg-yellow: #475569;     /* 高齢層でも読みやすい中立ダーク */
   --mg-purple: #8B5CF6;     /* 特別項目 */
 
   /* Shadows (Soft & Professional) */
@@ -38,6 +38,10 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
   --shadow-neon-pink: 0 4px 12px rgba(42, 132, 255, 0.3);
   --shadow-neon-green: 0 4px 12px rgba(16, 185, 129, 0.2);
+  --surface-subtle: #F9FAFB;
+  --surface-accent: #EFF6FF;
+  --surface-warning: #FFFBEB;
+  --surface-success: #F0FDF4;
 
   /* Layout Constants */
   --header-height: 64px;
@@ -207,6 +211,17 @@ h1, h2, h3, h4, h5, h6 {
   margin: 16px;
   box-shadow: var(--shadow-sm);
   transition: transform 0.1s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(var(--color-accent-rgb), 0.14), rgba(16, 185, 129, 0.08));
+  pointer-events: none;
 }
 
 .glass-card-header {
@@ -216,6 +231,34 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border-glass);
+}
+
+.saas-section-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.saas-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-glass);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.saas-kpi-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
 .glass-card-title {
@@ -349,7 +392,7 @@ h1, h2, h3, h4, h5, h6 {
 .badge-pink { background-color: #EFF6FF; color: var(--mg-pink); border: 1px solid #BFDBFE; }
 .badge-green { background-color: #ECFDF5; color: var(--mg-green); border: 1px solid #A7F3D0; }
 .badge-blue { background-color: #EFF6FF; color: var(--mg-blue); border: 1px solid #BFDBFE; }
-.badge-yellow { background-color: #FFFBEB; color: var(--mg-yellow); border: 1px solid #FDE68A; }
+.badge-yellow { background-color: #F8FAFC; color: var(--text-primary); border: 1px solid #CBD5E1; }
 .badge-purple { background-color: #F5F3FF; color: var(--mg-purple); border: 1px solid #DDD6FE; }
 
 /* Modal */

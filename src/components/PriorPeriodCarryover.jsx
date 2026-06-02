@@ -288,7 +288,7 @@ function PriorPeriodCarryover({
 
               {/* 負債・純資産系 */}
               <div>
-                <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-yellow)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>負債・純資産項目</h4>
+                <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>負債・純資産項目</h4>
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">⑰ 借入金 (万)</label>

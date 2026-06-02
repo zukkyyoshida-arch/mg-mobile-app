@@ -1110,17 +1110,17 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                   </div>
                 </div>
               ) : selectedCategory === '保険' ? (
-                <div style={{ background: 'rgba(255, 235, 59, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-yellow)' }}>
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px dashed #94a3b8' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-yellow)', margin: 0 }}>保険の購入</h4>
+                    <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0 }}>保険の購入</h4>
                     <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>5万</span>
                   </div>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', marginBottom: 0 }}>火災や盗難が発生した場合、被害額が自動補填されます。（保険チップは事故の発生時に失われます）</p>
                 </div>
               ) : selectedCategory === '期首処理' ? (
-                <div style={{ background: 'rgba(255, 193, 7, 0.1)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-yellow)' }}>
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px dashed #94a3b8' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-yellow)', margin: 0 }}>🌅 期首一括処理</h4>
+                    <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0 }}>🌅 期首一括処理</h4>
                   </div>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem' }}>
@@ -1143,7 +1143,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                       <span style={{ fontWeight: 'bold' }}>-{Math.round((carryover?.loan || 0) * (currentPeriod >= 4 ? 0.05 : 0.10))} 万</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-                      <span style={{ color: 'var(--mg-yellow)' }}>[任意] 借入金返済 (ナ)</span>
+                      <span style={{ color: 'var(--text-primary)' }}>[任意] 借入金返済 (ナ)</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontWeight: 'bold' }}>-</span>
                         <input 

@@ -414,7 +414,7 @@ function App() {
                   <div style={{ color: 'var(--text-secondary)' }}>
                     <div>ルームID: <strong style={{ color: 'var(--text-primary)' }}>{roomId || '未参加'}</strong></div>
                     <div>プレイヤー名: <strong style={{ color: 'var(--text-primary)' }}>{playerId || '未設定'}</strong></div>
-                    {isOffline && <div style={{ color: 'var(--mg-yellow)' }}>現在オフラインモードです</div>}
+                    {isOffline && <div style={{ color: 'var(--text-secondary)' }}>現在オフラインモードです</div>}
                   </div>
                   <button 
                     onClick={() => {
@@ -547,7 +547,7 @@ function App() {
       {showLogin && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999,
+          backgroundColor: 'rgba(15, 23, 42, 0.35)', zIndex: 9999,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '20px'
         }}>
