@@ -320,7 +320,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
         onClick={onClose}
         style={{
           width: '100%', padding: '16px', borderRadius: '12px',
-          background: 'var(--color-accent)', color: 'black',
+          background: 'var(--color-accent)', color: 'var(--text-primary)',
           fontSize: '1.1rem', fontWeight: 'bold', border: 'none',
           marginBottom: '40px'
         }}

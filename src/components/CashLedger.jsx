@@ -697,7 +697,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* 財務サマリーカード */}
-      <div className="glass-card" style={{ padding: '16px', background: 'linear-gradient(135deg, rgba(30, 32, 45, 0.8) 0%, rgba(20, 22, 31, 0.9) 100%)', border: '1px solid rgba(255, 46, 147, 0.15)' }}>
+      <div className="glass-card" style={{ padding: '16px', background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)', border: '1px solid var(--border-glass)' }}>
         <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
           第 {visibleLedger.length > 0 ? (visibleLedger.length) : 0} 取引完了
         </span>
@@ -731,7 +731,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
             alignItems: 'center', 
             gap: '8px', 
             border: '1px solid rgba(0, 176, 255, 0.2)',
-            background: showMinimap ? 'rgba(0, 176, 255, 0.1)' : 'rgba(255, 255, 255, 0.02)',
+            background: showMinimap ? 'rgba(0, 176, 255, 0.1)' : 'rgba(0, 0, 0, 0.02)',
             color: showMinimap ? '#00e676' : 'var(--text-secondary)'
           }}
         >
@@ -928,7 +928,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                 <label className="form-label" style={{ marginBottom: '12px', display: 'block', fontSize: '1rem', fontWeight: 'bold' }}>実行する項目を選択</label>
                 
                 {/* 🌟 ルールA (よく使う項目) */}
-                <div style={{ marginBottom: '20px', padding: '12px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <div style={{ marginBottom: '20px', padding: '12px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.03)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
                   <h4 style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '1.1rem' }}>⚡️</span> ルールA (メインの意思決定)
                   </h4>
@@ -966,7 +966,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                 </div>
 
                 {/* 📌 ルールB・その他 (決算・随時項目) */}
-                <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.04)', border: '1px solid rgba(0, 0, 0, 0.02)' }}>
                   <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '1rem' }}>📌</span> ルールB・その他 (随時・決算処理)
                   </h4>
@@ -1032,7 +1032,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
               {/* カスタムUIブロック */}
               {selectedCategory !== '期首処理' && (
-              <div className="glass-card" style={{ margin: '4px 0', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.02)' }}>
+              <div className="glass-card" style={{ margin: '4px 0', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0, 0, 0, 0.02)' }}>
                 <span style={{ fontSize: '0.88rem', fontWeight: '700' }}>
                   選択中: <span style={{ color: `var(--mg-${currentCatMeta.color})` }}>[{selectedCategory}] {currentCatMeta.label}</span>
                 </span>
@@ -1217,7 +1217,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                                 const capacity = riskAction === 'monopoly_salesman' ? (results?.activeSalesmen || 0) * 2
                                   : (results?.activeRdChips || 0) * 2;
                                 setRiskQty(Math.min(capacity, results?.prod?.endingCount || 0));
-                              }} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'black', fontWeight: 'bold' }}>MAX</button>
+                              }} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'var(--text-primary)', fontWeight: 'bold' }}>MAX</button>
                             </label>
                             <input type="number" className="form-input" value={riskQty} onChange={e => setRiskQty(e.target.value)} />
                           </div>
@@ -1282,7 +1282,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                               <button type="button" onClick={() => {
                                 const maxAllowed = Math.max(0, (results?.productionCapacity || 0) * 2 - (results?.mat?.endingCount || 0));
                                 setRiskQty(Math.min(riskAction === 'special_mat' ? 5 : 3, maxAllowed));
-                              }} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'black', fontWeight: 'bold' }}>MAX</button>
+                              }} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'var(--text-primary)', fontWeight: 'bold' }}>MAX</button>
                             </label>
                             <input type="number" className="form-input" value={riskQty} onChange={e => {
                                 const maxAllowed = Math.max(0, (results?.productionCapacity || 0) * 2 - (results?.mat?.endingCount || 0));
@@ -1367,7 +1367,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                   </div>
                 </div>
               ) : selectedCategory === '採用' ? (
-                <div style={{ background: 'rgba(15, 17, 26, 0.4)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-blue)' }}>
+                <div style={{ background: 'rgba(33, 150, 243, 0.05)', padding: '16px', borderRadius: '12px', border: '1px dashed var(--mg-blue)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-blue)', margin: 0 }}>採用情報の入力</h4>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -1592,7 +1592,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                                         setMarketQuantities(prev => ({ ...prev, [m.id]: qty + actualAdd }));
                                       }
                                     }}
-                                    style={{ background: 'var(--color-accent)', border: 'none', color: 'black', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', opacity: (qty >= maxLimit) || totalQty >= maxTotalPurchase ? 0.3 : 1 }}
+                                    style={{ background: 'var(--color-accent)', border: 'none', color: 'var(--text-primary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', opacity: (qty >= maxLimit) || totalQty >= maxTotalPurchase ? 0.3 : 1 }}
                                     disabled={(qty >= maxLimit) || totalQty >= maxTotalPurchase}
                                   >MAX</button>
                                 )}
@@ -1633,7 +1633,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                             <div>
                               <div style={{ fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 {chip.name}
-                                {isBought && <span style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(255,255,255,0.2)', borderRadius: '4px' }}>購入済</span>}
+                                {isBought && <span style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px' }}>購入済</span>}
                               </div>
                               <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{chip.desc}</div>
                             </div>
