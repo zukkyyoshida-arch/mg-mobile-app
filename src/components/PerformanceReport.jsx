@@ -17,7 +17,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(11, 12, 16, 0.95)',
+      background: '#ffffff',
       zIndex: 9999, overflowY: 'auto', padding: '20px',
       color: 'var(--text-primary)', display: 'flex', flexDirection: 'column',
       animation: 'fadeIn 0.3s ease-out'

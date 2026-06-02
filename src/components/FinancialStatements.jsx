@@ -127,7 +127,7 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
         <div className="tab-panel">
           
           {/* MQ / G ハイライトカード */}
-          <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(255, 46, 147, 0.12) 0%, rgba(28, 30, 41, 0.9) 100%)', borderColor: 'rgba(255, 46, 147, 0.25)', padding: '20px' }}>
+          <div className="glass-card" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fef2f8 100%)', borderColor: 'rgba(255, 46, 147, 0.25)', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>MQ 付加価値額</span>
@@ -137,7 +137,7 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                 <span className="badge badge-pink" style={{ fontSize: '0.65rem' }}>m率 {pl.marginRatio.toFixed(1)}%</span>
               </div>
               
-              <div style={{ borderLeft: '1px solid rgba(255, 255, 255, 0.08)', paddingLeft: '20px', textAlign: 'right' }}>
+              <div style={{ borderLeft: '1px solid var(--border-glass)', paddingLeft: '20px', textAlign: 'right' }}>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>G 経常利益</span>
                 <div className="electric-number" style={{ fontSize: '2.2rem', color: pl.operatingProfit >= 0 ? 'var(--mg-green)' : '#ef4444', margin: '4px 0' }}>
                   ¥{pl.operatingProfit >= 0 ? '+' : ''}{pl.operatingProfit.toLocaleString()}<span style={{ fontSize: '1rem' }}>万</span>
@@ -155,7 +155,7 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                 <span>固定費 F ({((pl.fixedCost / (pl.salesRevenue || 1)) * 100).toFixed(0)}%)</span>
                 <span>経常利益 G</span>
               </div>
-              <div style={{ width: '100%', height: '10px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '5px', overflow: 'hidden', display: 'flex' }}>
+              <div style={{ width: '100%', height: '10px', backgroundColor: 'rgba(0, 0, 0, 0.05)', borderRadius: '5px', overflow: 'hidden', display: 'flex' }}>
                 <div style={{ width: `${(pl.variableCost / (pl.salesRevenue || 1)) * 100}%`, backgroundColor: 'var(--mg-green)' }} />
                 <div style={{ width: `${(pl.fixedCost / (pl.salesRevenue || 1)) * 100}%`, backgroundColor: 'var(--mg-blue)' }} />
                 <div style={{ width: `${Math.max(0, pl.operatingProfit) / (pl.salesRevenue || 1) * 100}%`, backgroundColor: 'var(--mg-pink)' }} />
@@ -287,7 +287,7 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                       <td>製品在庫 (完成 - 売上 - 盗難)</td>
                       <td style={{ textAlign: 'right' }}>¥{bs.productValue.toLocaleString()}万 <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>({results.prod.endingCount}個)</span></td>
                     </tr>
-                    <tr style={{ fontWeight: '700', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                    <tr style={{ fontWeight: '700', backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
                       <td>流動資産合計</td>
                       <td style={{ textAlign: 'right' }}>¥{bs.totalCurrentAssets.toLocaleString()}万</td>
                     </tr>
@@ -326,7 +326,7 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                         <td style={{ textAlign: 'right' }}>¥{bs.accruedLaborCost.toLocaleString()}万</td>
                       </tr>
                     )}
-                    <tr style={{ fontWeight: '700', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                    <tr style={{ fontWeight: '700', backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
                       <td>負債合計</td>
                       <td style={{ textAlign: 'right' }}>¥{bs.totalLiabilities.toLocaleString()}万</td>
                     </tr>
@@ -340,7 +340,7 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                         ¥{bs.retainedEarnings.toLocaleString()}万
                       </td>
                     </tr>
-                    <tr style={{ fontWeight: '700', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                    <tr style={{ fontWeight: '700', backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
                       <td>純資産合計</td>
                       <td style={{ textAlign: 'right' }}>¥{bs.totalNetAssets.toLocaleString()}万</td>
                     </tr>
@@ -398,7 +398,7 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                     ¥{cf.investingCF >= 0 ? '+' : ''}{cf.investingCF.toLocaleString()}万
                   </td>
                 </tr>
-                <tr style={{ borderBottom: '1px solid var(--border-glass)', fontWeight: '700', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                <tr style={{ borderBottom: '1px solid var(--border-glass)', fontWeight: '700', backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
                   <td>フリーキャッシュフロー</td>
                   <td style={{ textAlign: 'right', color: cf.freeCF >= 0 ? 'var(--mg-green)' : '#ef4444' }}>
                     ¥{cf.freeCF >= 0 ? '+' : ''}{cf.freeCF.toLocaleString()}万

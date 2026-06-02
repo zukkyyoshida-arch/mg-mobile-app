@@ -49,7 +49,7 @@ function CompanyBoardMinimap({ results }) {
   const isShortOfWorkers = totalWorkers < requiredWorkers;
 
   return (
-    <div className="glass-card" style={{ padding: '16px', background: 'rgba(15, 17, 26, 0.95)', border: '1px solid rgba(0, 176, 255, 0.25)', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)' }}>
+    <div className="glass-card" style={{ padding: '16px', background: '#ffffff', border: '1px solid rgba(0, 176, 255, 0.25)', boxShadow: '0 4px 12px 0 rgba(0, 0, 0, 0.1)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
         <h4 style={{ fontSize: '0.88rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px', margin: 0, color: 'var(--mg-blue)' }}>
           <span className="animate-pulse" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#00e676', display: 'inline-block' }}></span>
