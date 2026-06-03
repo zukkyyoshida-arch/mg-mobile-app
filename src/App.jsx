@@ -517,35 +517,11 @@ function App() {
         </button>
 
         <button 
-          onClick={() => setActiveTab('statements')} 
-          className={`nav-item ${activeTab === 'statements' ? 'active' : ''}`}
-        >
-          <FileText size={24} style={{ marginBottom: '4px', transition: 'transform 0.2s' }} />
-          決算書
-        </button>
-
-        <button 
           onClick={() => setActiveTab('periodEnd')} 
           className={`nav-item ${activeTab === 'periodEnd' ? 'active' : ''}`}
         >
           <CalendarCheck size={24} style={{ marginBottom: '4px', transition: 'transform 0.2s' }} />
           期末処理
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('plan')} 
-          className={`nav-item ${activeTab === 'plan' ? 'active' : ''}`}
-        >
-          <Target size={24} style={{ marginBottom: '4px', transition: 'transform 0.2s' }} />
-          計画表
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('settings')} 
-          className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-        >
-          <Settings size={24} style={{ marginBottom: '4px', transition: 'transform 0.2s' }} />
-          設定
         </button>
       </nav>
 
