@@ -71,8 +71,8 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
+  overflow: hidden; /* back to hidden since we scale it to fit viewport */
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -82,7 +82,7 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.25;
 }
 
-/* App Container */
+/* App Container and Shell (Smartphone Size Constraint) */
 #root {
   width: 100vw;
   height: 100vh;
@@ -94,9 +94,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .phone-shell {
   width: 100%;
-  max-width: 390px; /* iPhone size */
   height: 100%;
-  max-height: 100vh;
   position: relative;
   background-color: var(--bg-shell);
   display: flex;
@@ -110,9 +108,10 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (min-width: 481px) {
   .phone-shell {
-    width: 390px;
-    height: 844px; /* iPhone 13/14 size */
-    max-height: 90vh; /* Prevent it from being taller than the screen */
+    height: 92vh; /* Fills most of the desktop height */
+    max-height: 950px;
+    width: auto;
+    aspect-ratio: 393 / 852; /* Strict iPhone 16 aspect ratio */
     border-radius: 40px;
     border: 6px solid var(--bg-glass-heavy);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
