@@ -377,7 +377,7 @@ function App() {
           )}
 
           {activeTab === 'settings' && (
-            <div className="tab-panel">
+            <div className="tab-panel" style={{ display: 'block' }}>
               <div className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
                 <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
                   <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ネットワーク設定</h3>
