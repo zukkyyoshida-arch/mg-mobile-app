@@ -240,7 +240,7 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
       <div className="glass-card" style={{ padding: '16px' }}>
         <div style={{ marginBottom: '12px' }}>
           <h2 style={{ fontSize: '1.1rem', color: 'var(--mg-blue)', marginBottom: '4px' }}>第{period}期 MG経営計画</h2>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>スマホで上から順番に埋めていける縦長レイアウト</p>
+
         </div>
         <div style={{ display: 'grid', gap: '10px' }}>
           <input
