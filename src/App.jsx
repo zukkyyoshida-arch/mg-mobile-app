@@ -415,39 +415,54 @@ function App() {
               className="tab-panel"
             >
               <div className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
-                <div style={{ display: 'grid', gap: '10px', marginBottom: '14px' }}>
-                  <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ネットワーク設定</h3>
-                  <span
-                    style={{
-                      justifySelf: 'start',
-                      fontSize: '0.72rem',
-                      fontWeight: '700',
-                      padding: '6px 10px',
-                      borderRadius: '999px',
-                      background: isOffline ? '#f8fafc' : syncStatus.includes('エラー') ? '#fef2f2' : '#f8fafc',
-                      border: `1px solid ${syncStatus.includes('エラー') ? '#fecaca' : '#e5e7eb'}`,
-                      color: syncStatus.includes('エラー') ? '#b91c1c' : 'var(--text-secondary)'
-                    }}
-                  >
-                    {isOffline ? 'オフライン' : syncStatus}
-                  </span>
+                <div style={{ display: 'grid', gap: '10px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                    <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ネットワーク設定</h3>
+                    <span
+                      style={{
+                        justifySelf: 'start',
+                        fontSize: '0.72rem',
+                        fontWeight: '700',
+                        padding: '6px 10px',
+                        borderRadius: '999px',
+                        background: isOffline ? '#f8fafc' : syncStatus.includes('エラー') ? '#fef2f2' : '#f8fafc',
+                        border: `1px solid ${syncStatus.includes('エラー') ? '#fecaca' : '#e5e7eb'}`,
+                        color: syncStatus.includes('エラー') ? '#b91c1c' : 'var(--text-secondary)'
+                      }}
+                    >
+                      {isOffline ? 'オフライン' : syncStatus}
+                    </span>
+                  </div>
                 </div>
 
-                <div style={{ display: 'grid', gap: '10px', marginBottom: '16px' }}>
-                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '12px' }}>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px' }}>ルームID</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{roomId || '未参加'}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px', marginBottom: '12px' }}>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '10px' }}>
+                    <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginBottom: '4px' }}>ルームID</div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.3 }}>{roomId || '未参加'}</div>
                   </div>
-                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '12px' }}>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px' }}>プレイヤー名</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{playerId || '未設定'}</div>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '10px' }}>
+                    <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginBottom: '4px' }}>プレイヤー名</div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.3 }}>{playerId || '未設定'}</div>
                   </div>
-                  {isOffline && (
-                    <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      現在オフラインモードです。同期やルーム連携は行われません。
-                    </div>
-                  )}
                 </div>
+
+                {isOffline && (
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: '0.76rem',
+                      lineHeight: 1.45,
+                      background: '#f8fafc',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      padding: '10px 12px',
+                      color: 'var(--text-secondary)',
+                      marginBottom: '12px'
+                    }}
+                  >
+                    現在オフラインモードです。同期やルーム連携は行われません。
+                  </span>
+                )}
 
                 <div style={{ display: 'grid', gap: '10px' }}>
                   <button 
