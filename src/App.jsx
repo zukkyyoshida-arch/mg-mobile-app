@@ -11,7 +11,6 @@ import { syncPlayerData, removePlayer } from './firebase';
 import { useDebounce } from 'react-use';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, FileText, CalendarCheck, Target, Settings, Sun, Moon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // 安全な localStorage ラッパー
 const safeStorage = {
@@ -324,16 +323,9 @@ function App() {
 
       {/* アプリコンテンツ（スクロール可能） */}
       <main className="app-content" style={{ overflowX: 'hidden' }}>
-        <AnimatePresence mode="wait">
+        <>
           {activeTab === 'ledger' && (
-            <motion.div
-              key="ledger"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="tab-panel"
-            >
+            <div className="tab-panel">
               <CashLedger 
                 carryover={currentData.carryover}
                 ledger={currentData.ledger} 
@@ -343,18 +335,11 @@ function App() {
                 transactionMode={transactionMode}
                 setTransactionMode={setTransactionMode}
               />
-            </motion.div>
+            </div>
           )}
           
           {activeTab === 'statements' && (
-            <motion.div
-              key="statements"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="tab-panel"
-            >
+            <div className="tab-panel">
               <FinancialStatements 
                 results={results} 
                 carryover={currentData.carryover}
@@ -362,18 +347,11 @@ function App() {
                 ledger={currentData.ledger}
                 onShowPerformance={() => setShowPerformanceReport(true)}
               />
-            </motion.div>
+            </div>
           )}
 
           {activeTab === 'periodEnd' && (
-            <motion.div
-              key="periodEnd"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="tab-panel"
-            >
+            <div className="tab-panel">
               <PeriodEndWizard 
                 carryover={currentData.carryover}
                 ledger={currentData.ledger}
@@ -384,36 +362,22 @@ function App() {
                 results={results}
                 onShowPerformance={() => setShowPerformanceReport(true)}
               />
-            </motion.div>
+            </div>
           )}
 
           {activeTab === 'plan' && (
-            <motion.div
-              key="plan"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="tab-panel"
-            >
+            <div className="tab-panel">
               <ManagementPlan 
                 budget={currentData.budget}
                 carryover={currentData.carryover}
                 onUpdateBudget={(newBudget) => updatePeriodData('budget', newBudget)}
                 results={results}
               />
-            </motion.div>
+            </div>
           )}
 
           {activeTab === 'settings' && (
-            <motion.div
-              key="settings"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="tab-panel"
-            >
+            <div className="tab-panel">
               <div className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
                 <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
                   <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ネットワーク設定</h3>
@@ -519,9 +483,9 @@ function App() {
                 rollForwardFromPrevious={rollForwardFromPrevious}
                 resetAllData={resetAllData}
               />
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </>
 
         {showPerformanceReport && (() => {
           const prevData = currentPeriod > 1 ? periods[currentPeriod - 1] : null;
