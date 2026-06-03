@@ -409,10 +409,11 @@ function App() {
               className="tab-panel"
             >
               <div className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem' }}>ネットワーク設定</h3>
+                <div style={{ display: 'grid', gap: '10px', marginBottom: '14px' }}>
+                  <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ネットワーク設定</h3>
                   <span
                     style={{
+                      justifySelf: 'start',
                       fontSize: '0.72rem',
                       fontWeight: '700',
                       padding: '6px 10px',
