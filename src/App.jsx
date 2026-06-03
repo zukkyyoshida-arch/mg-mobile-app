@@ -307,12 +307,18 @@ function App() {
     <div className="phone-shell">
       {/* アプリ共通ヘッダー */}
       <header className="app-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <h1 className="app-title" style={{ fontSize: '1.2rem', margin: 0 }}>戦略MG</h1>
-          <span className="badge badge-blue">第{currentPeriod}期</span>
-          <span style={{ fontSize: '0.8rem', color: syncStatus.includes('エラー') ? '#DC2626' : 'var(--text-secondary)' }}>
-            ☁️ {syncStatus}
-          </span>
+        <div className="app-header__content">
+          <div className="app-header__title-row">
+            <h1 className="app-title" style={{ fontSize: '1.2rem', margin: 0 }}>戦略MG</h1>
+            <span className="badge badge-blue">第{currentPeriod}期</span>
+          </div>
+          <div
+            className={`app-header__status ${syncStatus.includes('エラー') ? 'is-error' : ''}`}
+            aria-live="polite"
+          >
+            <span aria-hidden="true">☁️</span>
+            <span>{syncStatus}</span>
+          </div>
         </div>
       </header>
 
