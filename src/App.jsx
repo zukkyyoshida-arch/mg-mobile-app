@@ -417,41 +417,31 @@ function App() {
               <div className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
                 <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
                   <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ネットワーク設定</h3>
-                  <span
-                    style={{
-                      justifySelf: 'start',
-                      maxWidth: '100%',
-                      fontSize: '0.72rem',
-                      fontWeight: '700',
-                      lineHeight: 1.35,
-                      padding: '6px 10px',
-                      borderRadius: '999px',
-                      background: isOffline ? '#f8fafc' : syncStatus.includes('エラー') ? '#fef2f2' : '#f8fafc',
-                      border: `1px solid ${syncStatus.includes('エラー') ? '#fecaca' : '#e5e7eb'}`,
-                      color: syncStatus.includes('エラー') ? '#b91c1c' : 'var(--text-secondary)',
-                      whiteSpace: 'normal',
-                      wordBreak: 'break-word'
-                    }}
-                  >
-                    {isOffline ? 'オフライン' : syncStatus}
-                  </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '8px', marginBottom: '12px' }}>
-                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '10px' }}>
-                    <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginBottom: '4px' }}>ルームID</div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.3 }}>{roomId || '未参加'}</div>
+                <div style={{ display: 'grid', gap: '10px', marginBottom: '14px' }}>
+                  <div style={{ padding: '10px 0', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '4px' }}>同期状態</div>
+                    <div style={{ fontSize: '0.92rem', fontWeight: '800', color: syncStatus.includes('エラー') ? '#b91c1c' : 'var(--text-primary)', lineHeight: 1.4, wordBreak: 'break-word' }}>
+                      {isOffline ? 'オフライン' : syncStatus}
+                    </div>
                   </div>
-                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '10px' }}>
-                    <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginBottom: '4px' }}>プレイヤー名</div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.3 }}>{playerId || '未設定'}</div>
+
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px' }}>
+                      <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginBottom: '4px' }}>ルームID</div>
+                      <div style={{ fontSize: '0.92rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.35 }}>{roomId || '未参加'}</div>
+                    </div>
+                    <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px' }}>
+                      <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginBottom: '4px' }}>プレイヤー名</div>
+                      <div style={{ fontSize: '0.92rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.35 }}>{playerId || '未設定'}</div>
+                    </div>
                   </div>
                 </div>
 
                 {isOffline && (
-                  <span
+                  <div
                     style={{
-                      display: 'block',
                       fontSize: '0.76rem',
                       lineHeight: 1.45,
                       background: '#f8fafc',
@@ -463,7 +453,7 @@ function App() {
                     }}
                   >
                     現在オフラインモードです。同期やルーム連携は行われません。
-                  </span>
+                  </div>
                 )}
 
                 <div style={{ display: 'grid', gap: '10px' }}>
