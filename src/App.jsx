@@ -415,27 +415,29 @@ function App() {
               className="tab-panel"
             >
               <div className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
-                <div style={{ display: 'grid', gap: '10px', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-                    <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ネットワーク設定</h3>
-                    <span
-                      style={{
-                        justifySelf: 'start',
-                        fontSize: '0.72rem',
-                        fontWeight: '700',
-                        padding: '6px 10px',
-                        borderRadius: '999px',
-                        background: isOffline ? '#f8fafc' : syncStatus.includes('エラー') ? '#fef2f2' : '#f8fafc',
-                        border: `1px solid ${syncStatus.includes('エラー') ? '#fecaca' : '#e5e7eb'}`,
-                        color: syncStatus.includes('エラー') ? '#b91c1c' : 'var(--text-secondary)'
-                      }}
-                    >
-                      {isOffline ? 'オフライン' : syncStatus}
-                    </span>
-                  </div>
+                <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
+                  <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ネットワーク設定</h3>
+                  <span
+                    style={{
+                      justifySelf: 'start',
+                      maxWidth: '100%',
+                      fontSize: '0.72rem',
+                      fontWeight: '700',
+                      lineHeight: 1.35,
+                      padding: '6px 10px',
+                      borderRadius: '999px',
+                      background: isOffline ? '#f8fafc' : syncStatus.includes('エラー') ? '#fef2f2' : '#f8fafc',
+                      border: `1px solid ${syncStatus.includes('エラー') ? '#fecaca' : '#e5e7eb'}`,
+                      color: syncStatus.includes('エラー') ? '#b91c1c' : 'var(--text-secondary)',
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word'
+                    }}
+                  >
+                    {isOffline ? 'オフライン' : syncStatus}
+                  </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px', marginBottom: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '8px', marginBottom: '12px' }}>
                   <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '10px' }}>
                     <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginBottom: '4px' }}>ルームID</div>
                     <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.3 }}>{roomId || '未参加'}</div>
