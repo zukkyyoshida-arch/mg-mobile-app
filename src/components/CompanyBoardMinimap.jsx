@@ -93,6 +93,15 @@ function CompanyBoardMinimap({ results }) {
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#ff9800', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>材料倉庫</div>
               
+              {activeMdChips > 0 && (
+                <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {Array.from({ length: activeMdChips }).map((_, i) => (
+                    <span key={i} style={{ fontSize: '0.8rem' }} title="マーチャンダイザー">🟢</span>
+                  ))}
+                  <span style={{ fontSize: '0.55rem', color: '#2e7d32', fontWeight: 'bold' }}>MD</span>
+                </div>
+              )}
+
               <div style={{ fontSize: '0.62rem', color: 'var(--text-primary)', fontWeight: '700', marginBottom: '4px' }}>材料:</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                 {matChips.map((i) => (
@@ -136,6 +145,15 @@ function CompanyBoardMinimap({ results }) {
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#e040fb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>工場ライン</div>
               
+              {activePacChips > 0 && (
+                <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {Array.from({ length: activePacChips }).map((_, i) => (
+                    <span key={i} style={{ fontSize: '0.8rem' }} title="PAC生産性">🟢</span>
+                  ))}
+                  <span style={{ fontSize: '0.55rem', color: '#2e7d32', fontWeight: 'bold' }}>PAC</span>
+                </div>
+              )}
+
               <div style={{ fontSize: '0.62rem', color: '#ea80fc', fontWeight: '700', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
                 <span>ワーカー:</span>
                 <span>全{totalWorkers}名</span>
@@ -277,6 +295,15 @@ function CompanyBoardMinimap({ results }) {
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#4caf50', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>販売所</div>
 
+              {activeResearchChips > 0 && (
+                <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {Array.from({ length: activeResearchChips }).map((_, i) => (
+                    <span key={i} style={{ fontSize: '0.8rem' }} title="マーケットリサーチ">🟢</span>
+                  ))}
+                  <span style={{ fontSize: '0.55rem', color: '#2e7d32', fontWeight: 'bold' }}>ﾘｻｰﾁ</span>
+                </div>
+              )}
+
               <div style={{ fontSize: '0.62rem', color: '#81c784', fontWeight: '700', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
                 <span>セールスマン:</span>
                 <span>全{totalSalesmen}名</span>
@@ -346,21 +373,6 @@ function CompanyBoardMinimap({ results }) {
               {activeRdChips > 0 && (
                 <div style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#e3f2fd', color: '#1565c0', borderRadius: '4px', border: '1px solid #42a5f5' }}>
                   青チップ (研究開発) 🔬 × {activeRdChips}
-                </div>
-              )}
-              {activeMdChips > 0 && (
-                <div style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', border: '1px solid #66bb6a' }}>
-                  緑チップ (MD) 🟢 × {activeMdChips}
-                </div>
-              )}
-              {activePacChips > 0 && (
-                <div style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', border: '1px solid #66bb6a' }}>
-                  緑チップ (PAC) 🟢 × {activePacChips}
-                </div>
-              )}
-              {activeResearchChips > 0 && (
-                <div style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', border: '1px solid #66bb6a' }}>
-                  緑チップ (リサーチ) 🟢 × {activeResearchChips}
                 </div>
               )}
               {activeGenericGreenChips > 0 && (
