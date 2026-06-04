@@ -152,9 +152,15 @@ function CompanyBoardMinimap({ results }) {
                 </div>
               )}
 
-              <div style={{ fontSize: '0.55rem', color: '#ea80fc', fontWeight: '700', marginBottom: '2px', display: 'flex', justifyContent: 'space-between' }}>
-                <span>ワーカー:</span>
-                <span>全{totalWorkers}名</span>
+              <div style={{ fontSize: '0.55rem', color: '#ea80fc', fontWeight: '700', marginBottom: '2px' }}>
+                ワーカー:
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px', marginBottom: '4px', minHeight: '14px', alignItems: 'center' }}>
+                {totalWorkers > 0 ? Array.from({ length: totalWorkers }).map((_, i) => (
+                  <span key={i} style={{ fontSize: '0.75rem', lineHeight: '1' }}>🧑‍🔧</span>
+                )) : (
+                  <span style={{ fontSize: '0.55rem', color: 'rgba(156, 39, 176, 0.5)', fontStyle: 'italic' }}>不在</span>
+                )}
               </div>
               
               {/* 設備された機械のアイコン ＆ 人員配置 */}
@@ -301,9 +307,8 @@ function CompanyBoardMinimap({ results }) {
                 </div>
               )}
 
-              <div style={{ fontSize: '0.55rem', color: '#81c784', fontWeight: '700', marginBottom: '2px', display: 'flex', justifyContent: 'space-between' }}>
-                <span>ｾｰﾙｽﾏﾝ:</span>
-                <span>{totalSalesmen}名</span>
+              <div style={{ fontSize: '0.55rem', color: '#81c784', fontWeight: '700', marginBottom: '2px' }}>
+                ｾｰﾙｽﾏﾝ:
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px', minHeight: '14px', alignItems: 'center' }}>
                 {totalSalesmen > 0 ? Array.from({ length: totalSalesmen }).map((_, i) => (
