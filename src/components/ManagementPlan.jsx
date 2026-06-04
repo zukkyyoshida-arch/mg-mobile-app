@@ -78,6 +78,7 @@ const cardStyle = {
 
 function ManagementPlan({ carryover, onUpdateBudget, results }) {
   const period = Number(results?.currentPeriod || results?.period || 1);
+  const [activeTab, setActiveTab] = useState('input');
   const [currentScenario, setCurrentScenario] = useState('A');
   const [meta, setMeta] = useState({ companyName: '', presidentName: '' });
 
@@ -235,6 +236,25 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
     </div>
   );
 
+  const pl = results?.pl || { salesRevenue: 0, variableCost: 0, margin: 0, fixedCost: 0, operatingProfit: 0 };
+
+  const renderGapRow = (label, actual, budget, isCost = false) => {
+    const gap = actual - budget;
+    // Costs are better when lower. Profits/Sales better when higher.
+    const isPositive = isCost ? gap <= 0 : gap >= 0;
+    const gapColor = gap === 0 ? 'var(--text-secondary)' : (isPositive ? 'var(--mg-green)' : '#ef4444');
+    const sign = gap > 0 ? '+' : '';
+    
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr', gap: '4px', padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.05)', alignItems: 'center', fontSize: '0.85rem' }}>
+        <div style={{ fontWeight: '800', color: 'var(--text-secondary)' }}>{label}</div>
+        <div style={{ textAlign: 'right', fontWeight: '700', color: 'var(--text-muted)' }}>¥{budget.toLocaleString()}</div>
+        <div style={{ textAlign: 'right', fontWeight: '700' }}>¥{actual.toLocaleString()}</div>
+        <div style={{ textAlign: 'right', fontWeight: '900', color: gapColor }}>{sign}{gap.toLocaleString()}</div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ padding: '0 0 100px 0', display: 'grid', gap: '14px' }}>
       <div className="glass-card" style={{ padding: '16px' }}>
@@ -258,7 +278,24 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
         </div>
       </div>
 
-      <div className="glass-card" style={{ padding: '12px 16px', position: 'sticky', top: '8px', zIndex: 5 }}>
+      {/* タブ切り替え */}
+      <div className="segmented-control" style={{ margin: '0 16px' }}>
+        <button
+          onClick={() => setActiveTab('input')}
+          className={`segment-item ${activeTab === 'input' ? 'active' : ''}`}
+        >
+          予算入力
+        </button>
+        <button
+          onClick={() => setActiveTab('gap')}
+          className={`segment-item ${activeTab === 'gap' ? 'active' : ''}`}
+        >
+          予実ギャップ
+        </button>
+      </div>
+
+      {/* シナリオ選択 (両タブで共通) */}
+      <div className="glass-card" style={{ margin: '0 16px', padding: '12px 16px', position: 'sticky', top: '8px', zIndex: 5 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           {SCENARIOS.map((key) => (
             <button
@@ -273,73 +310,103 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
           ))}
         </div>
       </div>
-
-      <div style={{ ...cardStyle, margin: '0 16px' }}>
-        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>1. 必要Gを決める</div>
-        {renderInput('targetG', { label: '必要目標利益 G (万)' })}
-      </div>
-
-      <div style={{ ...cardStyle, margin: '0 16px', padding: '14px' }}>
-        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>2. 固定費 F を積み上げる</div>
-        <div style={{ display: 'grid', gap: '12px' }}>
-          {fixedCostGroups.map(renderCostGroup)}
-        </div>
-        <div style={{ marginTop: '12px', padding: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: '800' }}>固定費合計 F</span>
-          <span style={{ fontSize: '1.05rem', fontWeight: '900', color: 'var(--mg-blue)' }}>¥{activeResult.fixedCostTotal.toLocaleString()}万</span>
-        </div>
-      </div>
-
-      <div style={{ ...cardStyle, margin: '0 16px' }}>
-        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>3. 必要mPQを計算する</div>
-        <div style={{ padding: '12px', background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px' }}>
-          <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>必要G + 計算F</div>
-          <div style={{ marginTop: '6px', fontSize: '1.1rem', fontWeight: '900' }}>¥{activeResult.requiredMQ.toLocaleString()}万</div>
-        </div>
-      </div>
-
-      <div style={{ ...cardStyle, margin: '0 16px' }}>
-        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>4. 予定P / 予定vP を決める</div>
-        <div style={{ display: 'grid', gap: '10px' }}>
-          {renderInput('plannedP', { label: '予定P (販売単価)' })}
-          {renderInput('plannedVP', { label: '予定vP (材料+投入+完成)' })}
-        </div>
-      </div>
-
-      <div style={{ ...cardStyle, margin: '0 16px' }}>
-        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>5. 予定mP / 必要Q を確認する</div>
-        <div style={{ display: 'grid', gap: '10px' }}>
-          <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>予定mP</span>
-            <strong style={{ color: 'var(--mg-blue)' }}>¥{activeResult.plannedMP.toLocaleString()}万</strong>
+      {activeTab === 'input' && (
+        <>
+          <div style={{ ...cardStyle, margin: '0 16px' }}>
+            <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>1. 必要Gを決める</div>
+            {renderInput('targetG', { label: '必要目標利益 G (万)' })}
           </div>
-          <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>必要Q</span>
-            <strong>{activeResult.requiredQ.toLocaleString()}</strong>
-          </div>
-        </div>
-      </div>
 
-      <div className="glass-card" style={{ margin: '0 16px', padding: '14px' }}>
-        <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>6. 予算サマリー</div>
-        <div style={{ display: 'grid', gap: '8px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
-            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>P</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedP}</div></div>
-            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>vP</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedVP}</div></div>
-            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>mP / Q</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedMP.toLocaleString()} / {activeResult.requiredQ}</div></div>
+          <div style={{ ...cardStyle, margin: '0 16px', padding: '14px' }}>
+            <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>2. 固定費 F を積み上げる</div>
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {fixedCostGroups.map(renderCostGroup)}
+            </div>
+            <div style={{ marginTop: '12px', padding: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: '800' }}>固定費合計 F</span>
+              <span style={{ fontSize: '1.05rem', fontWeight: '900', color: 'var(--mg-blue)' }}>¥{activeResult.fixedCostTotal.toLocaleString()}万</span>
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>PQ</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedSales.toLocaleString()}</div></div>
-            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>vPQ</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedVariableCost.toLocaleString()}</div></div>
-            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>mPQ</div><div style={{ fontWeight: '800', marginTop: '6px', color: 'var(--mg-blue)' }}>¥{activeResult.requiredMQ.toLocaleString()}</div></div>
-            <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>F / G</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.fixedCostTotal.toLocaleString()} / ¥{activeResult.targetG.toLocaleString()}</div></div>
+
+          <div style={{ ...cardStyle, margin: '0 16px' }}>
+            <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>3. 必要mPQを計算する</div>
+            <div style={{ padding: '12px', background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '12px' }}>
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>必要G + 計算F</div>
+              <div style={{ marginTop: '6px', fontSize: '1.1rem', fontWeight: '900' }}>¥{activeResult.requiredMQ.toLocaleString()}万</div>
+            </div>
           </div>
-          <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>f/m</span>
-            <strong>{activeResult.fmRatio}%</strong>
+
+          <div style={{ ...cardStyle, margin: '0 16px' }}>
+            <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>4. 予定P / 予定vP を決める</div>
+            <div style={{ display: 'grid', gap: '10px' }}>
+              {renderInput('plannedP', { label: '予定P (販売単価)' })}
+              {renderInput('plannedVP', { label: '予定vP (材料+投入+完成)' })}
+            </div>
+          </div>
+
+          <div style={{ ...cardStyle, margin: '0 16px' }}>
+            <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>5. 予定mP / 必要Q を確認する</div>
+            <div style={{ display: 'grid', gap: '10px' }}>
+              <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>予定mP</span>
+                <strong style={{ color: 'var(--mg-blue)' }}>¥{activeResult.plannedMP.toLocaleString()}万</strong>
+              </div>
+              <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>必要Q</span>
+                <strong>{activeResult.requiredQ.toLocaleString()}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card" style={{ margin: '0 16px', padding: '14px' }}>
+            <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>6. 予算サマリー</div>
+            <div style={{ display: 'grid', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>P</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedP}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>vP</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedVP}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>mP / Q</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedMP.toLocaleString()} / {activeResult.requiredQ}</div></div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>PQ</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedSales.toLocaleString()}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>vPQ</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedVariableCost.toLocaleString()}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>mPQ</div><div style={{ fontWeight: '800', marginTop: '6px', color: 'var(--mg-blue)' }}>¥{activeResult.requiredMQ.toLocaleString()}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>F / G</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.fixedCostTotal.toLocaleString()} / ¥{activeResult.targetG.toLocaleString()}</div></div>
+              </div>
+              <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>f/m</span>
+                <strong>{activeResult.fmRatio}%</strong>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'gap' && (
+        <div className="glass-card" style={{ margin: '0 16px', padding: '16px' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: '800', marginBottom: '16px', color: 'var(--mg-blue)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '1.2rem' }}>⚖️</span> 予実ギャップ (シナリオ{currentScenario})
+          </h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr', gap: '4px', paddingBottom: '8px', borderBottom: '2px solid rgba(0,0,0,0.1)', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)' }}>
+            <div>項目</div>
+            <div style={{ textAlign: 'right' }}>予算</div>
+            <div style={{ textAlign: 'right' }}>実績</div>
+            <div style={{ textAlign: 'right' }}>ギャップ(差額)</div>
+          </div>
+
+          {renderGapRow('売上高 (PQ)', pl.salesRevenue, activeResult.plannedSales, false)}
+          {renderGapRow('変動費 (vPQ)', pl.variableCost, activeResult.plannedVariableCost, true)}
+          {renderGapRow('付加価値 (mPQ)', pl.margin, activeResult.requiredMQ, false)}
+          {renderGapRow('固定費 (F)', pl.fixedCost, activeResult.fixedCostTotal, true)}
+          {renderGapRow('経常利益 (G)', pl.operatingProfit, activeResult.targetG, false)}
+
+          <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+            <strong>💡 見方のポイント:</strong><br/>
+            利益(G)や売上(PQ/mPQ)はプラス(+)が大きいほど計画上振れ（好調）です。<br/>
+            費用(vPQ/F)はプラス(+)が大きいほど計画よりコスト超過、マイナス(-)はコスト削減を意味します。
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
