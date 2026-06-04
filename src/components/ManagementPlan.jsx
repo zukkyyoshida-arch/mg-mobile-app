@@ -238,18 +238,22 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
 
   const pl = results?.pl || { salesRevenue: 0, variableCost: 0, margin: 0, fixedCost: 0, operatingProfit: 0 };
 
-  const renderGapRow = (label, actual, budget, isCost = false) => {
+  const renderGapRow = (label, actual, budget, isCost = false, isSubItem = false) => {
     const gap = actual - budget;
     // Costs are better when lower. Profits/Sales better when higher.
     const isPositive = isCost ? gap <= 0 : gap >= 0;
     const gapColor = gap === 0 ? 'var(--text-secondary)' : (isPositive ? 'var(--mg-green)' : '#ef4444');
     const sign = gap > 0 ? '+' : '';
     
+    const rowStyle = isSubItem 
+      ? { display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr', gap: '4px', padding: '6px 0', borderBottom: '1px dashed rgba(0,0,0,0.05)', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)' }
+      : { display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr', gap: '4px', padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.05)', alignItems: 'center', fontSize: '0.85rem' };
+
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr', gap: '4px', padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.05)', alignItems: 'center', fontSize: '0.85rem' }}>
-        <div style={{ fontWeight: '800', color: 'var(--text-secondary)' }}>{label}</div>
-        <div style={{ textAlign: 'right', fontWeight: '700', color: 'var(--text-muted)' }}>¥{budget.toLocaleString()}</div>
-        <div style={{ textAlign: 'right', fontWeight: '700' }}>¥{actual.toLocaleString()}</div>
+      <div style={rowStyle}>
+        <div style={{ fontWeight: isSubItem ? '600' : '800', color: isSubItem ? 'inherit' : 'var(--text-secondary)' }}>{label}</div>
+        <div style={{ textAlign: 'right', fontWeight: '700', color: isSubItem ? 'inherit' : 'var(--text-muted)' }}>¥{budget.toLocaleString()}</div>
+        <div style={{ textAlign: 'right', fontWeight: '700', color: isSubItem ? 'inherit' : 'var(--text-primary)' }}>¥{actual.toLocaleString()}</div>
         <div style={{ textAlign: 'right', fontWeight: '900', color: gapColor }}>{sign}{gap.toLocaleString()}</div>
       </div>
     );
@@ -398,6 +402,18 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
           {renderGapRow('変動費 (vPQ)', pl.variableCost, activeResult.plannedVariableCost, true)}
           {renderGapRow('付加価値 (mPQ)', pl.margin, activeResult.requiredMQ, false)}
           {renderGapRow('固定費 (F)', pl.fixedCost, activeResult.fixedCostTotal, true)}
+
+          {/* 細かい内訳 */}
+          <div style={{ paddingLeft: '8px', background: 'rgba(0,0,0,0.01)' }}>
+            {renderGapRow(' ├ 労務費', pl.laborCost || 0, activeResult.laborBudget || 0, true, true)}
+            {renderGapRow(' ├ 製造経費', (pl.manufacturingFixed || 0) - (results?.machines?.depreciation || 0), activeResult.manufacturingBudget || 0, true, true)}
+            {renderGapRow(' ├ 減価償却費', results?.machines?.depreciation || 0, activeResult.depreciationBudget || 0, true, true)}
+            {renderGapRow(' ├ 販売費', pl.salesCost || 0, activeResult.salesBudget || 0, true, true)}
+            {renderGapRow(' ├ 一般管理費', pl.adminCost || 0, activeResult.adminBudget || 0, true, true)}
+            {renderGapRow(' ├ 営業外費用', pl.nonOperatingCost || 0, activeResult.nonOperatingBudget || 0, true, true)}
+            {renderGapRow(' └ 研究開発費', pl.rdCost || 0, activeResult.rdBudget || 0, true, true)}
+          </div>
+
           {renderGapRow('経常利益 (G)', pl.operatingProfit, activeResult.targetG, false)}
 
           <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
