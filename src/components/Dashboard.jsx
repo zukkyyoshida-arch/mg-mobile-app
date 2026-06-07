@@ -117,6 +117,13 @@ export default function Dashboard() {
           >
             モニタリング開始
           </button>
+          <button 
+            onClick={() => navigate('/')}
+            className="btn-secondary"
+            style={{ width: '100%', padding: '16px', fontSize: '1.2rem', marginTop: '12px' }}
+          >
+            🎮 ゲームアプリ画面に戻る
+          </button>
         </div>
       </div>
     );
@@ -137,6 +144,13 @@ export default function Dashboard() {
           <span style={{ fontSize: '2.5rem' }}>📊</span> 戦略MG リアルタイム成績表
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <button 
+            onClick={() => navigate('/')} 
+            className="btn-primary"
+            style={{ padding: '8px 16px', fontSize: '1rem', background: 'var(--mg-blue)', border: 'none' }}
+          >
+            🎮 ゲームアプリ画面に戻る
+          </button>
             <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', padding: '8px 12px', background: 'var(--surface-subtle)', border: '1px solid var(--border-glass)', borderRadius: '999px' }}>
               ルームID: <strong style={{ color: 'var(--text-primary)' }}>{roomId}</strong>
             </span>
