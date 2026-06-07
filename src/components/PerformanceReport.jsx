@@ -40,7 +40,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>第{currentPeriod}期 経営成績</h2>
         <button onClick={onClose} style={{ background: '#ffffff', border: '1px solid #e5e7eb', color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.85rem' }}>
-          閉じる
+          ゲームに戻る
         </button>
       </div>
 
@@ -320,12 +320,12 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
         onClick={onClose}
         style={{
           width: '100%', padding: '16px', borderRadius: '12px',
-          background: 'var(--color-accent)', color: '#ffffff',
+          background: 'var(--mg-blue)', color: '#ffffff',
           fontSize: '1.1rem', fontWeight: 'bold', border: 'none',
-          marginBottom: '40px'
+          marginBottom: '40px', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
         }}
       >
-        確認して戻る
+        🎮 ゲームアプリ画面に戻る
       </button>
 
     </div>
