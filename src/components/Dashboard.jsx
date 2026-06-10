@@ -68,6 +68,7 @@ export default function Dashboard() {
   // タブに応じたプレイヤーデータの生成
   const getProcessedPlayers = () => {
     const rawPlayers = Object.entries(playersData).map(([id, data]) => ({ id, ...data }));
+    console.log(`[Dashboard] tab=${selectedTab}, rawPlayers:`, rawPlayers);
     
     return rawPlayers.map(player => {
       if (selectedTab === 'overall') {
@@ -102,24 +103,21 @@ export default function Dashboard() {
         };
       } else {
         const periodNum = parseInt(selectedTab);
-        const pData = getPeriodData(player, periodNum);
-        if (pData && (player.currentPeriod >= periodNum)) {
+        if (player.currentPeriod >= periodNum) {
+          const pData = getPeriodData(player, periodNum);
+          const useFallback = !pData && (player.currentPeriod === periodNum);
+          
           return {
             ...player,
             displayPeriod: periodNum,
-            totalNetAssets: pData.totalNetAssets || 0,
-            sales: pData.sales || 0,
-            profit: pData.profit || 0,
-            salesQty: pData.salesQty || 0,
-            averagePrice: pData.averagePrice || 0
-          };
-        } else if (player.currentPeriod === periodNum && !player.periods) {
-          return {
-            ...player,
-            displayPeriod: periodNum
+            totalNetAssets: pData?.totalNetAssets ?? (useFallback ? (player.totalNetAssets || 0) : (periodNum === 1 ? 300 : 0)),
+            sales: pData?.sales ?? (useFallback ? (player.sales || 0) : 0),
+            profit: pData?.profit ?? (useFallback ? (player.profit || 0) : 0),
+            salesQty: pData?.salesQty ?? (useFallback ? (player.salesQty || 0) : 0),
+            averagePrice: pData?.averagePrice ?? (useFallback ? (player.averagePrice || 0) : 0)
           };
         } else {
-          return null; // この期のデータがない
+          return null; // この期にまだ到達していない
         }
       }
     }).filter(p => p !== null).sort((a, b) => (b.totalNetAssets || 0) - (a.totalNetAssets || 0));
