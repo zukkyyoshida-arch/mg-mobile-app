@@ -360,6 +360,7 @@ function App() {
           {activeTab === 'periodEnd' && (
             <div className="tab-panel">
               <PeriodEndWizard 
+                key={`${currentPeriod}-${currentData.ledger.length}-${JSON.stringify(currentData.carryover)}`}
                 carryover={currentData.carryover}
                 ledger={currentData.ledger}
                 actuals={currentData.actuals}
@@ -596,6 +597,31 @@ function App() {
                   alert("ルームIDとプレイヤー名を入力してください");
                   return;
                 }
+
+                // 過去のゲームデータ（仕訳、期首変更、2期以降の進捗など）が残っているかチェック
+                const hasExistingData = Object.values(periods).some(p => p.ledger.length > 0) || 
+                                        currentPeriod > 1 || 
+                                        periods[1].carryover.capital !== 300 || 
+                                        periods[1].carryover.loan !== 0;
+
+                if (hasExistingData) {
+                  const shouldReset = window.confirm(
+                    "過去のゲームデータが残っています。\n新しいルームに参加するにあたり、データを初期化して最初から開始しますか？\n\n・『OK』：データを初期化して最初から開始します。\n・『キャンセル』：現在のデータを引き継いで参加します（再接続など）。"
+                  );
+                  if (shouldReset) {
+                    const freshData = {};
+                    for (let i = 1; i <= 20; i++) {
+                      freshData[i] = JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA));
+                    }
+                    setPeriods(freshData);
+                    setCurrentPeriod(1);
+                    setTransactionMode('cash');
+                    setActiveTab('ledger');
+                    safeStorage.setItem('mg_periods_data', JSON.stringify(freshData));
+                    safeStorage.setItem('mg_current_period', '1');
+                  }
+                }
+
                 safeStorage.setItem('mg_room_id', cleanRoom);
                 safeStorage.setItem('mg_player_id', cleanPlayer);
                 safeStorage.setItem('mg_offline_mode', 'false');

@@ -73,8 +73,8 @@ export const DEFAULT_PERIOD_DATA = {
     wipValue: 0,            // ⑯仕掛品金額
     productCount: 0,        // ⑧製品個数
     productValue: 0,        // ⑧製品金額
-    machinesCount: 3,       // ⑭機械台数 (合計)
-    machinesValue: 300,     // ⑭機械金額 (合計)
+    machinesCount: 0,       // ⑭機械台数 (合計)
+    machinesValue: 0,       // ⑭機械金額 (合計)
     loan: 0,                // ⑰借入金
     receivables: 0,         // ⑱売掛金
     payables: 0,            // ⑲買掛金
@@ -83,12 +83,12 @@ export const DEFAULT_PERIOD_DATA = {
     
     // 機械内訳
     largeMachines: 0,       // 大型機械台数
-    smallMachines: 3,       // 小型機械台数
+    smallMachines: 0,       // 小型機械台数
     attachments: 0,         // アタッチメント数
     
     // 人員
-    workers: 3,             // ワーカー数
-    salesmen: 2             // セールスマン数
+    workers: 0,             // ワーカー数
+    salesmen: 0             // セールスマン数
   },
   ledger: [],               // 現金出納帳
   actuals: {
