@@ -33,7 +33,7 @@ const MARKET_MAX_PRICES = {
   fukuoka: 20
 };
 
-function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod, transactionMode, setTransactionMode }) {
+function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod, transactionMode, setTransactionMode, enableCredit = true }) {
   const modalContentRef = useRef(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [voucherNo, setVoucherNo] = useState('');
@@ -435,6 +435,12 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       finalAmount = rdPrice;
       finalPrice = rdPrice;
     } else if (selectedCategory === "保険") {
+      // 保険の保有上限は同時に1つまで
+      const currentInsurance = results?.activeInsuranceChips || 0;
+      if (currentInsurance >= 1) {
+        alert("⚠️ 保険は同時に1つしか保有できません。");
+        return;
+      }
       finalQuantity = 1;
       finalAmount = 5;
       finalPrice = 5;
@@ -745,7 +751,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       </div>
 
       {/* 掛け取引モードへの切り替えバナー */}
-      {currentPeriod >= 2 && transactionMode === 'cash' && (
+      {enableCredit && currentPeriod >= 2 && transactionMode === 'cash' && (
         <div style={{ margin: '8px 16px', padding: '16px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(103, 58, 183, 0.1) 100%)', border: '1px solid rgba(156, 39, 176, 0.4)' }}>
           <h4 style={{ fontSize: '0.95rem', color: '#e040fb', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>🚀</span> 掛け取引（売掛・買掛）が解禁されました！
@@ -996,7 +1002,11 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                       },
                       { action: "借入返済", symbol: "ナ" },
                       { action: "その他出金", symbol: "ス" }
-                    ].map(btn => (
+                    ].filter(btn => {
+                      // 掛け取引無効時は「売掛割引」ボタンを表示しない
+                      if (btn.symbol === '売掛割引') return enableCredit;
+                      return true;
+                    }).map(btn => (
                       <button
                         type="button"
                         key={btn.action}

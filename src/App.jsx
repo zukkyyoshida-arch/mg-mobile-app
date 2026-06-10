@@ -64,6 +64,11 @@ function App() {
     return safeStorage.getItem('mg_transaction_mode') || 'cash';
   });
 
+  // 掛け取引ルールの有効・無効
+  const [enableCredit, setEnableCredit] = useState(() => {
+    return safeStorage.getItem('mg_enable_credit') !== 'false';
+  });
+
   // Firebase Room/Player ID
   const [roomId, setRoomId] = useState(() => safeStorage.getItem('mg_room_id') || '');
   const [playerId, setPlayerId] = useState(() => safeStorage.getItem('mg_player_id') || '');
@@ -95,6 +100,10 @@ function App() {
   useEffect(() => {
     safeStorage.setItem('mg_transaction_mode', transactionMode);
   }, [transactionMode]);
+
+  useEffect(() => {
+    safeStorage.setItem('mg_enable_credit', String(enableCredit));
+  }, [enableCredit]);
 
   // テーマ切り替え処理
   useEffect(() => {
@@ -341,6 +350,7 @@ function App() {
                 currentPeriod={currentPeriod}
                 transactionMode={transactionMode}
                 setTransactionMode={setTransactionMode}
+                enableCredit={enableCredit}
               />
             </div>
           )}
@@ -386,6 +396,76 @@ function App() {
 
           {activeTab === 'settings' && (
             <div className="tab-panel" style={{ display: 'block' }}>
+              {/* ルール設定カード */}
+              <div className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
+                <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
+                  <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ルール設定</h3>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 'bold' }}>掛け取引ルールを有効にする</span>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        無効にすると、2期目以降も現金取引（現金売上・仕入）のみになります。
+                      </div>
+                    </div>
+                    <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={enableCredit} 
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setEnableCredit(val);
+                          if (!val) {
+                            setTransactionMode('cash'); // 無効時は強制的に現金モードへ
+                          }
+                        }}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                      />
+                      <span style={{
+                        position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: enableCredit ? '#00b0ff' : '#ccc',
+                        borderRadius: '24px',
+                        transition: '0.4s',
+                        boxShadow: enableCredit ? '0 0 8px rgba(0, 176, 255, 0.4)' : 'none'
+                      }}>
+                        <span style={{
+                          position: 'absolute', height: '18px', width: '18px', left: enableCredit ? '22px' : '4px', bottom: '3px',
+                          backgroundColor: 'white',
+                          borderRadius: '50%',
+                          transition: '0.4s'
+                        }} />
+                      </span>
+                    </label>
+                  </div>
+
+                  {enableCredit && (
+                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '12px' }}>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>現在の取引モード</span>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setTransactionMode('cash')}
+                          className={`btn-premium ${transactionMode === 'cash' ? 'btn-primary' : 'btn-secondary'}`}
+                          style={{ flex: 1, padding: '8px 0', fontSize: '0.8rem' }}
+                        >
+                          現金取引のみ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTransactionMode('credit')}
+                          className={`btn-premium ${transactionMode === 'credit' ? 'btn-primary' : 'btn-secondary'}`}
+                          style={{ flex: 1, padding: '8px 0', fontSize: '0.8rem' }}
+                        >
+                          掛け取引モード
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
                 <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
                   <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ネットワーク設定</h3>
