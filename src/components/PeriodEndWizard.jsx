@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { SALARY_TABLE } from '../utils/calculations';
 
 function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdateLedger, currentPeriod, results, onShowPerformance }) {
@@ -8,11 +8,10 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const [actualMaterials, setActualMaterials] = useState(actuals?.actualMaterials ?? '');
   const [actualWip, setActualWip] = useState(actuals?.actualWip ?? '');
   const [actualProduct, setActualProduct] = useState(actuals?.actualProduct ?? '');
-  const [actualCash, setActualCash] = useState(actuals?.actualCash ?? '');
 
   // Step 2: Salary state
-  const [periodEndWorkers, setPeriodEndWorkers] = useState('');
-  const [periodEndSalesmen, setPeriodEndSalesmen] = useState('');
+  const [periodEndWorkers, setPeriodEndWorkers] = useState(() => (results?.workers || 0).toString());
+  const [periodEndSalesmen, setPeriodEndSalesmen] = useState(() => (results?.salesmen || 0).toString());
 
   // Step 3: AR Collection state
   const [arCollection, setArCollection] = useState('');
@@ -22,13 +21,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const [fireSaleType, setFireSaleType] = useState('cash'); // 'cash' or 'credit'
   const [disposedState, setDisposedState] = useState({ prod: 0, wip: 0, mat: 0, required: false });
 
-  // Initialize salary state when moving to step 2
-  useEffect(() => {
-    if (currentStep === 2) {
-      if (periodEndWorkers === '') setPeriodEndWorkers((results?.workers || 0).toString());
-      if (periodEndSalesmen === '') setPeriodEndSalesmen((results?.salesmen || 0).toString());
-    }
-  }, [currentStep, results, periodEndWorkers, periodEndSalesmen]);
+
 
   const handleActualChange = (field, val) => {
     const rawVal = val === '' ? '' : Number(val);
@@ -43,17 +36,12 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
     } else if (field === 'prod') {
       setActualProduct(rawVal);
       onUpdateActuals({ ...actuals, actualProduct: updateVal });
-    } else if (field === 'cash') {
-      setActualCash(rawVal);
-      onUpdateActuals({ ...actuals, actualCash: updateVal });
     }
   };
 
-  // 材料/仕掛品/製品の帳簿残高 (理論値)
   const matTheoretical = results.mat.endingCount;
   const wipTheoretical = results.wip.endingCount;
   const prodTheoretical = results.prod.endingCount;
-  const cashTheoretical = results.bookEndingCash;
 
   // 在庫不一致チェック
   const safeMat = actualMaterials === '' ? 0 : actualMaterials;

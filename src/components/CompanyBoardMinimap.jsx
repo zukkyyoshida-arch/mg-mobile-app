@@ -1,9 +1,9 @@
-import React from 'react';
+
 
 function CompanyBoardMinimap({ results }) {
   const { 
-    mat, wip, prod, machines, bookEndingCash, workers, salesmen, 
-    activeAdChips, activeGreenChips,
+    mat, wip, prod, machines, workers, salesmen, 
+    activeAdChips, 
     activeInsuranceChips, activeRdChips, activeMdChips, activePacChips, activeResearchChips, activeGenericGreenChips
   } = results;
 

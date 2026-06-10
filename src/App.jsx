@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { calculateFinancials, DEFAULT_PERIOD_DATA } from './utils/calculations';
 import CashLedger from './components/CashLedger';
 import FinancialStatements from './components/FinancialStatements';
@@ -157,7 +157,7 @@ function App() {
   // 初回接続時（またはリロード時）に即座に同期してダッシュボードに表示させる
   useEffect(() => {
     if (roomId && playerId) {
-      setSyncStatus('同期中...');
+      setTimeout(() => setSyncStatus('同期中...'), 0);
       syncPlayerData(roomId, playerId, generateSyncPayload()).then(() => {
         setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
       }).catch(err => {
@@ -197,20 +197,25 @@ function App() {
         const prevResults = calculateFinancials(prevData.carryover, prevData.ledger, prevData.actuals, currentPeriod - 1);
         const unpaidTax = prevResults.bs?.unpaidTax || 0;
         if (unpaidTax > 0) {
-          setPeriods(prev => ({
-            ...prev,
-            [currentPeriod]: {
-              ...prev[currentPeriod],
-              carryover: {
-                ...prev[currentPeriod].carryover,
-                taxes: unpaidTax
-              }
-            }
-          }));
+          setTimeout(() => {
+            setPeriods(prev => {
+              if (prev[currentPeriod]?.carryover?.taxes) return prev;
+              return {
+                ...prev,
+                [currentPeriod]: {
+                  ...prev[currentPeriod],
+                  carryover: {
+                    ...prev[currentPeriod].carryover,
+                    taxes: unpaidTax
+                  }
+                }
+              };
+            });
+          }, 0);
         }
       }
     }
-  }, [currentPeriod]);
+  }, [currentPeriod, currentData.carryover.taxes, periods]);
 
   // データの更新関数群
   const updatePeriodData = (field, newData) => {

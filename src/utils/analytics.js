@@ -174,7 +174,7 @@ export function calculateAnalytics(ledger, results, prevLedger = null, prevResul
     const diffCash = currentCash - prev.simulation.currentCash;
 
     // AIアドバイスの生成
-    let growthAdvice = "";
+    let growthAdvice;
     if (diffG > 0 && diffNetAssets > 0) {
       growthAdvice = "🎉 前期から見事に業績を伸ばし、会社が成長しています！戦略がバッチリ当たっていますね。";
     } else if (diffG <= 0 && prev.financials.G > 0 && G <= 0) {
@@ -185,7 +185,7 @@ export function calculateAnalytics(ledger, results, prevLedger = null, prevResul
       growthAdvice = "安定した経営が続いていますが、さらにブレイクスルーを狙いたいところです。";
     }
 
-    let pvmqAdvice = "";
+    let pvmqAdvice;
     if (diffP > 0 && diffQ < 0) {
       pvmqAdvice = "数量(Q)は減りましたが、単価(P)を上げたことで高付加価値化に成功しています！";
     } else if (diffQ > 0 && diffM < 0) {

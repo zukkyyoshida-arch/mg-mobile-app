@@ -277,11 +277,6 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
     }
   });
 
-  // --- 期中予測（ハイブリッド）給与・保険料計算 ---
-  // 期末処理を行う前でも「給与を払ったら経常利益がいくらになるか」をPLに反映するための予測計算
-  const hiresWorkers = ledger.reduce((sum, e) => e.category === '採用' ? sum + (Number(e.workersHired) || 0) : sum, 0);
-  const hiresSalesmen = ledger.reduce((sum, e) => e.category === '採用' ? sum + (Number(e.salesmenHired) || 0) : sum, 0);
-  
   // 今期採用したワーカーやセールスマンも含めて、期中予測では給与を計上する
   const staffForSalaryWorkers = totalWorkersHired;
   const staffForSalarySalesmen = totalSalesmenHired;

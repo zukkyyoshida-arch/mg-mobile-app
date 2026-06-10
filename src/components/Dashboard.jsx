@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { subscribeToRoom, removePlayer, archiveRoom } from '../firebase';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
@@ -205,7 +205,6 @@ export default function Dashboard() {
                     fontSize: '1.2rem',
                     fontWeight: 'bold',
                     borderRadius: '8px',
-                    border: 'none',
                     cursor: 'pointer',
                     background: selectedTab === tab ? 'var(--mg-blue)' : 'var(--surface-subtle)',
                     color: selectedTab === tab ? '#fff' : 'var(--text-secondary)',
