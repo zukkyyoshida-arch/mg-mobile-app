@@ -184,8 +184,8 @@ function App() {
         });
       }
     },
-    5000, // 5秒間操作が落ち着いたら送信
-    [results, currentPeriod, roomId, playerId]
+    2000, // 2秒間操作が落ち着いたら送信
+    [periods, currentPeriod, roomId, playerId]
   );
 
   // バグ救済用：期をまたいだ際に未払税金が引き継がれていない場合、一度だけ自動補完する
