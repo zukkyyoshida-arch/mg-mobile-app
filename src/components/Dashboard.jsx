@@ -4,6 +4,33 @@ import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { useNavigate } from 'react-router-dom';
 
+// ヘルパー: 配列・オブジェクト両対応で指定期のデータを取り出す
+function getPeriodData(player, periodNum) {
+  if (!player || !player.periods) return null;
+  
+  if (Array.isArray(player.periods)) {
+    // 6要素の配列（[null, 1期, 2期, ...]）の場合
+    if (player.periods.length === 6) {
+      return player.periods[periodNum] || null;
+    }
+    // 5要素の配列（[1期, 2期, ...]）の場合
+    if (player.periods.length === 5) {
+      return player.periods[periodNum - 1] || null;
+    }
+    // その他
+    if (player.periods.length > periodNum && player.periods[periodNum] !== null && player.periods[periodNum] !== undefined) {
+      return player.periods[periodNum];
+    }
+    if (player.periods.length > (periodNum - 1) && (periodNum - 1) >= 0) {
+      return player.periods[periodNum - 1] || null;
+    }
+    return null;
+  }
+  
+  // オブジェクト（マップ）の場合
+  return player.periods[periodNum] || player.periods[periodNum.toString()] || null;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   // localStorageから前回の状態を復元
@@ -48,12 +75,13 @@ export default function Dashboard() {
         let latestNetAssets = 0;
         if (player.periods) {
           [1, 2, 3, 4, 5].forEach(p => {
-            if (player.periods[p]) {
-              sales += (player.periods[p].sales || 0);
-              profit += (player.periods[p].profit || 0);
-              salesQty += (player.periods[p].salesQty || 0);
+            const pData = getPeriodData(player, p);
+            if (pData) {
+              sales += (pData.sales || 0);
+              profit += (pData.profit || 0);
+              salesQty += (pData.salesQty || 0);
               if (p <= player.currentPeriod) {
-                latestNetAssets = player.periods[p].totalNetAssets || 0;
+                latestNetAssets = pData.totalNetAssets || 0;
               }
             }
           });
@@ -74,8 +102,8 @@ export default function Dashboard() {
         };
       } else {
         const periodNum = parseInt(selectedTab);
-        if (player.periods && player.periods[periodNum] && (player.currentPeriod >= periodNum)) {
-          const pData = player.periods[periodNum];
+        const pData = getPeriodData(player, periodNum);
+        if (pData && (player.currentPeriod >= periodNum)) {
           return {
             ...player,
             displayPeriod: periodNum,
