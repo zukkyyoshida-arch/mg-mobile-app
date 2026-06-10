@@ -437,14 +437,15 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
     productionCapacity += operatingSmall * 1;
   }
 
-  // 減価償却費 (大型: 20/台, 小型: 10/台, アタッチメント: 2/台)
+  // 購入された機械工具 (ケ)
+  const purchasedMachineValue = ledgerTotals["ケ"].amount;
+
+  // 減価償却費 (期首の機械資産簿価 + 当期新規購入額 の 20% = 耐用年数5年)
   // 第1期は練習期のため、ルール上減価償却費は発生しない
   const depreciation = periodKey === 1
     ? 0
-    : (largeMachines * 20) + (smallMachines * 10) + (attachments * 2);
+    : Math.round((carryover.machinesValue + purchasedMachineValue) * 0.2);
   
-  // 購入された機械工具 (ケ)
-  const purchasedMachineValue = ledgerTotals["ケ"].amount;
   // 機械資産の期末残高 (理論値)
   // 期首金額 + 新規購入 - 減価償却 (機械売却による資産減は帳簿上は簡易化するため売却額を引かない。※売却益として処理済みのため引くと二重マイナスになる)
   const bookEndingMachines = Math.max(0, carryover.machinesValue + purchasedMachineValue - depreciation);

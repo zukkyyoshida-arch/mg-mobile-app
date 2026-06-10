@@ -62,9 +62,9 @@ const p2Carryover = {
 console.log("2期期首繰越 - ワーカー数 (期待値: 3):", p2Carryover.workers);
 console.log("2期期首繰越 - セールスマン数 (期待値: 2):", p2Carryover.salesmen);
 
-// 5. 2期の減価償却費の計算 (2期は減価償却が発生する。小型機械3台で 30万)
+// 5. 2期の減価償却費の計算 (2期は減価償却が発生する。30万の20% = 6万)
 const p2Results = calculateFinancials(p2Carryover, [], {}, 2);
-console.log("2期 減価償却費 (期待値: 30):", p2Results.machines.depreciation);
-console.log("2期 期末機械簿価 (期待値: 0):", p2Results.machines.endingValue); // 30万の機械が30万償却されて0になる
+console.log("2期 減価償却費 (期待値: 6):", p2Results.machines.depreciation);
+console.log("2期 期末機械簿価 (期待値: 24):", p2Results.machines.endingValue); // 30万の機械が6万償却されて24万になる
 console.log("2期期末処理前 - ワーカー数 (期待値: 3):", p2Results.workers);
 console.log("2期期末処理前 - セールスマン数 (期待値: 2):", p2Results.salesmen);

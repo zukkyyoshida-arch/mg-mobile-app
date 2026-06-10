@@ -88,7 +88,7 @@ function VisualCharts({ results, carryover }) {
   const totalManufacturingOverhead = laborCost + laborSeverance + manufacturingFixed + depreciation;
 
   // 固定資産
-  const macBegVal = carryover.fixedAssets || 0;
+  const macBegVal = carryover.machinesValue || 0;
   const macInVal = ledger?.filter(e => e.category === 'ケ').reduce((sum, e) => sum + (Number(e.amount)||0), 0) || 0;
   const macEndVal = bs.fixedAssets || (macBegVal + macInVal - depreciation);
 
