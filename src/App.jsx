@@ -117,21 +117,23 @@ function App() {
   const generateSyncPayload = () => {
     const periodsData = {};
     [1, 2, 3, 4, 5].forEach(p => {
-      const pData = periods[p];
-      if (pData) {
-        const pResults = calculateFinancials(pData.carryover, pData.ledger, pData.actuals, p);
-        const pSalesCount = pResults?.prod?.salesCount || 0;
-        const pSalesRevenue = pResults?.pl?.salesRevenue || 0;
-        periodsData[p] = {
-          totalNetAssets: pResults?.bs?.totalNetAssets || 0,
-          sales: pSalesRevenue,
-          profit: pResults?.pl?.operatingProfit || 0,
-          salesQty: pSalesCount,
-          averagePrice: pSalesCount > 0 ? Math.round(pSalesRevenue / pSalesCount) : 0,
-          cash: pResults?.bs?.cash || 0,
-          capital: pResults?.bs?.capital || 0,
-          retainedEarnings: pResults?.bs?.retainedEarnings || 0
-        };
+      if (p <= currentPeriod) {
+        const pData = periods[p];
+        if (pData) {
+          const pResults = calculateFinancials(pData.carryover, pData.ledger, pData.actuals, p);
+          const pSalesCount = pResults?.prod?.salesCount || 0;
+          const pSalesRevenue = pResults?.pl?.salesRevenue || 0;
+          periodsData[p] = {
+            totalNetAssets: pResults?.bs?.totalNetAssets || 0,
+            sales: pSalesRevenue,
+            profit: pResults?.pl?.operatingProfit || 0,
+            salesQty: pSalesCount,
+            averagePrice: pSalesCount > 0 ? Math.round(pSalesRevenue / pSalesCount) : 0,
+            cash: pResults?.bs?.cash || 0,
+            capital: pResults?.bs?.capital || 0,
+            retainedEarnings: pResults?.bs?.retainedEarnings || 0
+          };
+        }
       }
     });
 

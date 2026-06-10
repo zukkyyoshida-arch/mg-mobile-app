@@ -45,22 +45,28 @@ export default function Dashboard() {
     return rawPlayers.map(player => {
       if (selectedTab === 'overall') {
         let sales = 0, profit = 0, salesQty = 0;
+        let latestNetAssets = 0;
         if (player.periods) {
           [1, 2, 3, 4, 5].forEach(p => {
             if (player.periods[p]) {
               sales += (player.periods[p].sales || 0);
               profit += (player.periods[p].profit || 0);
               salesQty += (player.periods[p].salesQty || 0);
+              if (p <= player.currentPeriod) {
+                latestNetAssets = player.periods[p].totalNetAssets || 0;
+              }
             }
           });
         } else {
           sales = player.sales || 0;
           profit = player.profit || 0;
           salesQty = player.salesQty || 0;
+          latestNetAssets = player.totalNetAssets || 0;
         }
         return {
           ...player,
           displayPeriod: '総合',
+          totalNetAssets: latestNetAssets,
           sales,
           profit,
           salesQty,
@@ -68,7 +74,7 @@ export default function Dashboard() {
         };
       } else {
         const periodNum = parseInt(selectedTab);
-        if (player.periods && player.periods[periodNum]) {
+        if (player.periods && player.periods[periodNum] && (player.currentPeriod >= periodNum)) {
           const pData = player.periods[periodNum];
           return {
             ...player,

@@ -116,6 +116,12 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const finalCash = currentCash - totalAmount - remainingRepayment + arToCollect + fireSaleRevenue;
 
   const confirmPeriodEnd = () => {
+    onUpdateActuals({
+      ...actuals,
+      actualWorkers: wCount,
+      actualSalesmen: sCount
+    });
+
     const newTransactions = [];
     if (workerSal > 0) {
       newTransactions.push({ id: Date.now().toString() + "-w-sal", category: "シ", quantity: 1, amount: workerSal, price: workerSal, timestamp: new Date(Date.now() + 1).toISOString(), customName: "ワーカー給与の支払", customShortName: "労務" });
