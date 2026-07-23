@@ -10,27 +10,47 @@ const PLAYERS_COLLECTION = 'players';
 const ARCHIVES_COLLECTION = 'archives';
 
 // Helper function to sync player data ((room, player) で upsert)
-export const syncPlayerData = (roomId, playerId, data) => {
+// backup が渡されたときだけ仕訳明細フルバックアップ(json)も一緒に保存する（後方互換）
+export const syncPlayerData = (roomId, playerId, data, backup) => {
   if (!roomId || !playerId) return Promise.resolve();
 
   const filter = pb.filter('room = {:room} && player = {:player}', { room: roomId, player: playerId });
 
+  // backup が undefined のときは body に含めない（旧サーバー/旧スキーマとの後方互換）
+  const body = backup === undefined ? { data } : { data, backup };
+
   return pb.collection(PLAYERS_COLLECTION).getFirstListItem(filter)
     .then((record) => {
-      return pb.collection(PLAYERS_COLLECTION).update(record.id, { data });
+      return pb.collection(PLAYERS_COLLECTION).update(record.id, body);
     })
     .catch((error) => {
       if (error instanceof ClientResponseError && error.status === 404) {
         return pb.collection(PLAYERS_COLLECTION)
-          .create({ room: roomId, player: playerId, data })
+          .create({ room: roomId, player: playerId, ...body })
           .catch((createError) => {
             // ユニーク制約違反（他クライアントと同時作成）の場合は1回だけupdateにリトライ
             if (createError instanceof ClientResponseError && createError.status === 400) {
               return pb.collection(PLAYERS_COLLECTION).getFirstListItem(filter)
-                .then((record) => pb.collection(PLAYERS_COLLECTION).update(record.id, { data }));
+                .then((record) => pb.collection(PLAYERS_COLLECTION).update(record.id, body));
             }
             throw createError;
           });
+      }
+      throw error;
+    });
+};
+
+// Helper function to fetch a single player record in full (backup 含む)
+// 参加時の上書き防止／サーバー復元のために使用する。存在しなければ null、通信エラーは throw
+export const fetchPlayerRecord = (roomId, playerId) => {
+  if (!roomId || !playerId) return Promise.resolve(null);
+
+  const filter = pb.filter('room = {:room} && player = {:player}', { room: roomId, player: playerId });
+
+  return pb.collection(PLAYERS_COLLECTION).getFirstListItem(filter)
+    .catch((error) => {
+      if (error instanceof ClientResponseError && error.status === 404) {
+        return null;
       }
       throw error;
     });
@@ -48,8 +68,8 @@ export const subscribeToRoom = (roomId, callback) => {
 
   const emit = () => callback({ ...map });
 
-  // ① 初回全件取得
-  pb.collection(PLAYERS_COLLECTION).getFullList({ filter })
+  // ① 初回全件取得（backup(最大5MB)はダッシュボードで不要なので受信しない＝通信量削減）
+  pb.collection(PLAYERS_COLLECTION).getFullList({ filter, fields: 'id,room,player,data' })
     .then((records) => {
       records.forEach((record) => {
         map[record.player] = record.data;
@@ -74,7 +94,7 @@ export const subscribeToRoom = (roomId, callback) => {
         map[record.player] = record.data;
       }
       emit();
-    }, { filter })
+    }, { filter, fields: 'id,room,player,data' })
     .then((unsub) => {
       if (cancelled) {
         // すでにunsubscribeが呼ばれていた場合は即座に解除する
