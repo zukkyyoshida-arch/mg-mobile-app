@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { subscribeToRoom, removePlayer, archiveRoom } from '../pocketbase';
+import { subscribeToRoom, archiveRoom } from '../pocketbase';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { useNavigate } from 'react-router-dom';
@@ -65,48 +65,61 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [roomId, isSubscribed]);
 
+  // 総合(overall)基準でプレイヤー1名分の集計値を算出する（タブ選択非依存）
+  const computeOverallPlayer = (player) => {
+    let sales = 0, profit = 0, salesQty = 0;
+    let latestNetAssets = 0;
+    if (player.periods) {
+      [1, 2, 3, 4, 5].forEach(p => {
+        const pData = getPeriodData(player, p);
+        if (pData) {
+          sales += (pData.sales || 0);
+          profit += (pData.profit || 0);
+          salesQty += (pData.salesQty || 0);
+          if (p <= player.currentPeriod) {
+            latestNetAssets = pData.totalNetAssets || 0;
+          }
+        }
+      });
+    } else {
+      sales = player.sales || 0;
+      profit = player.profit || 0;
+      salesQty = player.salesQty || 0;
+      latestNetAssets = player.totalNetAssets || 0;
+    }
+    return {
+      ...player,
+      displayPeriod: '総合',
+      totalNetAssets: latestNetAssets,
+      sales,
+      profit,
+      salesQty,
+      averagePrice: salesQty > 0 ? Math.round(sales / salesQty) : 0
+    };
+  };
+
+  // 総合(overall)基準でソート済みプレイヤーリストを算出する（アーカイブ保存専用、selectedTabに非依存）
+  const getOverallPlayers = () => {
+    const rawPlayers = Object.entries(playersData).map(([id, data]) => ({ id, ...data }));
+    return rawPlayers
+      .map(computeOverallPlayer)
+      .sort((a, b) => (b.totalNetAssets || 0) - (a.totalNetAssets || 0));
+  };
+
   // タブに応じたプレイヤーデータの生成
   const getProcessedPlayers = () => {
     const rawPlayers = Object.entries(playersData).map(([id, data]) => ({ id, ...data }));
     console.log(`[Dashboard] tab=${selectedTab}, rawPlayers:`, rawPlayers);
-    
+
     return rawPlayers.map(player => {
       if (selectedTab === 'overall') {
-        let sales = 0, profit = 0, salesQty = 0;
-        let latestNetAssets = 0;
-        if (player.periods) {
-          [1, 2, 3, 4, 5].forEach(p => {
-            const pData = getPeriodData(player, p);
-            if (pData) {
-              sales += (pData.sales || 0);
-              profit += (pData.profit || 0);
-              salesQty += (pData.salesQty || 0);
-              if (p <= player.currentPeriod) {
-                latestNetAssets = pData.totalNetAssets || 0;
-              }
-            }
-          });
-        } else {
-          sales = player.sales || 0;
-          profit = player.profit || 0;
-          salesQty = player.salesQty || 0;
-          latestNetAssets = player.totalNetAssets || 0;
-        }
-        return {
-          ...player,
-          displayPeriod: '総合',
-          totalNetAssets: latestNetAssets,
-          sales,
-          profit,
-          salesQty,
-          averagePrice: salesQty > 0 ? Math.round(sales / salesQty) : 0
-        };
+        return computeOverallPlayer(player);
       } else {
         const periodNum = parseInt(selectedTab);
         if (player.currentPeriod >= periodNum) {
           const pData = getPeriodData(player, periodNum);
           const useFallback = !pData && (player.currentPeriod === periodNum);
-          
+
           return {
             ...player,
             displayPeriod: periodNum,
@@ -186,14 +199,15 @@ export default function Dashboard() {
             <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', padding: '8px 12px', background: 'var(--surface-subtle)', border: '1px solid var(--border-glass)', borderRadius: '999px' }}>
               ルームID: <strong style={{ color: 'var(--text-primary)' }}>{roomId}</strong>
             </span>
-          <button 
+          <button
             onClick={() => {
-              if(window.confirm('現在の成績を「アーカイブ（過去の記録）」として永久保存しますか？')) {
-                archiveRoom(roomId, sortedPlayers)
+              const overallPlayers = getOverallPlayers();
+              if(window.confirm(`${overallPlayers.length}名の総合成績を保存します。よろしいですか？`)) {
+                archiveRoom(roomId, overallPlayers)
                   .then(() => alert('✅ 成績をアーカイブに保存しました！'))
                   .catch(e => alert('保存に失敗しました: ' + e.message));
               }
-            }} 
+            }}
             className="btn-primary"
             style={{ padding: '8px 16px', fontSize: '1rem', background: 'var(--mg-pink)', border: 'none' }}
           >
@@ -250,13 +264,13 @@ export default function Dashboard() {
             </div>
 
             {/* テーブルヘッダー */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '90px 1fr 70px 120px 120px 80px 100px 120px 40px', 
-              gap: '16px', 
-              padding: '0 24px', 
-              color: 'var(--text-secondary)', 
-              fontSize: '1rem', 
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '90px 1fr 70px 120px 120px 80px 100px 120px',
+              gap: '16px',
+              padding: '0 24px',
+              color: 'var(--text-secondary)',
+              fontSize: '1rem',
               fontWeight: 'bold',
               borderBottom: '2px solid #e5e7eb',
               paddingBottom: '12px',
@@ -270,7 +284,6 @@ export default function Dashboard() {
               <div style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>販売数</div>
               <div style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>平均単価</div>
               <div style={{ textAlign: 'right', color: 'var(--mg-pink)' }}>利益(G)</div>
-              <div style={{ textAlign: 'center' }}></div>
             </div>
 
             {/* ランキングリスト */}
@@ -297,10 +310,10 @@ export default function Dashboard() {
                 <div 
                   key={player.id} 
                   className="glass-card" 
-                  style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: '90px 1fr 70px 120px 120px 80px 100px 120px 40px', 
-                    gap: '16px', 
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '90px 1fr 70px 120px 120px 80px 100px 120px',
+                    gap: '16px',
                     alignItems: 'center', 
                     padding: '20px 24px', 
                     borderRadius: '16px',
@@ -337,19 +350,6 @@ export default function Dashboard() {
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '1.5rem', fontWeight: 'bold', fontFamily: 'monospace', color: 'var(--mg-pink)' }}>
                     {(player.profit || 0).toLocaleString()}
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <button 
-                      onClick={() => {
-                        if (window.confirm(`「${player.id}」を成績表から削除しますか？`)) {
-                          removePlayer(roomId, player.id);
-                        }
-                      }}
-                      style={{ background: 'transparent', border: 'none', color: '#ff4444', fontSize: '1.2rem', cursor: 'pointer', padding: '4px' }}
-                      title="退出させる"
-                    >
-                      ×
-                    </button>
                   </div>
                 </div>
               );
