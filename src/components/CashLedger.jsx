@@ -41,6 +41,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
   const [amount, setAmount] = useState('');
+  const [isFireSale, setIsFireSale] = useState(false);
+  const [fireSaleQty, setFireSaleQty] = useState('');
   
   // 採用用のステート
   const [workersHired, setWorkersHired] = useState('');
@@ -112,6 +114,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     setQuantity('');
     setPrice('');
     setAmount('');
+    setIsFireSale(false);
+    setFireSaleQty('');
     setWorkersHired('');
     setSalesmenHired('');
     setHirePrice(5);
@@ -152,34 +156,50 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     let finalPrice = 0;
 
     if (["キ", "ネ"].includes(selectedCategory)) {
-      let totalQty = 0;
-      let totalAmount = 0;
-      let hasError = false;
-      
-      MARKETS.filter(m => m.id !== 'stocker').forEach(m => {
-        const qty = salesData[m.id]?.qty || 0;
-        const prc = Number(salesData[m.id]?.price) || 0;
-        if (qty > 0) {
-          if (prc <= 0) {
-            alert(`${m.name}の販売単価を入力してください`);
-            hasError = true;
-          } else {
-            totalQty += qty;
-            totalAmount += qty * prc;
-          }
+      if (isFireSale) {
+        const qty = Number(fireSaleQty) || 0;
+        if (qty <= 0) {
+          alert("投げ売りする数量を入力してください");
+          return;
         }
-      });
+        const maxInventory = results?.prod?.endingCount || 0;
+        if (qty > maxInventory) {
+          alert(`手持在庫 (${maxInventory}個) を超える数量は販売できません`);
+          return;
+        }
+        finalQuantity = qty;
+        finalAmount = qty * 18;
+        finalPrice = 18;
+      } else {
+        let totalQty = 0;
+        let totalAmount = 0;
+        let hasError = false;
+        
+        MARKETS.filter(m => m.id !== 'stocker').forEach(m => {
+          const qty = salesData[m.id]?.qty || 0;
+          const prc = Number(salesData[m.id]?.price) || 0;
+          if (qty > 0) {
+            if (prc <= 0) {
+              alert(`${m.name}の販売単価を入力してください`);
+              hasError = true;
+            } else {
+              totalQty += qty;
+              totalAmount += qty * prc;
+            }
+          }
+        });
 
-      if (hasError) return;
+        if (hasError) return;
 
-      if (totalQty === 0) {
-        alert("販売する数量と単価を入力してください");
-        return;
+        if (totalQty === 0) {
+          alert("販売する数量と単価を入力してください");
+          return;
+        }
+
+        finalQuantity = totalQty;
+        finalAmount = totalAmount;
+        finalPrice = 0;
       }
-
-      finalQuantity = totalQty;
-      finalAmount = totalAmount;
-      finalPrice = 0;
     } else if (selectedCategory === "売掛割引") {
       const discountVal = Number(factoringAmount) || 0;
       if (discountVal <= 0) {
@@ -548,14 +568,23 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       quantity: finalQuantity,
       price: finalPrice,
       amount: finalAmount || (finalQuantity * finalPrice),
-      customName: selectedCategory === 'セ' ? '広告費の支払' : undefined,
-      customShortName: selectedCategory === 'セ' ? '広告' : undefined,
+      customName: isFireSale 
+        ? '製品投げ売り' 
+        : (selectedCategory === 'セ' ? '広告費の支払' : undefined),
+      customShortName: isFireSale 
+        ? '投売' 
+        : (selectedCategory === 'セ' ? '広告' : undefined),
       workersHired: selectedCategory === '採用' ? (Number(workersHired) || 0) : (selectedCategory === '配置転換' ? (Number(transferS2W) || 0) - (Number(transferW2S) || 0) : 0),
       salesmenHired: selectedCategory === '採用' ? (Number(salesmenHired) || 0) : (selectedCategory === '配置転換' ? (Number(transferW2S) || 0) - (Number(transferS2W) || 0) : 0),
       largeMachines: selectedCategory === 'ケ' ? (machineQuantities.large || 0) : 0,
       smallMachines: selectedCategory === 'ケ' ? (machineQuantities.small || 0) : 0,
       attachments: selectedCategory === 'ケ' ? (machineQuantities.attachment || 0) : 0,
       salesDetails: ["キ", "ネ"].includes(selectedCategory) ? (() => {
+        if (isFireSale) {
+          return {
+            fireSale: { qty: finalQuantity, price: 18, name: "投げ売り" }
+          };
+        }
         const details = {};
         MARKETS.filter(m => m.id !== 'stocker').forEach(m => {
           const qty = salesData[m.id]?.qty || 0;
@@ -638,6 +667,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
   // 取引カテゴリ切り替え時の自動表示制御
   const handleCategorySelect = (symbol) => {
     setSelectedCategory(symbol);
+    setIsFireSale(false);
+    setFireSaleQty('');
     // 数量が必要ない科目の場合は数量と単価をリセット
     const needsQty = ["キ", "ネ", "コ", "サ", "ツ", "ノ", "ケ", "セ", "チ", "保険", "MD", "リサーチ", "PAC", "配置転換"].includes(symbol);
     if (!needsQty) {
@@ -700,6 +731,20 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
   const visibleLedger = ledger.filter(entry => entry.category !== '期首処理');
 
+  // 単価情報 (P, V, M) の計算
+  const salesQty = results?.prod?.salesCount || 0;
+  const salesRev = results?.pl?.salesRevenue || 0;
+  const varCost = results?.pl?.variableCost || 0;
+  const marginRev = results?.pl?.margin || 0;
+
+  const avgPrice = salesQty > 0 ? (salesRev / salesQty) : 0;
+  const varPrice = salesQty > 0 ? (varCost / salesQty) : 0;
+  const marginPrice = salesQty > 0 ? (marginRev / salesQty) : 0;
+
+  const avgPriceDisplay = salesQty > 0 ? `¥${avgPrice.toFixed(1)}万` : '-';
+  const varPriceDisplay = salesQty > 0 ? `¥${varPrice.toFixed(1)}万` : '-';
+  const marginPriceDisplay = salesQty > 0 ? `¥${marginPrice.toFixed(1)}万` : '-';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* 財務サマリーカード */}
@@ -718,6 +763,33 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
           <span className="electric-number" style={{ fontSize: '1.2rem', color: (results?.pl?.operatingProfit || 0) >= 0 ? 'var(--mg-pink)' : '#ef4444' }}>
             {(results?.pl?.operatingProfit || 0) >= 0 ? '+' : ''}¥ {results?.pl?.operatingProfit || 0} 万
           </span>
+        </div>
+
+        {/* 単価情報 (P, V, M) */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          borderTop: '1px solid var(--border-glass)', 
+          paddingTop: '8px', 
+          marginTop: '8px',
+          fontSize: '0.75rem',
+          color: 'var(--text-secondary)'
+        }}>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>平均単価 (P)</div>
+            <strong style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>{avgPriceDisplay}</strong>
+          </div>
+          <div style={{ width: '1px', height: '18px', background: 'var(--border-glass)' }}></div>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>変動単価 (V)</div>
+            <strong style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>{varPriceDisplay}</strong>
+          </div>
+          <div style={{ width: '1px', height: '18px', background: 'var(--border-glass)' }}></div>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>粗利単価 (M)</div>
+            <strong style={{ color: 'var(--mg-pink)', fontSize: '0.85rem' }}>{marginPriceDisplay}</strong>
+          </div>
         </div>
       </div>
 
@@ -1774,12 +1846,18 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                 (() => {
                   let totalQty = 0;
                   let totalAmount = 0;
-                  MARKETS.filter(m => m.id !== 'stocker').forEach(m => {
-                    const qty = salesData[m.id]?.qty || 0;
-                    const prc = Number(salesData[m.id]?.price) || 0;
-                    totalQty += qty;
-                    totalAmount += qty * prc;
-                  });
+
+                  if (isFireSale) {
+                    totalQty = Number(fireSaleQty) || 0;
+                    totalAmount = totalQty * 18;
+                  } else {
+                    MARKETS.filter(m => m.id !== 'stocker').forEach(m => {
+                      const qty = salesData[m.id]?.qty || 0;
+                      const prc = Number(salesData[m.id]?.price) || 0;
+                      totalQty += qty;
+                      totalAmount += qty * prc;
+                    });
+                  }
                   
                   return (
                     <div style={{ background: 'rgba(233, 30, 99, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(233, 30, 99, 0.3)' }}>
@@ -1791,57 +1869,127 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
                           手持在庫 (完成品): <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{results?.prod?.endingCount || 0}</strong> 個
                         </span>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginBottom: '16px' }}>
-                        {MARKETS.filter(m => m.id !== 'stocker').map(m => {
-                          const qty = salesData[m.id]?.qty || 0;
-                          const prc = salesData[m.id]?.price || '';
-                          const maxPrice = MARKET_MAX_PRICES[m.id] || 40;
-                          
-                          return (
-                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                                <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>@</span>
-                                  <input 
-                                    type="number"
-                                    placeholder="単価"
-                                    value={prc}
-                                    onChange={(e) => {
-                                      let val = e.target.value === '' ? '' : Number(e.target.value);
-                                      if (val !== '' && val > maxPrice) val = maxPrice;
-                                      setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], price: val } }));
-                                    }}
-                                    style={{ width: '80px', padding: '8px 8px', fontSize: '1.1rem', fontWeight: 'bold', background: 'rgba(0,0,0,0.05)', border: '1px solid var(--border-glass)', borderRadius: '6px', color: 'var(--text-primary)', textAlign: 'center' }}
-                                  />
-                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>MAX: {maxPrice}</span>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'right' }}>MAX: {m.max}個</span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                  <button 
-                                    type="button"
-                                    onClick={() => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: Math.max(0, qty - 1) } }))}
-                                    style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                  >-</button>
-                                  <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
-                                  <button 
-                                    type="button"
-                                    onClick={() => {
-                                      const remainingInventory = (results?.prod?.endingCount || 0) - totalQty;
-                                      if (remainingInventory > 0 && qty < m.max) {
-                                        setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: qty + 1 } }));
-                                      }
-                                    }}
-                                    style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: ((results?.prod?.endingCount || 0) - totalQty > 0 && qty < m.max) ? 1 : 0.5 }}
-                                  >+</button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
+
+                      {/* 投げ売りトグル */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', padding: '8px 12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer', color: isFireSale ? 'var(--mg-pink)' : 'var(--text-secondary)' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={isFireSale} 
+                            onChange={(e) => {
+                              setIsFireSale(e.target.checked);
+                              setFireSaleQty('');
+                            }}
+                            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                          />
+                          🔥 投げ売りを行う (単価 18万 固定)
+                        </label>
                       </div>
+
+                      {isFireSale ? (
+                        /* 投げ売り専用入力フォーム */
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(0,0,0,0.02)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>投げ売り数量</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>単価: 18万 (固定)</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                const qty = Number(fireSaleQty) || 0;
+                                setFireSaleQty(Math.max(0, qty - 1).toString());
+                              }}
+                              style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '36px', height: '36px', borderRadius: '6px', fontSize: '1.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >-</button>
+                            <input 
+                              type="number"
+                              placeholder="数量"
+                              value={fireSaleQty}
+                              onChange={(e) => {
+                                const val = e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
+                                const maxInventory = results?.prod?.endingCount || 0;
+                                if (val !== '' && val > maxInventory) {
+                                  setFireSaleQty(maxInventory.toString());
+                                } else {
+                                  setFireSaleQty(val.toString());
+                                }
+                              }}
+                              style={{ flex: 1, padding: '8px', fontSize: '1.2rem', fontWeight: 'bold', background: 'rgba(0,0,0,0.05)', border: '1px solid var(--border-glass)', borderRadius: '6px', color: 'var(--text-primary)', textAlign: 'center' }}
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                const qty = Number(fireSaleQty) || 0;
+                                const maxInventory = results?.prod?.endingCount || 0;
+                                if (qty < maxInventory) {
+                                  setFireSaleQty((qty + 1).toString());
+                                }
+                              }}
+                              style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'var(--text-primary)', width: '36px', height: '36px', borderRadius: '6px', fontSize: '1.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (Number(fireSaleQty) || 0) >= (results?.prod?.endingCount || 0) ? 0.5 : 1 }}
+                            >+</button>
+                            <button
+                              type="button"
+                              onClick={() => setFireSaleQty((results?.prod?.endingCount || 0).toString())}
+                              style={{ background: 'var(--color-accent)', border: 'none', color: 'var(--text-primary)', padding: '8px 12px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold' }}
+                            >MAX</button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* 通常販売用（市場ごと）の入力フォーム */
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginBottom: '16px' }}>
+                          {MARKETS.filter(m => m.id !== 'stocker').map(m => {
+                            const qty = salesData[m.id]?.qty || 0;
+                            const prc = salesData[m.id]?.price || '';
+                            const maxPrice = MARKET_MAX_PRICES[m.id] || 40;
+                            
+                            return (
+                              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                  <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>@</span>
+                                    <input 
+                                      type="number"
+                                      placeholder="単価"
+                                      value={prc}
+                                      onChange={(e) => {
+                                        let val = e.target.value === '' ? '' : Number(e.target.value);
+                                        if (val !== '' && val > maxPrice) val = maxPrice;
+                                        setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], price: val } }));
+                                      }}
+                                      style={{ width: '80px', padding: '8px 8px', fontSize: '1.1rem', fontWeight: 'bold', background: 'rgba(0,0,0,0.05)', border: '1px solid var(--border-glass)', borderRadius: '6px', color: 'var(--text-primary)', textAlign: 'center' }}
+                                    />
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>MAX: {maxPrice}</span>
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'right' }}>MAX: {m.max}個</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <button 
+                                      type="button"
+                                      onClick={() => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: Math.max(0, qty - 1) } }))}
+                                      style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >-</button>
+                                    <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
+                                    <button 
+                                      type="button"
+                                      onClick={() => {
+                                        const remainingInventory = (results?.prod?.endingCount || 0) - totalQty;
+                                        if (remainingInventory > 0 && qty < m.max) {
+                                          setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: qty + 1 } }));
+                                        }
+                                      }}
+                                      style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: ((results?.prod?.endingCount || 0) - totalQty > 0 && qty < m.max) ? 1 : 0.5 }}
+                                    >+</button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.04)', borderRadius: '8px' }}>
                         <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計数量: <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{totalQty}個</strong></span>
                         <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>合計金額: <strong style={{ color: 'var(--mg-pink)', fontSize: '1.1rem' }}>{totalAmount}万</strong></span>

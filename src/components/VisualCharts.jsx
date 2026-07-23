@@ -1,9 +1,9 @@
 import React from 'react';
 
-function VisualCharts({ results, carryover }) {
+function VisualCharts({ results, carryover, ledger }) {
   if (!results || !carryover) return null;
 
-  const { pl, mat, wip, prod, ledger } = results;
+  const { pl, mat, wip, prod } = results;
 
   // --- STRAC図の計算 ---
   const PQ = pl.salesRevenue || 0;
@@ -57,9 +57,9 @@ function VisualCharts({ results, carryover }) {
   const cf = results.cf || {};
 
   // 借入金
-  const loanBeg = carryover.loans || 0;
-  const loanIn = ledger?.filter(e => e.category === 'ナ').reduce((sum, e) => sum + (Number(e.amount)||0), 0) || 0;
-  const loanOut = ledger?.filter(e => e.category === '二').reduce((sum, e) => sum + (Number(e.amount)||0), 0) || 0;
+  const loanBeg = carryover.loan || 0;
+  const loanIn = ledger?.filter(e => e.category === 'オ').reduce((sum, e) => sum + (Number(e.amount)||0), 0) || 0;
+  const loanOut = ledger?.filter(e => e.category === 'ナ').reduce((sum, e) => sum + (Number(e.amount)||0), 0) || 0;
   const loanChange = loanIn - loanOut;
   const loanEnd = bs.loans || (loanBeg + loanChange);
 
@@ -71,14 +71,44 @@ function VisualCharts({ results, carryover }) {
 
   // 人員
   const workerBeg = carryover.workers || 0;
-  const workerIn = ledger?.filter(e => e.category === 'メ').reduce((sum, e) => sum + (e.workers||0), 0) || 0;
-  const workerOut = ledger?.filter(e => e.category === '辞').reduce((sum, e) => sum + (e.workers||0), 0) || 0;
-  const workerEnd = workerBeg + workerIn - workerOut;
+  const workerIn = ledger?.reduce((sum, e) => {
+    if (e.category === "採用" || e.category === "配置転換") {
+      const hired = Number(e.workersHired) || 0;
+      return sum + (hired > 0 ? hired : 0);
+    }
+    return sum;
+  }, 0) || 0;
+  const workerOut = ledger?.reduce((sum, e) => {
+    if (e.category === "退職") {
+      return sum + (Number(e.workersResigned) || 0);
+    }
+    if (e.category === "配置転換") {
+      const hired = Number(e.workersHired) || 0;
+      return sum + (hired < 0 ? -hired : 0);
+    }
+    return sum;
+  }, 0) || 0;
+  const workerEnd = results.activeWorkers !== undefined ? results.activeWorkers : (workerBeg + workerIn - workerOut);
 
   const salesmanBeg = carryover.salesmen || 0;
-  const salesmanIn = ledger?.filter(e => e.category === 'メ').reduce((sum, e) => sum + (e.salesmen||0), 0) || 0;
-  const salesmanOut = ledger?.filter(e => e.category === '辞').reduce((sum, e) => sum + (e.salesmen||0), 0) || 0;
-  const salesmanEnd = salesmanBeg + salesmanIn - salesmanOut;
+  const salesmanIn = ledger?.reduce((sum, e) => {
+    if (e.category === "採用" || e.category === "配置転換") {
+      const hired = Number(e.salesmenHired) || 0;
+      return sum + (hired > 0 ? hired : 0);
+    }
+    return sum;
+  }, 0) || 0;
+  const salesmanOut = ledger?.reduce((sum, e) => {
+    if (e.category === "退職") {
+      return sum + (Number(e.salesmenResigned) || 0);
+    }
+    if (e.category === "配置転換") {
+      const hired = Number(e.salesmenHired) || 0;
+      return sum + (hired < 0 ? -hired : 0);
+    }
+    return sum;
+  }, 0) || 0;
+  const salesmanEnd = results.activeSalesmen !== undefined ? results.activeSalesmen : (salesmanBeg + salesmanIn - salesmanOut);
 
   // 製造間接費
   const laborCost = pl.workerSalary || 0;
