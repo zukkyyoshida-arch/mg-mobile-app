@@ -35,3 +35,7 @@ dist-ssr
 .venv/
 venv/
 .vercel
+
+# Test artifacts
+playwright-report
+test-results

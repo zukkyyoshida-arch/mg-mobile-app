@@ -1,15 +1,15 @@
 // @ts-check
-const { defineConfig, devices } = require('@playwright/test');
+import { defineConfig, devices } from '@playwright/test';
 
-module.exports = defineConfig({
-  testDir: './tests',
+export default defineConfig({
+  testDir: './tests/e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:8501',
+    baseURL: 'http://localhost:4173',
     trace: 'on-first-retry',
   },
 
@@ -20,9 +20,10 @@ module.exports = defineConfig({
     },
   ],
 
+  // vite preview は dist/ を配信するため、事前に `npm run build` が必要。
   webServer: {
-    command: 'streamlit run streamlit_app.py',
-    url: 'http://localhost:8501',
+    command: 'npm run preview -- --port 4173 --strictPort',
+    url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
   },
 });
