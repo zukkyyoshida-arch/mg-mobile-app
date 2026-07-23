@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { subscribeToRoom, removePlayer, archiveRoom } from '../firebase';
+import { subscribeToRoom, removePlayer, archiveRoom } from '../pocketbase';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { useNavigate } from 'react-router-dom';

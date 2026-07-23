@@ -17,6 +17,16 @@
 - **追加機能**: AIアドバイザー機能 (`AIAdvisor`)
 
 ## 最新の更新内容（Recent Updates）
+- **2026-07-23**: データベースをFirebase FirestoreからM1サーバー上のPocketBaseへ移行
+  - 背景: Firestoreのテストモードルールが30日で失効し PERMISSION_DENIED（「データベース接続エラー」）が発生していた
+  - DB: M1 MacBook Air上のPocketBase v0.39.9（LaunchAgent `com.zukky.pocketbase` 常駐、ポート8090）
+  - 公開: Tailscale Funnel → `https://kazukiyoshidamacbook-air-2.tail4dd8e5.ts.net`（接続先変更は `VITE_PB_URL` で上書き可）
+  - コード: `src/firebase.js` を撤去し `src/pocketbase.js`（onSnapshot互換のsubscribeToRoom等、同一インターフェース）へ差し替え
+  - コレクション: `players`（room+playerユニーク、公開CRUD）/ `archives`（作成・閲覧のみ公開、改ざん防止）
+  - バックアップ: M1で毎日3:10に純正バックアップAPI→`~/Backups/pocketbase/` 14世代（`com.zukky.pocketbase-backup`）
+  - E2E検証済み: プレイヤー参加→レコード作成、ダッシュボード初期取得、SSEリアルタイム反映、強制同期の往復
+  - 注意: M1が停止するとDBも停止する（研修前にM1稼働と `api/health` を確認すること）
+- **2026-07-23**: 投げ売り機能（在庫を@18万で処分売却）をCashLedgerに追加（先行未コミット分を取り込み）
 - **2026-05-29**: riskSaleType状態の削除リファクタリング完了・デプロイ
   - CashLedger.jsx から使用されていない riskSaleType state をリモーブ
   - リモート上の「loan borrowing機能削除」との競合を解決（git rebase）

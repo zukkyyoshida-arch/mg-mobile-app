@@ -7,7 +7,7 @@ import ManagementPlan from './components/ManagementPlan';
 import PriorPeriodCarryover from './components/PriorPeriodCarryover';
 import PerformanceReport from './components/PerformanceReport';
 import ErrorBoundary from './components/ErrorBoundary';
-import { syncPlayerData, removePlayer } from './firebase';
+import { syncPlayerData, removePlayer } from './pocketbase';
 import { useDebounce } from 'react-use';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, FileText, CalendarCheck, Target, Settings, Sun, Moon } from 'lucide-react';

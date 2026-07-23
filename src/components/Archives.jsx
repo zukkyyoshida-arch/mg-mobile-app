@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
-import { db } from '../firebase';
+import { listArchives } from '../pocketbase';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 
@@ -14,9 +13,7 @@ export default function Archives() {
   useEffect(() => {
     const fetchArchives = async () => {
       try {
-        const q = query(collection(db, "archives"), orderBy("timestamp", "desc"));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const data = await listArchives();
         setArchives(data);
       } catch (error) {
         console.error("Failed to fetch archives:", error);
