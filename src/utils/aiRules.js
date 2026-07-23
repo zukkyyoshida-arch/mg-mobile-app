@@ -130,14 +130,14 @@ export function generateReport(results, currentPeriod) {
     salesRevenue = 0,
     margin = 0,
     operatingProfit = 0,
-    salesmen = 0,
-    workers = 0,
-    largeMachines = 0,
-    smallMachines = 0
-  } = results;
-  const totalProducts = results.totalProducts ?? 0;
+    fixedCost = 0
+  } = results.pl || {};
+  const salesmen = results.salesmen || 0;
+  const workers = results.workers || 0;
+  const largeMachines = results.machines?.large || 0;
+  const smallMachines = results.machines?.small || 0;
+  const totalProducts = results.prod?.salesCount ?? 0; // 販売数 Q
 
-  const fixedCost = margin - operatingProfit; // MQ - G = F
   const marginRate = salesRevenue > 0 ? (margin / salesRevenue) : 0;
   const totalMachines = largeMachines + smallMachines;
 
@@ -220,7 +220,7 @@ export function generateReport(results, currentPeriod) {
       const needed = totalMachines - workers;
       report += `  - 目標: ワーカーを ${needed} 人増員して、機械稼働率を 100% に保ちましょう。\n`;
     }
-    if (results.bookEndingCash && results.fixedCost && results.bookEndingCash >= results.fixedCost * 2) {
+    if (results.bookEndingCash && fixedCost && results.bookEndingCash >= fixedCost * 2) {
       const invest = Math.floor(results.bookEndingCash / 2);
       report += `  - 余裕資金があるので、追加の機械投資やR&Dに ${invest} 万円程度割り当てることを検討してください。\n`;
     }
