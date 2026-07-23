@@ -11,7 +11,8 @@
     "test": "playwright test",
     "test:debug": "playwright test --debug",
     "test:ui": "playwright test --ui",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "deploy:m1": "npm run build && scp -r dist/. m1:pocketbase/pb_public/"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",

@@ -36,7 +36,15 @@ const MARKET_MAX_PRICES = {
 function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod, transactionMode, setTransactionMode, enableCredit = true }) {
   const modalContentRef = useRef(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [voucherNo, setVoucherNo] = useState('');
+
+  // 伝票番号の自動採番（既存の最大番号+1。削除があっても重複しない）
+  const getNextVoucherNo = (list) => {
+    const maxNo = list.reduce((max, item) => {
+      const n = parseInt(item.voucherNo, 10);
+      return Number.isFinite(n) && n > max ? n : max;
+    }, 0);
+    return maxNo + 1;
+  };
   const [selectedCategory, setSelectedCategory] = useState('キ'); // Default to現金売上
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
@@ -110,7 +118,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
   // フォームリセット関数
   const resetForm = () => {
-    setVoucherNo('');
     setQuantity('');
     setPrice('');
     setAmount('');
@@ -480,7 +487,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       for (let i = 0; i < pacQty; i++) {
         updatedLedger.push({
           id: Date.now().toString() + `-pac-${i}`,
-          voucherNo: voucherNo || (updatedLedger.length + 1).toString(),
+          voucherNo: getNextVoucherNo(updatedLedger).toString(),
           category: 'PAC',
           quantity: 1,
           price: 10,
@@ -492,7 +499,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       for (let i = 0; i < mdQty; i++) {
         updatedLedger.push({
           id: Date.now().toString() + `-md-${i}`,
-          voucherNo: voucherNo || (updatedLedger.length + 1).toString(),
+          voucherNo: getNextVoucherNo(updatedLedger).toString(),
           category: 'MD',
           quantity: 1,
           price: 10,
@@ -504,7 +511,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       for (let i = 0; i < researchQty; i++) {
         updatedLedger.push({
           id: Date.now().toString() + `-research-${i}`,
-          voucherNo: voucherNo || (updatedLedger.length + 1).toString(),
+          voucherNo: getNextVoucherNo(updatedLedger).toString(),
           category: 'リサーチ',
           quantity: 1,
           price: 10,
@@ -563,7 +570,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
     const newEntry = {
       id: Date.now().toString(),
-      voucherNo: voucherNo || (ledger.length + 1).toString(),
+      voucherNo: getNextVoucherNo(ledger).toString(),
       category: selectedCategory,
       quantity: finalQuantity,
       price: finalPrice,
@@ -625,7 +632,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       if (interestAmount > 0) {
         const interestEntry = {
           id: (Date.now() + 1).toString(),
-          voucherNo: voucherNo || (ledger.length + 2).toString(),
+          voucherNo: getNextVoucherNo(updatedLedger).toString(),
           category: 'タ',
           quantity: 0,
           price: 0,
@@ -986,17 +993,13 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
             <form onSubmit={handleAddTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              {/* 伝票番号 */}
+              {/* 伝票番号（自動連番・編集不可） */}
               {selectedCategory !== '期首処理' && (
               <div className="form-group">
-                <label className="form-label">伝票番号 (任意)</label>
-                <input 
-                  type="text" 
-                  value={voucherNo} 
-                  onChange={(e) => setVoucherNo(e.target.value)}
-                  placeholder={`自動連番: ${(ledger.length + 1)}`}
-                  className="form-input"
-                />
+                <label className="form-label">伝票番号（自動連番）</label>
+                <div className="form-input" style={{ background: 'rgba(0, 0, 0, 0.04)', color: 'var(--text-muted)', cursor: 'default', userSelect: 'none' }}>
+                  #{getNextVoucherNo(ledger)}
+                </div>
               </div>
               )}
 
