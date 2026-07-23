@@ -17,6 +17,11 @@
 - **追加機能**: AIアドバイザー機能 (`AIAdvisor`)
 
 ## 最新の更新内容（Recent Updates）
+- **2026-07-23 (2)**: 配信の二重運用開始 + 伝票番号の自動連番化
+  - **二重運用**: Vercel（従来URL）に加え、M1のPocketBase静的配信（`--publicDir` → `~/pocketbase/pb_public`）でも同一アプリを配信。URL: `https://kazukiyoshidamacbook-air-2.tail4dd8e5.ts.net/`。DBは共通なので、どちらのURLから参加しても同じルームでプレイ可能
+  - **自動配送**: post-commitフックがビルド成果物をM1へscp配送（失敗してもコミットは成立、手動は `npm run deploy:m1`）。Vercelは従来通りpushで自動デプロイ
+  - **注意**: localStorageはURL（オリジン）ごとに別。プレイヤーはゲーム中に配信URLを切り替えないこと
+  - **伝票番号**: 手入力を廃止し完全自動連番（既存の最大番号+1、削除後も重複しない）。追加画面は次番号の読み取り専用表示。借入の自動利息も連番継続。E2E検証済み
 - **2026-07-23**: データベースをFirebase FirestoreからM1サーバー上のPocketBaseへ移行
   - 背景: Firestoreのテストモードルールが30日で失効し PERMISSION_DENIED（「データベース接続エラー」）が発生していた
   - DB: M1 MacBook Air上のPocketBase v0.39.9（LaunchAgent `com.zukky.pocketbase` 常駐、ポート8090）
