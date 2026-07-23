@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { getRealtimeAdvice, generateReport } from '../utils/aiRules';
 
 export function useAI(results, currentPeriod) {

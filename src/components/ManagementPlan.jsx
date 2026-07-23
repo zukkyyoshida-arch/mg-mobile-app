@@ -164,7 +164,7 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
   const calculated = useMemo(() => {
     return SCENARIOS.reduce((acc, key) => {
       const full = deriveTotals(scenarios[key]);
-      const budgetResult = calculateBudget(full, carryover);
+      const budgetResult = calculateBudget(full, carryover, period);
       const plannedMP = Math.max(0, (full.plannedP || 0) - (full.plannedVP || 0));
       const requiredQ = plannedMP > 0 ? Math.ceil(budgetResult.requiredMQ / plannedMP) : 0;
       const plannedSales = requiredQ * (full.plannedP || 0);
@@ -182,7 +182,7 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
       };
       return acc;
     }, {});
-  }, [carryover, scenarios]);
+  }, [carryover, scenarios, period]);
 
   const activeScenario = scenarios[currentScenario];
   const activeResult = calculated[currentScenario];
@@ -233,6 +233,16 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
           </div>
         ))}
       </div>
+      {group.key === 'nonOperatingBudget' && activeResult.autoInterestCost > 0 && (
+        <div style={{ marginTop: '10px', padding: '10px', background: '#fff7ed', border: '1px dashed #fb923c', borderRadius: '10px' }}>
+          <div style={{ fontSize: '0.74rem', fontWeight: '700', color: '#c2410c' }}>
+            前期繰越からの自動計上: 支払利息 {activeResult.autoInterestCost.toLocaleString()}万
+          </div>
+          <div style={{ marginTop: '4px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+            前期繰越の借入残高 {(carryover?.loan || 0).toLocaleString()}万 × {Math.round(activeResult.autoInterestRate * 100)}%（手入力の営業外費用とは別に固定費Fへ自動加算・手入力欄では編集不可）
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -326,9 +336,16 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
             <div style={{ display: 'grid', gap: '12px' }}>
               {fixedCostGroups.map(renderCostGroup)}
             </div>
-            <div style={{ marginTop: '12px', padding: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: '800' }}>固定費合計 F</span>
-              <span style={{ fontSize: '1.05rem', fontWeight: '900', color: 'var(--mg-blue)' }}>¥{activeResult.fixedCostTotal.toLocaleString()}万</span>
+            <div style={{ marginTop: '12px', padding: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: '800' }}>固定費合計 F</span>
+                <span style={{ fontSize: '1.05rem', fontWeight: '900', color: 'var(--mg-blue)' }}>¥{activeResult.fixedCostTotal.toLocaleString()}万</span>
+              </div>
+              {activeResult.autoInterestCost > 0 && (
+                <div style={{ marginTop: '4px', fontSize: '0.7rem', color: '#c2410c', textAlign: 'right' }}>
+                  （うち前期繰越からの自動計上: 支払利息 {activeResult.autoInterestCost.toLocaleString()}万を含む）
+                </div>
+              )}
             </div>
           </div>
 

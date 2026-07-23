@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import VisualCharts from './VisualCharts';
+import TrendCharts from './TrendCharts';
 
-function FinancialStatements({ results, carryover, currentPeriod, ledger, onShowPerformance }) {
+function FinancialStatements({ results, carryover, currentPeriod, ledger, onShowPerformance, periods }) {
   // Defensive defaults for possible undefined props
   const safeCarry = carryover || {
     materialsValue: 0,
@@ -121,6 +122,14 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
         >
           図解 (Visual)
         </button>
+        {periods && (
+          <button
+            onClick={() => setStatementTab('trend')}
+            className={`segment-item ${statementTab === 'trend' ? 'active' : ''}`}
+          >
+            推移 (Trend)
+          </button>
+        )}
       </div>
 
       {/* ==================== 1. 変動損益計算書 (P/L) ==================== */}
@@ -437,6 +446,13 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
       {statementTab === 'visual' && (
         <div className="tab-panel">
           <VisualCharts results={results} carryover={safeCarry} ledger={ledger} />
+        </div>
+      )}
+
+      {/* ==================== 5. 期別推移 (Trend) ==================== */}
+      {statementTab === 'trend' && periods && (
+        <div className="tab-panel">
+          <TrendCharts periods={periods} currentPeriod={currentPeriod} />
         </div>
       )}
 

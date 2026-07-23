@@ -10,29 +10,36 @@ export function getRealtimeAdvice(results) {
 
   const warnings = [];
 
+  // calculateFinancials の結果オブジェクト形状に合わせて主要指標を取り出す。
+  // 固定費・限界利益・経常利益は results.pl 配下、借入残高は results.endingLoans。
+  const bookEndingCash = Number(results.bookEndingCash) || 0;
+  const fixedCost = results.pl && results.pl.fixedCost !== undefined
+    ? Number(results.pl.fixedCost) || 0
+    : ((Number(results.pl?.margin) || 0) - (Number(results.pl?.operatingProfit) || 0));
+  const loan = Number(results.endingLoans) || 0;
+  // 広告費の目安: 有効な広告チップ枚数 × 1枚あたり5万（純粋な広告費フィールドは無いため近似）
+  const totalAds = (Number(results.activeAdChips) || 0) * 5;
+
   // 1. 資金ショートの危険（MGの基準）
-  // 固定費は results.fixedCost があれば使用、なければ margin - operatingProfit で推測
-  const fixedCost = results.fixedCost !== undefined ? results.fixedCost : (results.margin - results.operatingProfit);
-  if (results.bookEndingCash < fixedCost) {
+  if (fixedCost > 0 && bookEndingCash < fixedCost) {
     warnings.push({
       type: 'danger',
-      message: `現金残高（${results.bookEndingCash}万）が固定費（${fixedCost}万）を下回っています。次期の支払いに危機が迫っています。早急に販売増や借入を検討してください。`
+      message: `現金残高（${bookEndingCash}万）が固定費（${fixedCost}万）を下回っています。次期の支払いに危機が迫っています。早急に販売増や借入を検討してください。`
     });
-  } else if (results.bookEndingCash < fixedCost * 1.5) {
+  } else if (fixedCost > 0 && bookEndingCash < fixedCost * 1.5) {
     warnings.push({
       type: 'warning',
-      message: `現金残高（${results.bookEndingCash}万）は固定費（${fixedCost}万）の1.5倍未満です。資金繰りに注意し、余裕を持たせる施策を検討しましょう。`
+      message: `現金残高（${bookEndingCash}万）は固定費（${fixedCost}万）の1.5倍未満です。資金繰りに注意し、余裕を持たせる施策を検討しましょう。`
     });
   }
   // 2. 借入過多の警告（借入が5万以上）
-  if (results.loan && results.loan >= 5) {
+  if (loan >= 5) {
     warnings.push({
       type: 'warning',
-      message: `借入額が ${results.loan}万 です。借入は資金確保に有効ですが、過大になると利息負担が増えます。返済計画を立てましょう。`
+      message: `借入額が ${loan}万 です。借入は資金確保に有効ですが、過大になると利息負担が増えます。返済計画を立てましょう。`
     });
   }
   // 3. 広告費過剰の警告（広告費合計が20万超）
-  const totalAds = (results.ads && results.ads.total) || 0;
   if (totalAds > 20) {
     warnings.push({
       type: 'warning',
@@ -41,21 +48,21 @@ export function getRealtimeAdvice(results) {
   }
   // 5. その他MG基準警告
   // 借入比率が現金の30%を超える場合
-  if (results.loan && results.bookEndingCash && results.loan > results.bookEndingCash * 0.3) {
+  if (loan > 0 && bookEndingCash > 0 && loan > bookEndingCash * 0.3) {
     warnings.push({
       type: 'warning',
-      message: `借入額が現金の30%を超えています（借入: ${results.loan}万 / 現金: ${results.bookEndingCash}万）。返済計画の見直しを検討しましょう。`
+      message: `借入額が現金の30%を超えています（借入: ${loan}万 / 現金: ${bookEndingCash}万）。返済計画の見直しを検討しましょう。`
     });
   }
   // 広告費が現金の20%を超える場合（既存の広告費チェックに加えて）
-  if (results.bookEndingCash && totalAds > results.bookEndingCash * 0.2) {
+  if (bookEndingCash > 0 && totalAds > bookEndingCash * 0.2) {
     warnings.push({
       type: 'warning',
       message: `広告費が現金の20%以上（${totalAds}万）です。投資効果を測定し、必要に応じて削減を検討してください。`
     });
   }
   // ワーカー数が機械数に対して不足している場合
-  const totalMachines = (results.largeMachines || 0) + (results.smallMachines || 0);
+  const totalMachines = (Number(results.largeMachines) || 0) + (Number(results.smallMachines) || 0);
   if (totalMachines > 0 && results.workers !== undefined && results.workers < totalMachines) {
     warnings.push({
       type: 'warning',
@@ -63,7 +70,7 @@ export function getRealtimeAdvice(results) {
     });
   }
   // 現金余裕: 固定費の2倍以上
-  if (results.bookEndingCash && results.fixedCost && results.bookEndingCash >= results.fixedCost * 2) {
+  if (bookEndingCash > 0 && fixedCost > 0 && bookEndingCash >= fixedCost * 2) {
     warnings.push({
       type: 'success',
       message: `現金残高は固定費の2倍以上で十分な余裕があります。今期は安定的に運営できます。`

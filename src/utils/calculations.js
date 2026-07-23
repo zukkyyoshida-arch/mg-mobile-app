@@ -402,18 +402,28 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   let newSmallMachines = 0;
   let newAttachments = 0;
 
+  let soldLargeMachines = 0;
+  let soldSmallMachines = 0;
+  let soldAttachments = 0;
+
   ledger.forEach(entry => {
     if (entry.category === "ケ") {
       newLargeMachines += entry.largeMachines || 0;
       newSmallMachines += entry.smallMachines || 0;
       newAttachments += entry.attachments || 0;
     }
-    // TODO: 売却（イ）でどの機械を売ったかのトラッキングは未実装のため今回は加算のみ
+    // 機械売却（イ）: どの機械を何台売却したかを台数トラッキング（|| 0 で旧データ互換）
+    if (entry.category === "イ") {
+      soldLargeMachines += entry.soldLargeMachines || 0;
+      soldSmallMachines += entry.soldSmallMachines || 0;
+      soldAttachments += entry.soldAttachments || 0;
+    }
   });
 
-  const largeMachines = (carryover.largeMachines || 0) + newLargeMachines;
-  const smallMachines = (carryover.smallMachines || 0) + newSmallMachines;
-  const attachments = (carryover.attachments || 0) + newAttachments;
+  // 最終台数 = 期首 + 当期購入（ケ） − 当期売却（イ）。マイナスは 0 でガード。
+  const largeMachines = Math.max(0, (carryover.largeMachines || 0) + newLargeMachines - soldLargeMachines);
+  const smallMachines = Math.max(0, (carryover.smallMachines || 0) + newSmallMachines - soldSmallMachines);
+  const attachments = Math.max(0, (carryover.attachments || 0) + newAttachments - soldAttachments);
   
   // 生産能力(PAC)の計算
   // ワーカーの稼働割り当て（大型優先）
@@ -447,7 +457,8 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
     : Math.round((carryover.machinesValue + purchasedMachineValue) * 0.2);
   
   // 機械資産の期末残高 (理論値)
-  // 期首金額 + 新規購入 - 減価償却 (機械売却による資産減は帳簿上は簡易化するため売却額を引かない。※売却益として処理済みのため引くと二重マイナスになる)
+  // 台数はトラッキング済み、簿価は簡略化継続（売却額を引かない）。
+  // ※機械売却は売却益として extraordinaryGain 側で処理済みのため、簿価から売却額を引くと二重マイナスになる。
   const bookEndingMachines = Math.max(0, carryover.machinesValue + purchasedMachineValue - depreciation);
 
   // 4. P/L (変動損益計算書) の計算
@@ -764,6 +775,10 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
     totalEquity: totalNetAssets,
     workers: activeWorkers,
     salesmen: activeSalesmen,
+    // 機械台数（トップレベル）: 期首 + 購入(ケ) − 売却(イ)。UI の保有台数バリデーション・AI診断が参照する。
+    largeMachines,
+    smallMachines,
+    attachments,
     productionCapacity: productionCapacity,
     rank: evaluationRank
   };
@@ -771,25 +786,42 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
 
 /**
  * 予定計画 (Budget) の計算ロジック
+ *
+ * carryover（前期繰越）を当期計画に自動反映する。
+ * 現状の自動計上項目:
+ *  - 支払利息: 前期繰越の借入金残高 (carryover.loan) に対し、
+ *    CashLedger の期首処理と同じ利率体系（期1〜3は10%、期4〜5は5%）で算出し、
+ *    営業外費用として固定費 F に自動加算する。
+ *    参照実装: src/components/CashLedger.jsx の期首処理ロジック（借入残高 × rate）。
  */
-export function calculateBudget(budget, carryover) {
+export function calculateBudget(budget, carryover, period = 1) {
   const G = Number(budget.targetG) || 0;
-  
-  // 固定費合計
-  const F = 
+  const periodKey = Math.min(5, Math.max(1, Number(period) || 1));
+
+  // 前期繰越の借入残高に対する当期支払利息（自動計上）
+  // CashLedger.jsx と同一の利率体系: 期1〜3は10%、期4〜5は5%
+  const carryoverLoan = Number(carryover?.loan) || 0;
+  const interestRate = periodKey >= 4 ? 0.05 : 0.10;
+  const autoInterestCost = carryoverLoan > 0 ? Math.round(carryoverLoan * interestRate) : 0;
+
+  // 固定費合計（手入力の営業外費用に、前期借入残高からの自動計上利息を加算）
+  const F =
     (Number(budget.laborBudget) || 0) +
     (Number(budget.manufacturingBudget) || 0) +
     (Number(budget.depreciationBudget) || 0) +
     (Number(budget.salesBudget) || 0) +
     (Number(budget.adminBudget) || 0) +
     (Number(budget.nonOperatingBudget) || 0) +
-    (Number(budget.rdBudget) || 0);
+    (Number(budget.rdBudget) || 0) +
+    autoInterestCost;
 
   // 必要MQ = G + F
   const requiredMQ = G + F;
-  
+
   return {
     fixedCostTotal: F,
-    requiredMQ
+    requiredMQ,
+    autoInterestCost,
+    autoInterestRate: interestRate
   };
 }

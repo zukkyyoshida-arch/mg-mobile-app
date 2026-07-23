@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SALARY_TABLE } from '../utils/calculations';
+import { getRealtimeAdvice } from '../utils/aiRules';
 
 function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdateLedger, currentPeriod, results, onShowPerformance }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -20,6 +21,9 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const [fireSaleCount, setFireSaleCount] = useState(0);
   const [fireSaleType, setFireSaleType] = useState('cash'); // 'cash' or 'credit'
   const [disposedState, setDisposedState] = useState({ prod: 0, wip: 0, mat: 0, required: false });
+  // 処分確定「前」の実棚値の退避（Step2以降からStep1へ戻った際の復元・やり直し用）
+  // これが常に復元の起点になるため、処分→戻る→再処分を繰り返しても二重減算されない
+  const [preDisposalActuals, setPreDisposalActuals] = useState(null);
 
 
 
@@ -82,7 +86,9 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
       const reduceWip = Math.min(safeWip, remaining);
       remaining -= reduceWip;
       const reduceMat = Math.min(safeMat, remaining);
-      
+
+      // 処分確定前の実棚値を退避（未処分のこの時点の値が「やり直し」の起点になる）
+      setPreDisposalActuals({ prod: safeProd, wip: safeWip, mat: safeMat });
       setDisposedState({ prod: reduceProd, wip: reduceWip, mat: reduceMat, required: true });
       setFireSaleCount(reduceProd); // Default to fire sale all possible products
       setCurrentStep(1.5);
@@ -114,6 +120,14 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   
   const fireSaleRevenue = (disposedState.required && fireSaleType === 'cash') ? (fireSaleCount * 18) : 0;
   const finalCash = currentCash - totalAmount - remainingRepayment + arToCollect + fireSaleRevenue;
+
+  // AIクラウド会計の事前予測: 期末見込み現金(finalCash)を反映して資金関連ルールのみ抽出する。
+  // getRealtimeAdvice は results.bookEndingCash を見るため、見込み残高で上書きした結果で判定する。
+  const projectedResults = { ...results, bookEndingCash: finalCash };
+  const cashAdvice = getRealtimeAdvice(projectedResults).filter(
+    w => (w.type === 'danger' || w.type === 'warning') &&
+      (w.message.includes('現金') || w.message.includes('固定費') || w.message.includes('借入'))
+  );
 
   const confirmPeriodEnd = () => {
     onUpdateActuals({
@@ -383,39 +397,74 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
               </div>
             )}
 
-            <button 
-              onClick={() => {
-                const safeMat = actualMaterials === '' ? 0 : actualMaterials;
-                const safeWip = actualWip === '' ? 0 : actualWip;
-                const safeProd = actualProduct === '' ? 0 : actualProduct;
-                const newProd = safeProd - disposedState.prod;
-                const newWip = safeWip - disposedState.wip;
-                const newMat = safeMat - disposedState.mat;
-                
-                setActualProduct(newProd);
-                setActualWip(newWip);
-                setActualMaterials(newMat);
-                
-                onUpdateActuals({
-                  ...actuals,
-                  actualProduct: newProd,
-                  actualWip: newWip,
-                  actualMaterials: newMat
-                });
-                
-                setCurrentStep(2);
-              }} 
-              className="btn-premium" 
-              style={{ 
-                width: '100%',
-                background: 'linear-gradient(135deg, rgba(255, 46, 147, 0.2) 0%, rgba(255, 128, 176, 0.2) 100%)',
-                border: '1px solid rgba(255, 46, 147, 0.4)',
-                color: 'var(--mg-pink)',
-                boxShadow: '0 4px 16px rgba(255, 46, 147, 0.15)'
-              }}
-            >
-              処分を確定して次へ →
-            </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => {
+                  // 処分せず、退避しておいた処分前の値に戻してStep1へ戻る
+                  if (preDisposalActuals) {
+                    setActualProduct(preDisposalActuals.prod);
+                    setActualWip(preDisposalActuals.wip);
+                    setActualMaterials(preDisposalActuals.mat);
+
+                    onUpdateActuals({
+                      ...actuals,
+                      actualProduct: preDisposalActuals.prod,
+                      actualWip: preDisposalActuals.wip,
+                      actualMaterials: preDisposalActuals.mat
+                    });
+                  }
+                  setDisposedState({ prod: 0, wip: 0, mat: 0, required: false });
+                  setPreDisposalActuals(null);
+                  setCurrentStep(1);
+                }}
+                className="btn-premium"
+                style={{
+                  flex: 1,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: 'var(--text-secondary)'
+                }}
+              >
+                ← 在庫入力に戻る
+              </button>
+              <button
+                onClick={() => {
+                  // 退避値（処分前の実棚値）を起点に減算する。
+                  // これにより「確定→戻る→再確定」を繰り返しても二重減算にならない。
+                  const base = preDisposalActuals ?? {
+                    prod: actualProduct === '' ? 0 : actualProduct,
+                    wip: actualWip === '' ? 0 : actualWip,
+                    mat: actualMaterials === '' ? 0 : actualMaterials
+                  };
+                  const newProd = base.prod - disposedState.prod;
+                  const newWip = base.wip - disposedState.wip;
+                  const newMat = base.mat - disposedState.mat;
+
+                  setActualProduct(newProd);
+                  setActualWip(newWip);
+                  setActualMaterials(newMat);
+
+                  onUpdateActuals({
+                    ...actuals,
+                    actualProduct: newProd,
+                    actualWip: newWip,
+                    actualMaterials: newMat
+                  });
+
+                  setCurrentStep(2);
+                }}
+                className="btn-premium"
+                style={{
+                  flex: 2,
+                  background: 'linear-gradient(135deg, rgba(255, 46, 147, 0.2) 0%, rgba(255, 128, 176, 0.2) 100%)',
+                  border: '1px solid rgba(255, 46, 147, 0.4)',
+                  color: 'var(--mg-pink)',
+                  boxShadow: '0 4px 16px rgba(255, 46, 147, 0.15)'
+                }}
+              >
+                処分を確定して次へ →
+              </button>
+            </div>
           </div>
         )}
 
@@ -526,10 +575,51 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
             })()}
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-              <button 
-                onClick={() => setCurrentStep(1)} 
-                className="btn-premium" 
-                style={{ 
+              <button
+                onClick={() => {
+                  // 処分実行済みの場合は、退避しておいた処分前の値へ復元してから
+                  // 在庫超過判定をやり直す（処分のやり直しを可能にする）
+                  if (disposedState.required && preDisposalActuals) {
+                    const restoredProd = preDisposalActuals.prod;
+                    const restoredWip = preDisposalActuals.wip;
+                    const restoredMat = preDisposalActuals.mat;
+
+                    setActualProduct(restoredProd);
+                    setActualWip(restoredWip);
+                    setActualMaterials(restoredMat);
+
+                    onUpdateActuals({
+                      ...actuals,
+                      actualProduct: restoredProd,
+                      actualWip: restoredWip,
+                      actualMaterials: restoredMat
+                    });
+
+                    const restoredTotal = restoredProd + restoredWip + restoredMat;
+                    if (restoredTotal > 20) {
+                      // まだ超過しているので再びStep1.5（強制処分）へ
+                      const excess = restoredTotal - 20;
+                      let remaining = excess;
+                      const reduceProd = Math.min(restoredProd, remaining);
+                      remaining -= reduceProd;
+                      const reduceWip = Math.min(restoredWip, remaining);
+                      remaining -= reduceWip;
+                      const reduceMat = Math.min(restoredMat, remaining);
+
+                      setDisposedState({ prod: reduceProd, wip: reduceWip, mat: reduceMat, required: true });
+                      setFireSaleCount(reduceProd);
+                      setCurrentStep(1.5);
+                      return;
+                    }
+
+                    // 超過が解消していれば処分状態をクリアしてStep1へ
+                    setDisposedState({ prod: 0, wip: 0, mat: 0, required: false });
+                    setPreDisposalActuals(null);
+                  }
+                  setCurrentStep(1);
+                }}
+                className="btn-premium"
+                style={{
                   flex: 1,
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -538,8 +628,8 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
               >
                 ← 戻る
               </button>
-              <button 
-                onClick={() => setCurrentStep(3)} 
+              <button
+                onClick={() => setCurrentStep(3)}
                 className="btn-premium" 
                 style={{ 
                   flex: 2,
@@ -564,11 +654,36 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
             </div>
             
             <div style={{ background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                💡 <strong>AIクラウド会計の事前予測</strong><br/>
-                キャッシュアウト（資金ショート）する前に、期末の現金残高をシミュレーションします。<br/>
-                マイナスになる場合は、ここで売掛金を回収して補填するか、一度画面を閉じて借入（オ）を行ってください。
+              <p style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                💡 <strong>AIクラウド会計の事前予測</strong>
               </p>
+              {cashAdvice.length > 0 ? (
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {cashAdvice.map((w, i) => {
+                    const isDanger = w.type === 'danger';
+                    return (
+                      <li
+                        key={i}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '6px',
+                          fontSize: '0.8rem',
+                          lineHeight: '1.45',
+                          color: isDanger ? 'var(--mg-pink)' : 'var(--text-primary)'
+                        }}
+                      >
+                        <span style={{ flexShrink: 0 }}>{isDanger ? '🚨' : '⚠️'}</span>
+                        <span>{w.message}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                  期末見込みの現金残高（¥{finalCash}万）に、資金ショートや借入過多の兆候は見当たりません。このまま確定して問題ありません。
+                </p>
+              )}
             </div>
 
             <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
