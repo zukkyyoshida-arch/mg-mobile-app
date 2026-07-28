@@ -1,11 +1,9 @@
 import { CATEGORIES } from './cashledger/constants';
 import CompanyBoardMinimap from './CompanyBoardMinimap';
-import { useAI } from '../hooks/useAI';
 import { useState, useRef } from 'react';
 import { buildTransactionEntries } from './cashledger/buildTransactionEntries';
 import AddTransactionModal from './cashledger/AddTransactionModal';
 import TimelineList from './cashledger/TimelineList';
-import AIAdvisorBanner from './cashledger/AIAdvisorBanner';
 
 function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod, transactionMode, setTransactionMode, enableCredit = true }) {
   const modalContentRef = useRef(null);
@@ -86,12 +84,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
   const [calcInput, setCalcInput] = useState('');
   const [showCalculator, setShowCalculator] = useState(false);
   const [showMinimap, setShowMinimap] = useState(false);
-
-  // AIアドバイザー: リアルタイム警告（当期中のみバナーを閉じられる。永続化はしない）
-  const { warnings: aiWarnings } = useAI(results, currentPeriod);
-  const [aiAdvisorClosed, setAiAdvisorClosed] = useState(false);
-  // 「問題なし(success)」だけのときはバナーを出さない。danger/warning があるときのみ表示。
-  const actionableWarnings = (aiWarnings || []).filter(w => w.type === 'danger' || w.type === 'warning');
 
   // フォームリセット関数
   const resetForm = () => {
@@ -327,14 +319,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
           </div>
         </div>
       </div>
-
-      {/* 💡 AIアドバイザー（リアルタイム警告バナー） */}
-      {!aiAdvisorClosed && actionableWarnings.length > 0 && (
-        <AIAdvisorBanner
-          actionableWarnings={actionableWarnings}
-          onClose={() => setAiAdvisorClosed(true)}
-        />
-      )}
 
       {/* 会社盤ミニマップのアコーディオン */}
       <div style={{ margin: '8px 16px' }}>
