@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>戦略MGアプリ かんたん操作ガイド</title>
+<style>
+  /* ===== 日本語改行ベース ===== */
+  body {
+    word-break: auto-phrase;
+    overflow-wrap: break-word;
+    line-break: strict;
+  }
+  h1, h2, h3 { text-wrap: balance; }
+  .nb { display: inline-block; }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @page { size: A4; margin: 0; }
+  body {
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    width: 210mm; height: 297mm;
+    padding: 9mm 10mm;
+    color: #1e293b; font-size: 9.2pt; line-height: 1.5;
+    display: flex; flex-direction: column; gap: 4mm;
+  }
+  header { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2.5px solid #3b5bdb; padding-bottom: 2mm; }
+  h1 { font-size: 15pt; color: #3b5bdb; }
+  header .sub { font-size: 8pt; color: #64748b; }
+  h2 { font-size: 10.5pt; color: #3b5bdb; margin-bottom: 1.5mm; display: flex; align-items: center; gap: 4px; }
+  h2 .num { background: #3b5bdb; color: #fff; border-radius: 50%; width: 15px; height: 15px; display: inline-flex; align-items: center; justify-content: center; font-size: 8.5pt; flex: none; }
+  .row { display: flex; gap: 4mm; }
+  .col { flex: 1; }
+  .card { border: 1px solid #cbd5e1; border-radius: 2mm; padding: 2.5mm 3mm; }
+
+  /* 画面の見方 */
+  .tabs { display: flex; gap: 1.5mm; margin-top: 1mm; }
+  .tab { flex: 1; text-align: center; border: 1px solid #cbd5e1; border-radius: 1.5mm; padding: 1.2mm 0.5mm; font-size: 7.6pt; background: #f8fafc; }
+  .tab b { display: block; font-size: 8.6pt; color: #3b5bdb; }
+
+  /* フロー図 */
+  .flow { display: flex; align-items: stretch; gap: 1mm; margin-top: 1mm; }
+  .flow .step { flex: 1; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 1.5mm; text-align: center; padding: 1.5mm 0.5mm; font-size: 7.8pt; display: flex; flex-direction: column; justify-content: center; }
+  .flow .step b { font-size: 8.6pt; color: #3730a3; }
+  .flow .arrow { align-self: center; color: #94a3b8; font-weight: bold; font-size: 9pt; }
+
+  /* 3ステップ */
+  .steps3 { display: flex; gap: 2mm; margin-top: 1mm; }
+  .steps3 .s { flex: 1; text-align: center; border: 1.5px dashed #93c5fd; border-radius: 1.5mm; padding: 1.5mm; font-size: 8pt; background: #f0f9ff; }
+  .steps3 .s b { display: block; font-size: 9pt; color: #1d4ed8; }
+
+  /* 練習シナリオ表 */
+  table { width: 100%; border-collapse: collapse; margin-top: 1mm; }
+  th, td { border: 1px solid #cbd5e1; padding: 1mm 1.6mm; font-size: 8.2pt; text-align: left; }
+  th { background: #3b5bdb; color: #fff; font-size: 8pt; }
+  td.money { text-align: right; font-weight: 700; color: #0f766e; white-space: nowrap; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .hint { color: #64748b; font-size: 7.6pt; }
+
+  /* 困ったとき */
+  .qa { margin-top: 1mm; }
+  .qa dt { font-weight: 700; font-size: 8.4pt; color: #b91c1c; margin-top: 1.2mm; }
+  .qa dt::before { content: "Q. "; }
+  .qa dd { font-size: 8.2pt; margin-left: 4mm; }
+  .qa dd::before { content: "→ "; color: #3b5bdb; font-weight: 700; }
+
+  .warn { background: #fef3c7; border: 1px solid #fbbf24; border-radius: 1.5mm; padding: 1.8mm 2.5mm; font-size: 8.4pt; margin-top: auto; }
+  .warn b { color: #92400e; }
+  footer { text-align: right; font-size: 6.8pt; color: #94a3b8; }
+</style>
+</head>
+<body>
+  <header>
+    <h1><span class="nb">戦略MGアプリ</span> <span class="nb">かんたん操作ガイド</span></h1>
+    <div class="sub">スマホのブラウザでURLを開くだけ・アプリのインストール不要</div>
+  </header>
+
+  <section>
+    <h2><span class="num">1</span><span class="nb">画面の見方</span>（下の5つのタブで切り替え）</h2>
+    <div class="tabs">
+      <div class="tab"><b>出納帳</b>取引を入力する<br>メイン画面</div>
+      <div class="tab"><b>決算書</b>P/L・B/S・<br>推移グラフ</div>
+      <div class="tab"><b>期末処理</b>期の終わりの<br>締め作業</div>
+      <div class="tab"><b>計画表</b>次の期の<br>目標と予算</div>
+      <div class="tab"><b>設定</b>ルーム参加・<br>リセット</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">2</span><span class="nb">会社経営の基本サイクル</span></h2>
+    <div class="flow">
+      <div class="step"><b>機械を買う</b>設備投資</div><div class="arrow">→</div>
+      <div class="step"><b>人を雇う</b>採用</div><div class="arrow">→</div>
+      <div class="step"><b>材料を買う</b>材料購入</div><div class="arrow">→</div>
+      <div class="step"><b>作る</b>投入→完成<br>の2段階</div><div class="arrow">→</div>
+      <div class="step"><b>売る</b>商品販売</div><div class="arrow">→</div>
+      <div class="step"><b>決算</b>決算書で<br>利益を確認</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">3</span><span class="nb">取引の入力は</span><span class="nb">いつでも3ステップ</span></h2>
+    <div class="steps3">
+      <div class="s"><b>① 右下の青い「＋」</b>をタップ</div>
+      <div class="s"><b>② 取引の種類を選ぶ</b>数量・金額を入れる</div>
+      <div class="s"><b>③「取引を追加する」</b>伝票番号は自動で付く</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">4</span><span class="nb">練習シナリオ</span>（講師と一緒に入力・現金残高が合っているか毎回確認）</h2>
+    <table>
+      <tr><th style="width:5mm">#</th><th>操作</th><th style="width:30mm">入力する内容</th><th style="width:17mm">現金残高</th></tr>
+      <tr><td>—</td><td>「参加せずに一人でプレイする」で開始</td><td>—</td><td class="money">¥300万</td></tr>
+      <tr><td>①</td><td>設備投資</td><td>小型機械 1台</td><td class="money">¥200万</td></tr>
+      <tr><td>②</td><td>採用</td><td>ワーカー1・セールスマン1</td><td class="money">¥190万</td></tr>
+      <tr><td>③</td><td>材料購入（現金）</td><td>札幌 2個</td><td class="money">¥170万</td></tr>
+      <tr><td>④</td><td>投入・完成</td><td>投入(コ) 1</td><td class="money">¥168万</td></tr>
+      <tr><td>⑤</td><td>投入・完成（もう一度）</td><td>完成(サ) 1</td><td class="money">¥167万</td></tr>
+      <tr><td>⑥</td><td>商品販売（現金）</td><td>東京 単価30 × 1個</td><td class="money">¥197万</td></tr>
+      <tr><td>⑦</td><td>銀行借入 <span class="hint">利息10万が自動計上</span></td><td>100</td><td class="money">¥287万</td></tr>
+    </table>
+    <div class="hint" style="margin-top:1mm">仕上げ: 決算書タブで経常利益（約▲63万＝投資先行の赤字でOK）を確認 → 設定タブ「全てのゲームデータを初期化する」→ 本番ルームへ参加</div>
+  </section>
+
+  <div class="row">
+    <section class="col card">
+      <h2><span class="num">5</span><span class="nb">困ったとき</span></h2>
+      <dl class="qa">
+        <dt>入力を間違えた</dt>
+        <dd>出納帳の取引履歴で、その行の赤いゴミ箱をタップして削除→入れ直し</dd>
+        <dt>全部消してしまった</dt>
+        <dd>設定タブ「⏪ 最後のリセットを取り消す」で直前に戻せる（1回だけ）</dd>
+        <dt>「同期エラー」と出る</dt>
+        <dd>自動で再送されるので少し待つ。続くなら設定タブ「手動で強制同期する」</dd>
+        <dt>スマホを再起動してしまった</dt>
+        <dd>同じルームID・同じ名前で再参加→「復元して再開」を選ぶ</dd>
+      </dl>
+    </section>
+    <section class="col card">
+      <h2><span class="num">6</span><span class="nb">本番ルームへの参加</span></h2>
+      <div style="font-size:8.6pt">
+        設定タブ →「ルーム設定を変更する」→<br>
+        <b>ルームID</b>: 講師が提示したIDを正確に入力<br>
+        <b>プレイヤー名</b>: <b style="color:#b91c1c">必ずフルネーム</b>（同姓の人とデータが混ざるのを防ぐため）<br>
+        →「参加する」→ ヘッダの雲マークが<b>「同期完了」</b>になれば成功
+      </div>
+      <div class="warn" style="margin-top:2mm">
+        <b>⚠ 注意</b>: ゲーム中はブラウザの履歴削除・シークレットモードを使わない（データが消えます）。URLは案内された1つだけを使う。
+      </div>
+    </section>
+  </div>
+
+  <footer>戦略MG モバイルアプリ 操作ガイド v1.0</footer>
+</body>
+</html>

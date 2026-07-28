@@ -39,3 +39,4 @@ venv/
 # Test artifacts
 playwright-report
 test-results
+scratch
