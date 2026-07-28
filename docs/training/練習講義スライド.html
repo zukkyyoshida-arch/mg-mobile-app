@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>戦略MG 体験プレイガイダンス</title>
+<style>
+  /* ===== 日本語改行ベース ===== */
+  body { word-break: auto-phrase; overflow-wrap: break-word; line-break: strict; }
+  h1, h2, h3 { text-wrap: balance; }
+  .nb { display: inline-block; }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @page { size: 1280px 720px; margin: 0; }
+  body { font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; color: #1e293b; }
+
+  .slide {
+    width: 1280px; height: 720px; page-break-after: always;
+    display: flex; flex-direction: column; position: relative; overflow: hidden;
+    background: #fff;
+  }
+  .slide-head {
+    display: flex; align-items: center; gap: 18px;
+    padding: 26px 48px 14px; border-bottom: 3px solid #e2e8f0;
+  }
+  .step-chip {
+    background: #3b5bdb; color: #fff; font-weight: 800; font-size: 22px;
+    border-radius: 12px; padding: 8px 18px; white-space: nowrap;
+  }
+  .step-chip.green { background: #0d9488; }
+  .step-chip.red { background: #e11d48; }
+  h2 { font-size: 38px; font-weight: 800; }
+  .time-badge { margin-left: auto; color: #64748b; font-size: 20px; font-weight: 700; white-space: nowrap; }
+
+  .slide-body { flex: 1; display: flex; gap: 40px; padding: 24px 48px 20px; align-items: stretch; }
+  .shot { flex: none; width: 300px; display: flex; align-items: center; justify-content: center; }
+  .shot img { max-width: 300px; max-height: 560px; border-radius: 18px; border: 1px solid #cbd5e1; box-shadow: 0 8px 24px rgba(15,23,42,.12); }
+  .shot.wide { width: 640px; gap: 24px; }
+  .shot.wide img { max-width: 300px; }
+
+  .content { flex: 1; display: flex; flex-direction: column; gap: 22px; justify-content: center; min-width: 0; }
+  .instruction { font-size: 30px; line-height: 1.6; }
+  .instruction b { color: #3b5bdb; }
+  .instruction .tap { color: #e11d48; font-weight: 800; }
+  ol.big { font-size: 29px; line-height: 1.7; padding-left: 1.4em; }
+  ol.big li { margin-bottom: 10px; }
+  ol.big b { color: #e11d48; }
+
+  .checkpoint {
+    background: #ecfdf5; border: 2.5px solid #0d9488; border-radius: 16px;
+    padding: 16px 26px; font-size: 28px; font-weight: 800; color: #065f46;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .checkpoint .money { font-size: 40px; color: #0d9488; }
+  .note {
+    background: #fefce8; border-left: 6px solid #eab308; border-radius: 0 10px 10px 0;
+    padding: 12px 20px; font-size: 22px; color: #713f12; line-height: 1.55;
+  }
+  .learn {
+    background: #eef2ff; border-left: 6px solid #3b5bdb; border-radius: 0 10px 10px 0;
+    padding: 12px 20px; font-size: 22px; color: #312e81; line-height: 1.55;
+  }
+
+  .slide-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 48px 16px; color: #94a3b8; font-size: 16px;
+  }
+
+  /* タイトルスライド */
+  .title-slide { background: linear-gradient(135deg, #1e2a78 0%, #3b5bdb 60%, #4f74e3 100%); color: #fff; justify-content: center; padding: 0 90px; }
+  .title-slide h1 { font-size: 62px; font-weight: 900; margin-bottom: 22px; }
+  .title-slide .lead { font-size: 30px; opacity: .92; margin-bottom: 44px; }
+  .goals { display: flex; gap: 22px; }
+  .goal { background: rgba(255,255,255,.14); border: 1.5px solid rgba(255,255,255,.4); border-radius: 18px; padding: 22px 26px; flex: 1; }
+  .goal b { display: block; font-size: 26px; margin-bottom: 8px; }
+  .goal span { font-size: 20px; opacity: .9; line-height: 1.5; }
+
+  /* まとめスライド */
+  .end-list { font-size: 30px; line-height: 2.0; }
+  .end-list li { list-style: none; padding-left: 1.6em; text-indent: -1.6em; }
+</style>
+</head>
+<body>
+
+<!-- 1: タイトル -->
+<section class="slide title-slide">
+  <h1><span class="nb">戦略MGアプリ</span> <span class="nb">体験プレイガイダンス</span></h1>
+  <div class="lead"><span class="nb">本番のゲームに入る前に、</span><span class="nb">アプリの操作を</span><span class="nb">30分でマスターします</span></div>
+  <div class="goals">
+    <div class="goal"><b>🎯 今日のゴール</b><span>会社経営の1サイクル（買う→作る→売る）をアプリで体験する</span></div>
+    <div class="goal"><b>📱 使うもの</b><span>お手元のスマホだけ。アプリのインストールは不要です</span></div>
+    <div class="goal"><b>🤝 進め方</b><span>スクリーンと同じ操作を一緒に。迷ったらすぐ挙手でOK</span></div>
+  </div>
+</section>
+
+<!-- 2: アプリを開く -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip">STEP 1</div><h2><span class="nb">アプリを開いて</span><span class="nb">練習モードで開始</span></h2><div class="time-badge">⏱ 3分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/01_join_solo.png"></div>
+    <div class="content">
+      <ol class="big">
+        <li>案内された<b>URL</b>をスマホのブラウザで開く</li>
+        <li><b>「参加せずに一人でプレイする」</b>をタップ</li>
+      </ol>
+      <div class="note">練習モードは通信を使いません。電波が悪くても大丈夫です。</div>
+      <div class="checkpoint">✅ 現金 <span class="money">¥300万</span> が見えたらOK</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>2 / 16</span></div>
+</section>
+
+<!-- 3: 画面の見方 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip">STEP 2</div><h2>画面の見方</h2><div class="time-badge">⏱ 1分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/02_main.png"></div>
+    <div class="content">
+      <div class="instruction">
+        画面下の5つのタブで切り替えます：<br>
+        <b>出納帳</b>（取引入力・今日のメイン）／<b>決算書</b>／<b>期末処理</b>／<b>計画表</b>／<b>設定</b>
+      </div>
+      <div class="instruction">取引の入力はすべて<span class="tap">右下の青い「＋」ボタン</span>からです。</div>
+      <div class="learn">💡 上部の「同期完了」表示は、講師のダッシュボードにあなたの成績が届いている合図です（練習中は「オフライン」でOK）。</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>3 / 16</span></div>
+</section>
+
+<!-- 4: 取引入力の型 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip">STEP 3</div><h2><span class="nb">取引入力は</span><span class="nb">いつでも3ステップ</span></h2><div class="time-badge">⏱ 1分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/03_modal_category.png"></div>
+    <div class="content">
+      <ol class="big">
+        <li>右下の<b>「＋」</b>をタップ</li>
+        <li><b>取引の種類</b>を選ぶ（数量や金額を入れる）</li>
+        <li>一番下の<b>「取引を追加する」</b>をタップ</li>
+      </ol>
+      <div class="learn">💡 伝票番号は自動で連番が振られます。入力は不要です。</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>4 / 16</span></div>
+</section>
+
+<!-- 5: 取引1 設備投資 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip red">取引 ①</div><h2><span class="nb">設備投資 —</span> <span class="nb">機械を買う</span></h2><div class="time-badge">⏱ 2分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/04_invest.png"></div>
+    <div class="content">
+      <div class="instruction">＋ → <b>設備投資</b> → <span class="tap">小型機械の「＋」を1回</span>（100万）→ 取引を追加する</div>
+      <div class="learn">💡 工場に機械がないと何も作れません。まずは生産設備から。</div>
+      <div class="checkpoint">✅ 現金 <span class="money">¥200万</span>（伝票 #1）</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>5 / 16</span></div>
+</section>
+
+<!-- 6: 取引2 採用 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip red">取引 ②</div><h2><span class="nb">採用 —</span> <span class="nb">人を雇う</span></h2><div class="time-badge">⏱ 1分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/05_hire.png"></div>
+    <div class="content">
+      <div class="instruction"><b>採用</b> → <span class="tap">ワーカー採用数に 1</span>、<span class="tap">セールスマン採用数に 1</span> → 取引を追加する</div>
+      <div class="learn">💡 ワーカーは工場担当、セールスマンは営業担当。機械と人が揃って初めて会社が動きます。</div>
+      <div class="checkpoint">✅ 現金 <span class="money">¥190万</span>（伝票 #2）</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>6 / 16</span></div>
+</section>
+
+<!-- 7: 取引3 材料 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip red">取引 ③</div><h2><span class="nb">材料購入 —</span> <span class="nb">材料を仕入れる</span></h2><div class="time-badge">⏱ 2分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/06_material.png"></div>
+    <div class="content">
+      <div class="instruction"><b>材料購入（現金）</b> → <span class="tap">札幌の「＋」を2回</span>（単価10万×2個）→ 取引を追加する</div>
+      <div class="learn">💡 材料を置ける上限は「生産能力×2」。さっき機械と人を入れたから買えるようになりました。この順番が経営の基本です。</div>
+      <div class="checkpoint">✅ 現金 <span class="money">¥170万</span>（伝票 #3）</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>7 / 16</span></div>
+</section>
+
+<!-- 8: 取引4 投入 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip red">取引 ④</div><h2><span class="nb">投入 —</span> <span class="nb">材料を工場へ</span></h2><div class="time-badge">⏱ 1分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/07_input.png"></div>
+    <div class="content">
+      <div class="instruction"><b>投入・完成</b> → <span class="tap">投入(コ)の「＋」を1回</span> → 取引を追加する</div>
+      <div class="learn">💡 材料が「仕掛品（作りかけ）」に変わりました。ものづくりは投入→完成の2段階です。</div>
+      <div class="checkpoint">✅ 現金 <span class="money">¥168万</span>（伝票 #4）</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>8 / 16</span></div>
+</section>
+
+<!-- 9: 取引5 完成 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip red">取引 ⑤</div><h2><span class="nb">完成 —</span> <span class="nb">製品ができる</span></h2><div class="time-badge">⏱ 1分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/08_complete.png"></div>
+    <div class="content">
+      <div class="instruction">もう一度 <b>投入・完成</b> → 今度は<span class="tap">完成(サ)の「＋」を1回</span> → 取引を追加する</div>
+      <div class="learn">💡 仕掛品が「完成品」になりました。これでようやく売り物があります。</div>
+      <div class="checkpoint">✅ 現金 <span class="money">¥167万</span>（伝票 #5）</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>9 / 16</span></div>
+</section>
+
+<!-- 10: 取引6 販売 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip red">取引 ⑥</div><h2><span class="nb">商品販売 —</span> <span class="nb">初めての売上！</span></h2><div class="time-badge">⏱ 2分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/09_sale.png"></div>
+    <div class="content">
+      <div class="instruction"><b>商品販売（現金）</b> → <span class="tap">東京の単価に 30</span> と入力 → <span class="tap">「＋」を1回</span> → 取引を追加する</div>
+      <div class="learn">💡 市場ごとに売れる上限価格が違います（東京はMAX 32万）。どこでいくらで売るかが腕の見せどころ。</div>
+      <div class="checkpoint">🎉 現金 <span class="money">¥197万</span>（伝票 #6）</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>10 / 16</span></div>
+</section>
+
+<!-- 11: 取引7 借入 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip red">取引 ⑦</div><h2><span class="nb">銀行借入 —</span> <span class="nb">お金を借りる</span></h2><div class="time-badge">⏱ 2分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/10_loan.png"></div>
+    <div class="content">
+      <div class="instruction"><b>銀行借入</b> → <span class="tap">金額に 100</span> と入力 → 取引を追加する</div>
+      <div class="learn">💡 利息10万円が<b>自動で費用計上</b>されるメッセージが出ます。借入には必ずコストが付く——大事な体験です。</div>
+      <div class="checkpoint">✅ 現金 <span class="money">¥287万</span>（伝票 #7・#8）</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>11 / 16</span></div>
+</section>
+
+<!-- 12: ここまでの成果 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip green">確認</div><h2><span class="nb">8つの取引が</span><span class="nb">できました</span></h2><div class="time-badge">⏱ 1分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/11_after_all.png"></div>
+    <div class="content">
+      <div class="instruction">出納帳のタイムラインに、いま入力した取引が並んでいます。</div>
+      <div class="note">🗑 入力を間違えたら：その取引の右端の<b>赤いゴミ箱</b>をタップして削除→入れ直せばOK。焦らなくて大丈夫です。</div>
+      <div class="checkpoint">✅ 「第 8 取引完了」・現金 <span class="money">¥287万</span> になっていますか？</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>12 / 16</span></div>
+</section>
+
+<!-- 13: 決算書 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip green">STEP 4</div><h2>決算書を見てみる</h2><div class="time-badge">⏱ 2分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/12_pl.png"></div>
+    <div class="content">
+      <div class="instruction">下タブの<b>「決算書」</b>をタップ。P/L（損益計算書）が見えます。</div>
+      <div class="learn">💡 売上30万あったのに経常利益は<b>約▲63万の赤字</b>。機械や人への投資が先行するのが第1期の姿です。ここからどう黒字化するかが本番のテーマ。</div>
+      <div class="instruction">B/S（貸借）や<b>「推移」</b>タブも眺めてみてください。期が進むと折れ線が伸びていきます。</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>13 / 16</span></div>
+</section>
+
+<!-- 14: リセット -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip green">STEP 5</div><h2><span class="nb">練習データを</span><span class="nb">まっさらに戻す</span></h2><div class="time-badge">⏱ 2分</div></div>
+  <div class="slide-body">
+    <div class="shot"><img src="slides/img/13_reset.png"></div>
+    <div class="content">
+      <div class="instruction"><b>設定</b>タブ → 一番下の<span class="tap">「全てのゲームデータを初期化する」</span> → OK</div>
+      <div class="note">⏪ 間違えて消しても、設定タブの「最後のリセットを取り消す」で1回だけ戻せます。</div>
+      <div class="checkpoint">✅ 現金が <span class="money">¥300万</span>・取引0件に戻ればOK</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>14 / 16</span></div>
+</section>
+
+<!-- 15: 本番ルーム参加 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip red">本番</div><h2><span class="nb">本番ルームに</span><span class="nb">参加する</span></h2><div class="time-badge">⏱ 4分</div></div>
+  <div class="slide-body">
+    <div class="shot wide"><img src="slides/img/14_room_change.png"><img src="slides/img/15_join_room.png"></div>
+    <div class="content">
+      <ol class="big">
+        <li><b>設定</b>タブ →「ルーム設定を変更する」</li>
+        <li>ルームID：<b>スクリーンのIDを正確に</b></li>
+        <li>プレイヤー名：<b>必ずフルネーム</b></li>
+        <li>「参加する」をタップ</li>
+      </ol>
+      <div class="note">⚠ 同姓の方とデータが混ざらないよう、名前は必ずフルネームで。</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>15 / 16</span></div>
+</section>
+
+<!-- 16: 完了 -->
+<section class="slide">
+  <div class="slide-head"><div class="step-chip green">完了</div><h2>接続チェックと約束ごと</h2><div class="time-badge">⏱ 3分（+質疑）</div></div>
+  <div class="slide-body">
+    <div class="content" style="justify-content:center">
+      <ul class="end-list">
+        <li>✅ 画面上部が<b style="color:#3b5bdb">「同期完了」</b>になっている</li>
+        <li>✅ スクリーンのダッシュボードに<b style="color:#3b5bdb">自分の名前</b>が出ている</li>
+        <li>⚠️ ゲーム中は<b style="color:#e11d48">ブラウザの履歴削除・シークレットモード禁止</b>（データが消えます）</li>
+        <li>⚠️ URLは案内された<b style="color:#e11d48">1つだけ</b>を使う（乗り換えるとデータが引き継がれません）</li>
+        <li>🙋 スマホが落ちた・再起動した → 同じルームID・同じ名前で再参加→<b style="color:#3b5bdb">「復元して再開」</b></li>
+      </ul>
+      <div class="checkpoint" style="margin-top:10px">これで準備完了。ここからは皆さんの経営手腕の見せどころです！</div>
+    </div>
+  </div>
+  <div class="slide-foot"><span>戦略MG 体験プレイガイダンス</span><span>16 / 16</span></div>
+</section>
+
+</body>
+</html>
