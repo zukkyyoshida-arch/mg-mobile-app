@@ -17,6 +17,54 @@
 //   rand: () => number（既定 Math.random）。monopoly_ad のタイムスタンプ生成で使用
 
 import { MARKETS, MACHINES, ADS, CATEGORIES } from './constants';
+import { calculateFinancials } from '../../utils/calculations';
+
+// 現金残高チェック（追加すると現金がマイナスになる取引をブロックする）。
+// 残高は自前で足し引きせず calculateFinancials に委ねる。
+// カテゴリごとの入出金判定（isCash / type）が既にそこに集約されており、
+// ここで再実装すると二重定義になって将来ずれるため。
+//
+// 戻り値: { error } … 残高不足でブロックする場合 / null … 問題なし
+export function checkCashBalance(ctx, updatedLedger) {
+  const { carryover, actuals, currentPeriod } = ctx;
+  if (!carryover) return null;
+
+  // actuals は呼び出し側の ctx に含まれない場合がある（undefined になる）。
+  // calculateFinancials 内で actuals を参照するのは期末処理後の人員数の確定だけで、
+  // 現金残高（bookEndingCash = carryover.cash + cashInflow − cashOutflow）には影響しないため、
+  // 残高チェックの用途では undefined のままで正しく判定できる。
+  const before = calculateFinancials(carryover, ctx.ledger || [], actuals, currentPeriod);
+  const after = calculateFinancials(carryover, updatedLedger, actuals, currentPeriod);
+
+  // calculateFinancials が返す現金残高のフィールド名は bookEndingCash
+  // （= carryover.cash + cashInflow − cashOutflow）。
+  const beforeCash = Number(before?.bookEndingCash);
+  const afterCash = Number(after?.bookEndingCash);
+  if (!Number.isFinite(afterCash)) return null;
+
+  // 元々マイナスの状態からさらに減らす場合も止める。
+  // 逆に、マイナスからの回復（入金）は通す。
+  if (afterCash < 0 && afterCash < beforeCash) {
+    const shortfall = Math.abs(afterCash);
+    return {
+      error: `この取引を登録すると現金が ¥${afterCash.toLocaleString()}万 になり、資金が ¥${shortfall.toLocaleString()}万 不足します。\n`
+        + `現在の現金残高は ¥${Number.isFinite(beforeCash) ? beforeCash.toLocaleString() : '—'}万 です。\n\n`
+        + `金額や数量を確認してください。資金が足りない場合は「銀行借入(オ)」で資金を調達してから登録してください。`
+    };
+  }
+  return null;
+}
+
+// 取引1件を ledger から取り除く。
+// groupId を持つ取引（退職＋退職費用、借入＋自動利息のように同時登録される組）は
+// 組ごと取り除く。片方だけ残すと帳簿の整合が崩れるため。
+export function removeEntry(ledger, entry) {
+  if (!entry) return ledger;
+  if (entry.groupId) {
+    return ledger.filter(e => e.groupId !== entry.groupId);
+  }
+  return ledger.filter(e => e.id !== entry.id);
+}
 
 // 伝票番号の自動採番（既存の最大番号+1。削除があっても重複しない）。
 // 元 CashLedger.jsx の getNextVoucherNo と同一実装。
@@ -234,10 +282,13 @@ function buildProduction(ctx, form) {
     return { error: '投入または完成する数量を入力してください' };
   }
 
+  // 伝票番号は他の枝と同様に採番する。
+  // 未設定だと画面に裸の「#」が出て、伝票番号で突き合わせる研修で照合できなくなる。
   const newTransactions = [];
   if (saQty > 0) {
     newTransactions.push({
       id: now.toString() + '-sa',
+      voucherNo: getNextVoucherNo([...ledger, ...newTransactions]).toString(),
       category: 'サ',
       quantity: saQty,
       amount: saQty * 1,
@@ -248,6 +299,7 @@ function buildProduction(ctx, form) {
   if (koQty > 0) {
     newTransactions.push({
       id: now.toString() + '-ko',
+      voucherNo: getNextVoucherNo([...ledger, ...newTransactions]).toString(),
       category: 'コ',
       quantity: koQty,
       amount: koQty * 2,
@@ -570,12 +622,21 @@ export function buildTransactionEntries(ctx, form) {
     return { error: '項目を選択してください' };
   }
 
+  // 成功結果に対して残高チェックを掛ける。
+  // 全経路（早期リターン枝 / fall-through 枝）がこのラッパーを通るため、
+  // 枝ごとにチェックを散らして漏らす事故を防げる。
+  const guard = (result) => {
+    if (!result || result.error || !result.ledger) return result;
+    const balanceError = checkCashBalance(fullCtx, result.ledger);
+    return balanceError || result;
+  };
+
   // --- 早期リターン枝（独自にエントリを組み立てて確定する） ---
-  if (selectedCategory === '売掛割引') return buildFactoring(fullCtx, form);
-  if (selectedCategory === 'リスクカード') return buildRiskCard(fullCtx, form);
-  if (selectedCategory === '期首処理') return buildPeriodOpening(fullCtx, form);
-  if (selectedCategory === '生産') return buildProduction(fullCtx, form);
-  if (selectedCategory === '緑チップ') return buildGreenChips(fullCtx, form);
+  if (selectedCategory === '売掛割引') return guard(buildFactoring(fullCtx, form));
+  if (selectedCategory === 'リスクカード') return guard(buildRiskCard(fullCtx, form));
+  if (selectedCategory === '期首処理') return guard(buildPeriodOpening(fullCtx, form));
+  if (selectedCategory === '生産') return guard(buildProduction(fullCtx, form));
+  if (selectedCategory === '緑チップ') return guard(buildGreenChips(fullCtx, form));
 
   // --- fall-through 枝（final を作って共通エントリ生成へ） ---
   let final;
@@ -601,5 +662,5 @@ export function buildTransactionEntries(ctx, form) {
 
   if (final.error) return { error: final.error };
 
-  return finalizeCommonEntry(fullCtx, form, final);
+  return guard(finalizeCommonEntry(fullCtx, form, final));
 }

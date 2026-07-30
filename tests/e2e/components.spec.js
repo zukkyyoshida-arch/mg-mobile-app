@@ -66,10 +66,97 @@ test.describe('MG Mobile App - コンポーネント機能テスト', () => {
       await expect(page.getByText('資金の借入')).toBeVisible();
 
       // 借入(#1)と自動利息(#2)の2件が入っているので、1件目を削除
-      await page.getByRole('button', { name: 'Delete transaction' }).first().click();
+      // （aria-label は「<取引名> を削除する」形式）
+      await page.getByRole('button', { name: /を削除する$/ }).first().click();
 
       // 削除後もタイムラインが壊れず表示されること（残り件数は実装依存のため厳密件数は問わない）
       await expect(page.getByText('取引履歴タイムライン')).toBeVisible();
+    });
+  });
+
+  // ダイアログは beforeEach の page.on('dialog', accept) が全て承諾する。
+  // ここで独自にハンドラを足すと二重登録になり "already handled" で落ちるため足さない。
+  test.describe('取引のやり直し（編集）', () => {
+    test('「直す」で取引を取り消し、同じ項目の入力画面が開くこと', async ({ page }) => {
+      await page.getByRole('button', { name: 'Add transaction' }).click();
+      await page.getByRole('button', { name: '銀行借入' }).click();
+      await page.getByPlaceholder('金額を入力').fill('50');
+      await page.getByRole('button', { name: '取引を追加する' }).click();
+      await page.getByRole('button', { name: '×' }).click();
+
+      await expect(page.getByText('資金の借入')).toBeVisible();
+
+      // 借入(#1)と自動利息(#2)が入っている。借入側の「直す」を押す
+      await page.getByRole('button', { name: '資金の借入 を入力し直す' }).click();
+
+      // 取り消した取引が消え、入力モーダルが開いていること
+      await expect(page.getByText('資金の借入')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: '取引を追加する' })).toBeVisible();
+    });
+
+    test('やり直しの確認ダイアログに取引内容と挙動が示されること', async ({ page }) => {
+      await page.getByRole('button', { name: 'Add transaction' }).click();
+      await page.getByRole('button', { name: 'その他出金' }).click();
+      await page.getByPlaceholder('金額を入力').fill('30');
+      await page.getByRole('button', { name: '取引を追加する' }).click();
+      await page.getByRole('button', { name: '×' }).click();
+
+      // beforeEach のハンドラより先に評価される listener でメッセージを覗く
+      let confirmText = '';
+      page.on('dialog', dialog => { if (!confirmText) confirmText = dialog.message(); });
+
+      await page.getByRole('button', { name: /を入力し直す$/ }).first().click();
+
+      expect(confirmText).toContain('取り消して');
+      expect(confirmText).toContain('30');
+      expect(confirmText).toContain('入力し直しますか');
+    });
+
+    test('やり直しても関連取引ごと取り消され、帳簿が壊れないこと', async ({ page }) => {
+      await page.getByRole('button', { name: 'Add transaction' }).click();
+      await page.getByRole('button', { name: '銀行借入' }).click();
+      await page.getByPlaceholder('金額を入力').fill('50');
+      await page.getByRole('button', { name: '取引を追加する' }).click();
+      await page.getByRole('button', { name: '×' }).click();
+
+      await page.getByRole('button', { name: '資金の借入 を入力し直す' }).click();
+      await page.getByRole('button', { name: '×' }).click();
+
+      // 借入が消え、タイムライン自体は壊れない
+      await expect(page.getByText('資金の借入')).toHaveCount(0);
+      await expect(page.getByText('取引履歴タイムライン')).toBeVisible();
+    });
+  });
+
+  test.describe('現金残高のガード', () => {
+    test('残高を超える支出は登録できず、不足額を伝える警告が出ること', async ({ page }) => {
+      // beforeEach のハンドラが accept するので、ここでは message を覗くだけにする
+      const messages = [];
+      page.on('dialog', dialog => messages.push(dialog.message()));
+
+      await page.getByRole('button', { name: 'Add transaction' }).click();
+      await page.getByRole('button', { name: 'その他出金' }).click();
+      await page.getByPlaceholder('金額を入力').fill('5000');
+      await page.getByRole('button', { name: '取引を追加する' }).click();
+
+      // 残高300万に対する5000万の出金 → 4,700万の不足を伝えてブロックする
+      expect(messages.join('\n')).toContain('不足');
+      expect(messages.join('\n')).toContain('4,700');
+      expect(messages.join('\n')).toContain('銀行借入');
+
+      // 登録されていないこと（モーダルを閉じてタイムラインを確認）
+      await page.getByRole('button', { name: '×' }).click();
+      await expect(page.getByText('取引データがありません。')).toBeVisible();
+    });
+
+    test('残高の範囲内の支出は登録できること', async ({ page }) => {
+      await page.getByRole('button', { name: 'Add transaction' }).click();
+      await page.getByRole('button', { name: 'その他出金' }).click();
+      await page.getByPlaceholder('金額を入力').fill('100');
+      await page.getByRole('button', { name: '取引を追加する' }).click();
+      await page.getByRole('button', { name: '×' }).click();
+
+      await expect(page.getByText('取引データがありません。')).toHaveCount(0);
     });
   });
 

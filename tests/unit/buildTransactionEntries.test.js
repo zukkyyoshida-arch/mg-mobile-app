@@ -406,3 +406,138 @@ describe('buildTransactionEntries - 採用と配置転換（既定枝）', () =>
     expect(res.error).toContain('生産能力');
   });
 });
+
+// 現金残高ガード。
+// 研修中に桁を打ち間違えた受講者が、現金がマイナスの帳簿のまま決算まで進んでしまう事故を防ぐ。
+// （ユーザーテスト準備時の実機検査で「残高288.5万に対し5000万の出金が無警告で通り、
+//   現金 -4,711.5万 になる」ことを確認したため追加した）
+describe('現金残高のガード', () => {
+  it('残高を超える支出はエラーになり、ledgerを更新しない', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'ス', amount: '5000' })
+    );
+    expect(res.error).toBeTruthy();
+    expect(res.ledger).toBeUndefined();
+  });
+
+  it('エラーメッセージに不足額・現在残高・対処法を含む', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'ス', amount: '5000' })
+    );
+    expect(res.error).toContain('4,700');    // 300 - 5000 = -4700 の不足額
+    expect(res.error).toContain('300');      // 現在の現金残高
+    expect(res.error).toContain('銀行借入'); // 資金調達の案内
+  });
+
+  it('残高ちょうどまでの支出は通る（境界値）', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'ス', amount: '300' })
+    );
+    expect(res.error).toBeUndefined();
+    expect(res.ledger).toHaveLength(1);
+  });
+
+  it('残高を1万超える支出は止まる（境界値）', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'ス', amount: '301' })
+    );
+    expect(res.error).toBeTruthy();
+  });
+
+  it('入金（現金売上）は残高に関係なく通る', () => {
+    const res = buildTransactionEntries(
+      makeCtx({ results: { productInventory: 5 } }),
+      makeForm({
+        selectedCategory: 'キ',
+        salesData: {
+          sapporo: { qty: 1, price: '30' }, sendai: { qty: 0, price: '' }, tokyo: { qty: 0, price: '' },
+          nagoya: { qty: 0, price: '' }, osaka: { qty: 0, price: '' }, fukuoka: { qty: 0, price: '' }
+        }
+      })
+    );
+    expect(res.error).toBeUndefined();
+    expect(res.ledger).toHaveLength(1);
+  });
+
+  it('既にマイナスの帳簿でも、入金は通る（回復を妨げない）', () => {
+    // 既存データが不正でも受講者が現金を回復できる経路を塞がないこと
+    const ctx = makeCtx({
+      carryover: { cash: 300, capital: 300, retainedEarnings: 0, loan: 0, receivables: 0, payables: 0, taxes: 0 },
+      ledger: [{ id: '1', voucherNo: '1', category: 'ス', quantity: 0, price: 0, amount: 5000 }],
+      results: { productInventory: 5 }
+    });
+    const res = buildTransactionEntries(ctx, makeForm({
+      selectedCategory: 'キ',
+      salesData: {
+        sapporo: { qty: 1, price: '30' }, sendai: { qty: 0, price: '' }, tokyo: { qty: 0, price: '' },
+        nagoya: { qty: 0, price: '' }, osaka: { qty: 0, price: '' }, fukuoka: { qty: 0, price: '' }
+      }
+    }));
+    expect(res.error).toBeUndefined();
+  });
+
+  it('既にマイナスの帳簿から、さらに減らす支出は止める', () => {
+    const ctx = makeCtx({
+      ledger: [{ id: '1', voucherNo: '1', category: 'ス', quantity: 0, price: 0, amount: 5000 }]
+    });
+    const res = buildTransactionEntries(ctx, makeForm({ selectedCategory: 'ス', amount: '10' }));
+    expect(res.error).toBeTruthy();
+  });
+
+  it('借入は入金なので通る（自動利息を引いても残高が残る場合）', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'オ', amount: '100' })
+    );
+    expect(res.error).toBeUndefined();
+    // 借入100 + 自動利息10 の2件
+    expect(res.ledger).toHaveLength(2);
+  });
+
+  it('材料購入も残高を超えれば止まる（早期リターン枝もガードされる）', () => {
+    const ctx = makeCtx({
+      carryover: { cash: 5, capital: 300, retainedEarnings: 0, loan: 0, receivables: 0, payables: 0, taxes: 0 },
+      results: { productionCapacity: 10 }
+    });
+    const res = buildTransactionEntries(ctx, makeForm({
+      selectedCategory: 'ツ',
+      marketQuantities: { sapporo: 2, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0, stocker: 0 },
+      price: '10'
+    }));
+    expect(res.error).toBeTruthy();
+  });
+
+  it('投入・完成にも伝票番号が採番される（画面に裸の「#」が出ない）', () => {
+    const ctx = makeCtx({
+      ledger: [{ id: 'x', voucherNo: '1', category: 'ケ', quantity: 1, price: 100, amount: 100 }],
+      results: { productionCapacity: 10, materialInventory: 10, wipInventory: 10 }
+    });
+    const res = buildTransactionEntries(ctx, makeForm({
+      selectedCategory: '生産', productionKo: '1', productionSa: '1'
+    }));
+    expect(res.error).toBeUndefined();
+    const added = res.ledger.slice(1);
+    expect(added).toHaveLength(2);
+    added.forEach(e => {
+      expect(e.voucherNo).toBeTruthy();
+      expect(Number(e.voucherNo)).toBeGreaterThan(1);
+    });
+    // 同時追加分どうしも番号が重複しない
+    expect(added[0].voucherNo).not.toBe(added[1].voucherNo);
+  });
+
+  it('生産（投入・完成）も残高を超えれば止まる', () => {
+    const ctx = makeCtx({
+      carryover: { cash: 1, capital: 300, retainedEarnings: 0, loan: 0, receivables: 0, payables: 0, taxes: 0 },
+      results: { productionCapacity: 10, materialInventory: 10, wipInventory: 10 }
+    });
+    const res = buildTransactionEntries(ctx, makeForm({
+      selectedCategory: '生産', productionKo: '5', productionSa: '5'
+    }));
+    expect(res.error).toBeTruthy();
+  });
+});

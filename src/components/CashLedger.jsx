@@ -1,7 +1,7 @@
 import { CATEGORIES } from './cashledger/constants';
 import CompanyBoardMinimap from './CompanyBoardMinimap';
 import { useState, useRef } from 'react';
-import { buildTransactionEntries } from './cashledger/buildTransactionEntries';
+import { buildTransactionEntries, removeEntry } from './cashledger/buildTransactionEntries';
 import AddTransactionModal from './cashledger/AddTransactionModal';
 import TimelineList from './cashledger/TimelineList';
 
@@ -163,14 +163,41 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     if (!entryToDelete) return;
 
     if (window.confirm("この取引データを削除してもよろしいですか？（関連する処理も同時に削除されます）")) {
-      let updated;
-      if (entryToDelete.groupId) {
-        updated = ledger.filter(entry => entry.groupId !== entryToDelete.groupId);
-      } else {
-        updated = ledger.filter(entry => entry.id !== id);
-      }
-      onUpdateLedger(updated);
+      onUpdateLedger(removeEntry(ledger, entryToDelete));
     }
+  };
+
+  // 取引のやり直し（＝編集）。
+  //
+  // 取引はカテゴリごとに構造が大きく異なる（採用は人数・販売は都市別・機械は種類別）ため、
+  // 汎用の編集フォームを別に作ると AddTransactionModal を二重実装することになり、
+  // 検証や計算がずれる。そこで「該当取引を取り消して、同じ項目の入力画面を開く」方式にする。
+  // 受講者は正しい値を入れ直すだけで済み、既存の検証（残高ガードを含む）がそのまま効く。
+  const handleRedoTransaction = (id) => {
+    const entry = ledger.find(t => t.id === id);
+    if (!entry) return;
+
+    const catMeta = CATEGORIES[entry.category];
+    const name = entry.customName || catMeta?.actionName || catMeta?.label || entry.category;
+
+    const ok = window.confirm(
+      `「${name}（#${entry.voucherNo ?? '—'}）¥${Number(entry.amount || 0).toLocaleString()}万」を取り消して、`
+      + `入力し直しますか？\n\n`
+      + `この取引を帳簿から削除し、同じ項目の入力画面を開きます。`
+      + `${entry.groupId ? '\n※ 同時に登録された関連処理もまとめて取り消されます。' : ''}`
+    );
+    if (!ok) return;
+
+    onUpdateLedger(removeEntry(ledger, entry));
+
+    // 入力し直しやすいように、元のカテゴリを選んだ状態でモーダルを開く。
+    // 金額や数量は敢えて復元しない（打ち間違いを直すのが目的で、
+    // 誤った値が入ったまま再登録される方が事故になりやすい）。
+    resetForm();
+    const reopenCategory = entry.category === 'タ' ? 'オ' : entry.category;
+    setSelectedCategory(reopenCategory);
+    setShowAddModal(true);
+    if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'auto' });
   };
 
   // 取引カテゴリ切り替え時の自動表示制御
@@ -412,6 +439,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
         visibleLedger={visibleLedger}
         carryoverCash={carryover.cash}
         onDelete={handleDeleteTransaction}
+        onRedo={handleRedoTransaction}
       />
 
       {/* 新規取引追加フローティングボタン(FAB) */}
