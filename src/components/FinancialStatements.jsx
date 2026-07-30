@@ -240,7 +240,12 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                   <td style={{ textAlign: 'right', fontWeight: '800' }}>¥{pl.profitBeforeTax.toLocaleString()}万</td>
                 </tr>
                 <tr>
-                  <td style={{ color: 'var(--text-secondary)' }}>未払法人税等 (30%)</td>
+                  {/* 税額が7万のときは均等割（最低税額）が適用されている。
+                      赤字でも7万を払うのがMGのルールなので、
+                      「(30%)」と出すと計算違いに見えてしまう。適用中の根拠を出す。 */}
+                  <td style={{ color: 'var(--text-secondary)' }}>
+                    未払法人税等 {pl.corporateTax <= 7 ? '(均等割 7万)' : '(利益の30%)'}
+                  </td>
                   <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>-¥{pl.corporateTax.toLocaleString()}万</td>
                 </tr>
                 <tr style={{ borderTop: '2px double var(--border-glass-focused)', fontWeight: '800', fontSize: '1rem' }}>
@@ -390,8 +395,14 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                   <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>¥{pl.profitBeforeTax.toLocaleString()}万</td>
                 </tr>
                 <tr>
+                  {/* 減価償却費は results.machines.depreciation をそのまま使う。
+                      以前は「製造固定費 − ス（製造経費）」で逆算していたため、
+                      PAC分や製造経費が償却額として混ざり、図解・固定資産台帳・予実ギャップと
+                      食い違う数字が出ていた（同じ状態で3画面が矛盾していた）。
+                      なお償却額は製造固定費に含まれており（manufacturingFixed = ス + 償却 + PAC）、
+                      固定費合計 F にも入っている。ここは非資金項目としての足し戻し額の内訳表示。 */}
                   <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 減価償却費 (非資金)</td>
-                  <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>+¥{pl.manufacturingFixed - (results.ledger?.filter(e => e.category === 'ス').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0) || 0)}万</td>
+                  <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>+¥{(results.machines?.depreciation || 0).toLocaleString()}万</td>
                 </tr>
                 <tr>
                   <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 在庫増減 (材料・仕掛・製品)</td>

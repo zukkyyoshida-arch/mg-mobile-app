@@ -454,3 +454,122 @@ describe('calculateFinancials - 旧test_*.jsスクリプトから引き継いだ
     expect(p2Results.salesmen).toBe(2);
   });
 });
+
+// C/F（キャッシュフロー計算書）の整合。
+// ユーザーテスト準備時の実機検査で「期首現金 + 当期キャッシュ増減 が期末現金残高と
+// 30万ずれる（差はB/Sの未払費用と一致）」ことを確認したため追加した。
+// 原因は営業CFに未払費用（未支出の給与・保険料）の足し戻しが無かったこと。
+describe('calculateFinancials - C/Fの帳尻', () => {
+  // UT検査で使った一連の取引（採用→機械→材料→投入→完成→販売）
+  const ledger = [
+    { id: '1', voucherNo: '1', category: '採用', quantity: 0, price: 0, amount: 5, workersHired: 1, salesmenHired: 0 },
+    { id: '2', voucherNo: '2', category: 'ケ', quantity: 1, price: 0, amount: 100, largeMachines: 0, smallMachines: 1, attachments: 0 },
+    { id: '3', voucherNo: '3', category: 'ツ', quantity: 2, price: 0, amount: 20 },
+    { id: '4', voucherNo: '4', category: 'コ', quantity: 1, price: 2, amount: 2 },
+    { id: '5', voucherNo: '5', category: 'サ', quantity: 1, price: 1, amount: 1 },
+    { id: '6', voucherNo: '6', category: 'キ', quantity: 1, price: 40, amount: 40 }
+  ];
+
+  it('期首現金 + 当期キャッシュ増減 = 期末現金残高 が成立する', () => {
+    const carryover = freshCarryover();
+    const res = calculateFinancials(carryover, ledger, {}, 1);
+
+    // これが崩れていたのが NG-3。差分は許容しない（1円単位で一致すべき）
+    expect(carryover.cash + res.cf.totalCF).toBe(res.bs.cash);
+    expect(res.bs.cash).toBe(res.bookEndingCash);
+  });
+
+  it('未払費用が計上されている状態でも帳尻が合う', () => {
+    const carryover = freshCarryover();
+    const res = calculateFinancials(carryover, ledger, {}, 1);
+
+    // 期末処理前なので未払費用（給与・保険料）が負債に立つ
+    expect(res.bs.accruedLaborCost).toBeGreaterThan(0);
+    // それでも C/F は帳尻が合う（足し戻しが効いている）
+    expect(carryover.cash + res.cf.totalCF).toBe(res.bs.cash);
+  });
+
+  it('取引が一切ない場合も帳尻が合う', () => {
+    const carryover = freshCarryover();
+    const res = calculateFinancials(carryover, [], {}, 1);
+    expect(carryover.cash + res.cf.totalCF).toBe(res.bs.cash);
+  });
+
+  it('営業CFの内訳を足すと営業CFに一致する（内訳が表示と矛盾しない）', () => {
+    const carryover = freshCarryover();
+    const res = calculateFinancials(carryover, ledger, {}, 1);
+
+    const inventoryChange =
+      (res.bs.materialsValue - carryover.materialsValue) +
+      (res.bs.wipValue - carryover.wipValue) +
+      (res.bs.productValue - carryover.productValue);
+    const accruedChange = res.bs.accruedLaborCost - (carryover.accruedLaborCost || 0);
+
+    const rebuilt =
+      res.pl.profitBeforeTax
+      + res.machines.depreciation
+      - (res.bs.receivables - carryover.receivables)
+      - inventoryChange
+      + (res.bs.payables - carryover.payables)
+      + accruedChange;
+
+    expect(rebuilt).toBe(res.cf.operatingCF);
+  });
+});
+
+// 減価償却費の一貫性。
+// 実機検査で C/F・図解・固定資産台帳・予実ギャップの4画面が食い違っていた（NG-5）。
+// 原因は (a) C/F が「製造固定費 − 製造経費」で逆算していた (b) pl.depreciation が未定義だった。
+describe('calculateFinancials - 減価償却費の一貫性', () => {
+  const machineLedger = [
+    { id: '1', voucherNo: '1', category: 'ケ', quantity: 1, price: 0, amount: 100, largeMachines: 0, smallMachines: 1, attachments: 0 },
+    { id: '2', voucherNo: '2', category: 'ス', quantity: 0, price: 0, amount: 50 }
+  ];
+
+  it('pl.depreciation と machines.depreciation が同じ値を返す（画面間で食い違わない）', () => {
+    const res = calculateFinancials(freshCarryover(), machineLedger, {}, 2);
+    expect(res.pl.depreciation).toBe(res.machines.depreciation);
+  });
+
+  it('減価償却費は製造固定費に含まれる（オーナー裁定: 償却分を固定費に入れる）', () => {
+    const res = calculateFinancials(freshCarryover(), machineLedger, {}, 2);
+    // manufacturingFixed = 製造経費(ス) + 減価償却 + PAC
+    expect(res.pl.manufacturingFixed).toBeGreaterThanOrEqual(res.machines.depreciation);
+    expect(res.pl.manufacturingFixed).toBe(50 + res.machines.depreciation);
+  });
+
+  it('減価償却費は固定費合計Fに含まれる', () => {
+    const res = calculateFinancials(freshCarryover(), machineLedger, {}, 2);
+    expect(res.pl.fixedCost).toBeGreaterThanOrEqual(res.machines.depreciation);
+  });
+
+  it('製造経費(ス)を逆算に使わない: 製造経費が大きくても償却額は変わらない', () => {
+    const small = calculateFinancials(freshCarryover(), machineLedger, {}, 2);
+    const large = calculateFinancials(freshCarryover(), [
+      machineLedger[0],
+      { id: '2', voucherNo: '2', category: 'ス', quantity: 0, price: 0, amount: 5000 }
+    ], {}, 2);
+    // 旧実装では「製造固定費 − ス」で逆算していたため、スの額に引きずられていた
+    expect(large.machines.depreciation).toBe(small.machines.depreciation);
+    expect(large.pl.depreciation).toBe(small.pl.depreciation);
+  });
+});
+
+// 法人税の均等割。
+// オーナー裁定（2026-07-30）: 赤字でも必ず7万を引く。これは均等割として正しい仕様。
+// 計算は変更せず、ラベルのみ実態に合わせた。
+describe('calculateFinancials - 法人税の均等割', () => {
+  it('赤字でも7万が課税される（均等割・裁定により仕様）', () => {
+    const res = calculateFinancials(freshCarryover(), [], {}, 1);
+    expect(res.pl.profitBeforeTax).toBeLessThanOrEqual(0);
+    expect(res.pl.corporateTax).toBe(7);
+  });
+
+  it('大きな赤字でも7万で固定される', () => {
+    const res = calculateFinancials(freshCarryover(), [
+      { id: '1', voucherNo: '1', category: 'ス', quantity: 0, price: 0, amount: 5000 }
+    ], {}, 1);
+    expect(res.pl.profitBeforeTax).toBeLessThan(-1000);
+    expect(res.pl.corporateTax).toBe(7);
+  });
+});

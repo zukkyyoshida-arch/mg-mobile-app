@@ -599,14 +599,24 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
 
   // 6. C/F (キャッシュフロー計算書)
   // 営業キャッシュフロー
-  const operatingCF = 
-    profitBeforeTax 
-    + depreciation 
-    - (endingReceivables - carryover.receivables) 
-    - (matEndingValue - matBeginningValue) 
-    - (wipEndingValue - wipBeginningValue) 
-    - (prodEndingValue - prodBeginningValue) 
+  //
+  // 未払費用（給与・保険料）の足し戻しについて:
+  // 期末処理前は、予想の給与・退職金・保険料が P/L の費用として既に引かれている一方、
+  // 現金はまだ出ていない（同額が B/S の accruedLaborCost として負債計上されている）。
+  // これを足し戻さないと営業CFが実際より小さくなり、
+  // 「期首現金 + 当期キャッシュ増減」が期末現金残高と一致しなくなる。
+  // 期末処理後は accruedLaborCost が 0 になり（実際に支払われる）、この項も自動的に消える。
+  const accruedExpenseChange = accruedLaborCost - (carryover.accruedLaborCost || 0);
+
+  const operatingCF =
+    profitBeforeTax
+    + depreciation
+    - (endingReceivables - carryover.receivables)
+    - (matEndingValue - matBeginningValue)
+    - (wipEndingValue - wipBeginningValue)
+    - (prodEndingValue - prodBeginningValue)
     + (endingPayables - carryover.payables)
+    + accruedExpenseChange // 未払費用の増減（未支出の給与・保険料を足し戻す）
     - ledgerTotals["ニ"].amount; // 納税出金
   
   // 投資キャッシュフロー
@@ -699,6 +709,11 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
       workerSeverance,
       autoLaborCost,
       manufacturingFixed,
+      // 減価償却費。manufacturingFixed（= ス + 償却 + PAC）に含まれており、
+      // 固定費合計 F にも入っている。内訳として単独でも参照できるように返す。
+      // 図解・予実ギャップが pl.depreciation を参照しているが未定義だったため
+      // 常に ¥0 と表示され、C/F の逆算値と食い違っていた（3画面の矛盾）。
+      depreciation,
       salesCost,
       // 販売費内訳
       salesmanSalary,
