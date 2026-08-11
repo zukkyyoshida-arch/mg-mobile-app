@@ -115,7 +115,13 @@ function VisualCharts({ results, carryover, ledger }) {
   const laborSeverance = pl.workerSeverance || 0;
   const manufacturingFixed = pl.manufacturingFixed || 0;
   const depreciation = pl.depreciation || 0;
-  const totalManufacturingOverhead = laborCost + laborSeverance + manufacturingFixed + depreciation;
+  // manufacturingFixed（pl.manufacturingFixed）は calculations.js で
+  // 「ス（製造経費）＋ 減価償却 ＋ PAC」として算出済み。ここで depreciation を
+  // 再加算すると償却の二重計上になり、P/L表示（pl.manufacturingFixed）と
+  // 償却額ぶんずれるため加算しない（A3修正）。
+  // 内訳行は「製造固定費（償却を除く）」と「減価償却費」に分けて重複なく表示する。
+  const manufacturingFixedExclDep = Math.max(0, manufacturingFixed - depreciation);
+  const totalManufacturingOverhead = laborCost + laborSeverance + manufacturingFixed;
 
   // 固定資産
   const macBegVal = carryover.machinesValue || 0;
@@ -362,8 +368,8 @@ function VisualCharts({ results, carryover, ledger }) {
               <span style={{ fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>¥{laborSeverance.toLocaleString()}</span>
             </div>
             <div style={resourceRowStyle}>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>製造固定費</span>
-              <span style={{ fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>¥{manufacturingFixed.toLocaleString()}</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>製造固定費（償却を除く）</span>
+              <span style={{ fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>¥{manufacturingFixedExclDep.toLocaleString()}</span>
             </div>
             <div style={{ ...resourceRowStyle, borderBottom: 'none' }}>
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>減価償却費</span>

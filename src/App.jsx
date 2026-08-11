@@ -7,7 +7,8 @@ import ManagementPlan from './components/ManagementPlan';
 import PriorPeriodCarryover from './components/PriorPeriodCarryover';
 import PerformanceReport from './components/PerformanceReport';
 import ErrorBoundary from './components/ErrorBoundary';
-import { syncPlayerData, fetchPlayerRecord } from './pocketbase';
+import { syncPlayerData, fetchPlayerRecord, isRemoteNewer } from './pocketbase';
+import { TOTAL_PERIODS, isAllLedgersEmpty, buildPeriodsSummary } from './utils/constants';
 import { useDebounce } from 'react-use';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, FileText, CalendarCheck, Target, Settings, Sun, Moon } from 'lucide-react';
@@ -44,7 +45,7 @@ function App() {
     }
     // 初期データ (1期〜20期)
     const initialData = {};
-    for (let i = 1; i <= 20; i++) {
+    for (let i = 1; i <= TOTAL_PERIODS; i++) {
       initialData[i] = JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA));
     }
     return initialData;
@@ -104,6 +105,10 @@ function App() {
   const retryTimerRef = useRef(null);
   const retryCountRef = useRef(0);
 
+  // C3対策: 初回のサーバー確認（fetchPlayerRecord）が完了するまで、
+  // マウント直後のデバウンス同期がローカル状態を無確認でpushしないようにするフラグ
+  const initialCheckDoneRef = useRef(false);
+
   // 保留中のリトライをキャンセルする（新しいデバウンス同期が走ったとき等）
   const cancelRetry = () => {
     if (retryTimerRef.current) {
@@ -148,28 +153,9 @@ function App() {
   const results = calculateFinancials(currentData.carryover, currentData.ledger, currentData.actuals, currentPeriod);
 
   // ダッシュボード用の同期ペイロード生成
+  // 期別サマリーは第1期〜第TOTAL_PERIODS(20)期を対象にする（以前は1〜5期ハードコードで6期以降が欠落）
   const generateSyncPayload = () => {
-    const periodsData = {};
-    [1, 2, 3, 4, 5].forEach(p => {
-      if (p <= currentPeriod) {
-        const pData = periods[p];
-        if (pData) {
-          const pResults = calculateFinancials(pData.carryover, pData.ledger, pData.actuals, p);
-          const pSalesCount = pResults?.prod?.salesCount || 0;
-          const pSalesRevenue = pResults?.pl?.salesRevenue || 0;
-          periodsData[p] = {
-            totalNetAssets: pResults?.bs?.totalNetAssets || 0,
-            sales: pSalesRevenue,
-            profit: pResults?.pl?.operatingProfit || 0,
-            salesQty: pSalesCount,
-            averagePrice: pSalesCount > 0 ? Math.round(pSalesRevenue / pSalesCount) : 0,
-            cash: pResults?.bs?.cash || 0,
-            capital: pResults?.bs?.capital || 0,
-            retainedEarnings: pResults?.bs?.retainedEarnings || 0
-          };
-        }
-      }
-    });
+    const periodsData = buildPeriodsSummary(periods, currentPeriod);
 
     const currentSalesCount = results?.prod?.salesCount || 0;
     const currentSalesRevenue = results?.pl?.salesRevenue || 0;
@@ -192,13 +178,24 @@ function App() {
 
   // 仕訳明細フルバックアップ生成（全期の ledger/carryover/actuals をそのまま保存）
   // サマリー同期とは別に players.backup(json) へ保存し、端末紛失時などにサーバーから復元できるようにする
+  // C1ガード: ローカルが実質空（全期のledgerが空）のときは undefined を返して backup を
+  // 送信ペイロードから外し、サーバー上の既存バックアップ（唯一の復元点）を空データで潰さない
   const generateBackupPayload = () => {
+    if (isAllLedgersEmpty(periods)) return undefined;
     return {
       periods,
       currentPeriod,
       savedAt: Date.now()
     };
   };
+
+  // C2対策: リトライのクロージャが古いレンダーのペイロード生成関数を捕捉して
+  // 古いスナップショットを再送しないよう、最新の生成関数を常に ref に持たせ、
+  // 送信直前に ref 経由で再生成する（refの更新はレンダー中でなくエフェクトで行う）
+  const payloadFnsRef = useRef({ sync: generateSyncPayload, backup: generateBackupPayload });
+  useEffect(() => {
+    payloadFnsRef.current = { sync: generateSyncPayload, backup: generateBackupPayload };
+  });
 
   // 自動リトライ付き同期（初回同期・デバウンス同期で共用）
   // 失敗時は 5秒→15秒→30秒 の最大3回まで自動再送。3回目も失敗したときだけ onFinalError を発火する。
@@ -207,13 +204,22 @@ function App() {
     if (!roomId || !playerId) return;
 
     const attempt = () => {
-      // 送信直前の最新stateでペイロードを生成する
+      // 送信直前に ref 経由で最新stateからペイロードを再生成する（古いスナップショットの再送防止）
       setSyncStatus(retryCountRef.current > 0 ? `再試行中(${retryCountRef.current}/${RETRY_DELAYS.length})...` : '同期中...');
-      syncPlayerData(roomId, playerId, generateSyncPayload(), generateBackupPayload())
-        .then(() => {
+      const payload = payloadFnsRef.current.sync();
+      const backup = payloadFnsRef.current.backup();
+      syncPlayerData(roomId, playerId, payload, backup)
+        .then((result) => {
           retryCountRef.current = 0;
           retryTimerRef.current = null;
-          setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
+          if (result?.skipped) {
+            // サーバー側が新しいため上書きしなかった（C2ガード）
+            setSyncStatus(`同期スキップ：サーバー側が新しいため (${new Date().toLocaleTimeString()})`);
+          } else {
+            // 最後にサーバーへ反映できた時刻を記録（C3のリロード時比較に使う）
+            safeStorage.setItem('mg_last_synced_at', String(payload.lastUpdated));
+            setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
+          }
         })
         .catch((err) => {
           console.error('Sync error:', err);
@@ -236,13 +242,54 @@ function App() {
   };
 
   // 初回接続時（またはリロード時）に即座に同期してダッシュボードに表示させる
+  // C3対策: 保存済み認証で起動した端末が無確認でサーバーをpushしないよう、
+  // 同期の前に fetchPlayerRecord でサーバー側を確認し、サーバーの lastUpdated が
+  // この端末の最終同期時刻（mg_last_synced_at）より新しい場合は確認ダイアログを挟む。
   useEffect(() => {
-    if (roomId && playerId) {
-      cancelRetry(); // ルーム参加/リロード時は保留中のリトライを破棄してからやり直す
-      setTimeout(() => setSyncStatus('同期中...'), 0);
+    if (!roomId || !playerId) return undefined;
+    cancelRetry(); // ルーム参加/リロード時は保留中のリトライを破棄してからやり直す
+    initialCheckDoneRef.current = false; // 確認が終わるまでデバウンス同期のpushを止める
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setSyncStatus('サーバー確認中...');
+        const record = await fetchPlayerRecord(roomId, playerId);
+        if (cancelled) return;
+        const localSyncedTs = Number(safeStorage.getItem('mg_last_synced_at')) || 0;
+        if (record && isRemoteNewer(record.data, localSyncedTs)) {
+          const load = window.confirm(
+            'サーバーに新しいデータがあります。読み込みますか？\n\n・『OK』：サーバーのデータをこの端末に読み込んで再開します。\n・『キャンセル』：この端末のデータでサーバーを上書きして続行します。'
+          );
+          if (load) {
+            const backup = record.backup;
+            if (backup && backup.periods) {
+              setPeriods(backup.periods);
+              setCurrentPeriod(backup.currentPeriod || 1);
+              safeStorage.setItem('mg_periods_data', JSON.stringify(backup.periods));
+              safeStorage.setItem('mg_current_period', String(backup.currentPeriod || 1));
+            } else {
+              alert('サーバーに読み込める明細データ（バックアップ）がありませんでした。この端末のデータで続行します。');
+            }
+            // 読み込んだサーバー時点までは同期済みとして記録し、次回リロードでの再確認を防ぐ
+            safeStorage.setItem('mg_last_synced_at', String(Number(record.data?.lastUpdated) || Date.now()));
+            setSyncStatus(`サーバーから読み込み完了 (${new Date().toLocaleTimeString()})`);
+            initialCheckDoneRef.current = true; // 以後の変更はデバウンス同期が拾う
+            return; // push しない
+          }
+          // キャンセル＝この端末の内容で上書きすることをユーザーが明示的に選択した
+        }
+      } catch (err) {
+        // fetch失敗（DB不達）→ 従来どおりリトライ同期に任せる（C2のlastUpdatedガードが最後の防波堤）
+        console.error('Initial fetchPlayerRecord failed, falling back to retry sync:', err);
+      }
+      if (cancelled) return;
+      initialCheckDoneRef.current = true;
       // 初回同期は最終失敗しても alert は出さず、ステータス表示のみ（従来挙動を踏襲）
       syncWithRetry(null);
-    }
+    })();
+
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, playerId]); // ルーム参加時に1回だけ即時実行
 
@@ -250,6 +297,9 @@ function App() {
   useDebounce(
     () => {
       if (roomId && playerId) {
+        // C3対策: 初回のサーバー確認が終わるまではマウント直後の発火でpushしない
+        // （確認完了後の変更は、次のstate変化で改めてこのデバウンスが発火して同期される）
+        if (!initialCheckDoneRef.current) return;
         // 新しいデバウンス同期が走ったら、前回の保留中リトライは破棄する
         cancelRetry();
         // 最終失敗（3回目失敗）時のみ alert を発火する
@@ -318,7 +368,7 @@ function App() {
       setResetBackupInfo({ ts });
 
       const freshData = {};
-      for (let i = 1; i <= 20; i++) {
+      for (let i = 1; i <= TOTAL_PERIODS; i++) {
         freshData[i] = JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA));
       }
       setPeriods(freshData);
@@ -621,9 +671,16 @@ function App() {
                       if (roomId && playerId) {
                         cancelRetry(); // 手動同期が保留中リトライを引き継ぐ
                         setSyncStatus('同期中...');
-                        syncPlayerData(roomId, playerId, generateSyncPayload(), generateBackupPayload()).then(() => {
-                          setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
-                          alert('手動での強制同期が完了しました');
+                        const payload = generateSyncPayload();
+                        syncPlayerData(roomId, playerId, payload, generateBackupPayload()).then((result) => {
+                          if (result?.skipped) {
+                            setSyncStatus(`同期スキップ：サーバー側が新しいため (${new Date().toLocaleTimeString()})`);
+                            alert('サーバーに、この端末より新しいデータがあるため上書きしませんでした。');
+                          } else {
+                            safeStorage.setItem('mg_last_synced_at', String(payload.lastUpdated));
+                            setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
+                            alert('手動での強制同期が完了しました');
+                          }
                         }).catch(err => {
                           setSyncStatus('同期エラー');
                           alert("エラー: " + err.message);
@@ -830,11 +887,17 @@ function App() {
                   if (hasExistingData) {
                     const shouldReset = window.confirm(
                       roomChangedNote +
-                      "過去のゲームデータが残っています。\n新しいルームに参加するにあたり、データを初期化して最初から開始しますか？\n\n・『OK』：データを初期化して最初から開始します。\n・『キャンセル』：現在のデータを引き継いで参加します（再接続など）。"
+                      "過去のゲームデータが残っています。\n新しいルームに参加するにあたり、データを初期化して最初から開始しますか？\n\n・『OK』：データを初期化して最初から開始します。参加後の同期で、サーバー上の同名プレイヤーの成績も初期化後の内容に更新されます。\n（初期化直前の状態は「設定 > 最後のリセットを取り消す」で1回だけ復元できます）\n・『キャンセル』：現在のデータを引き継いで参加します（再接続など）。"
                     );
                     if (shouldReset) {
+                      // C1対策: resetAllData と同じく、初期化直前のスナップショットを1世代だけ退避する
+                      // （「設定 > 最後のリセットを取り消す」で復元可能にする）
+                      const ts = Date.now();
+                      safeStorage.setItem('mg_reset_backup', JSON.stringify({ periods, currentPeriod, ts }));
+                      setResetBackupInfo({ ts });
+
                       const freshData = {};
-                      for (let i = 1; i <= 20; i++) {
+                      for (let i = 1; i <= TOTAL_PERIODS; i++) {
                         freshData[i] = JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA));
                       }
                       setPeriods(freshData);
@@ -879,6 +942,8 @@ function App() {
                       // 古いレコードで復元可能なbackupが無い → そのまま参加（＝新規上書き）
                       alert('サーバーに復元できるデータがありませんでした。新規として参加します。');
                     }
+                    // サーバー時点まで同期済みとして記録（直後の初回同期で再確認ダイアログを出さない）
+                    safeStorage.setItem('mg_last_synced_at', String(Number(serverRecord.data?.lastUpdated) || Date.now()));
                     commitJoin();
                     return;
                   } else {
@@ -891,6 +956,8 @@ function App() {
                       return;
                     }
                     // OK＝今の端末のデータのまま参加（初回同期でサーバーが上書きされる）
+                    // ユーザーが上書きを明示的に選択したので、直後の初回同期で再確認ダイアログを出さない
+                    safeStorage.setItem('mg_last_synced_at', String(Number(serverRecord.data?.lastUpdated) || Date.now()));
                     commitJoin();
                     return;
                   }

@@ -1,11 +1,17 @@
+/* eslint-disable react-refresh/only-export-components */
+// 上記ルールを無効化する理由:
+// 集計ロジック（computeOverallPlayer / getPeriodData）を純粋関数として
+// ユニットテストから直接 import できるよう、あえてコンポーネントと
+// 同一ファイルから export している。Fast Refresh の対象外になるだけで動作に影響しない。
 import { useState, useEffect } from 'react';
 import { subscribeToRoom, archiveRoom } from '../pocketbase';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { useNavigate } from 'react-router-dom';
+import { TOTAL_PERIODS } from '../utils/constants';
 
 // ヘルパー: 配列・オブジェクト両対応で指定期のデータを取り出す
-function getPeriodData(player, periodNum) {
+export function getPeriodData(player, periodNum) {
   if (!player || !player.periods) return null;
   
   if (Array.isArray(player.periods)) {
@@ -29,6 +35,41 @@ function getPeriodData(player, periodNum) {
   
   // オブジェクト（マップ）の場合
   return player.periods[periodNum] || player.periods[periodNum.toString()] || null;
+}
+
+// 総合(overall)基準でプレイヤー1名分の集計値を算出する純粋関数（タブ選択非依存）。
+// 第1期〜第TOTAL_PERIODS(20)期を合算する（以前は1〜5期ハードコードで、
+// 第6期以降のプレイヤーは純資産が5期末値で凍結・売上/利益が欠落していた）。
+export function computeOverallPlayer(player) {
+  let sales = 0, profit = 0, salesQty = 0;
+  let latestNetAssets = 0;
+  if (player.periods) {
+    for (let p = 1; p <= TOTAL_PERIODS; p++) {
+      const pData = getPeriodData(player, p);
+      if (pData) {
+        sales += (pData.sales || 0);
+        profit += (pData.profit || 0);
+        salesQty += (pData.salesQty || 0);
+        if (p <= player.currentPeriod) {
+          latestNetAssets = pData.totalNetAssets || 0;
+        }
+      }
+    }
+  } else {
+    sales = player.sales || 0;
+    profit = player.profit || 0;
+    salesQty = player.salesQty || 0;
+    latestNetAssets = player.totalNetAssets || 0;
+  }
+  return {
+    ...player,
+    displayPeriod: '総合',
+    totalNetAssets: latestNetAssets,
+    sales,
+    profit,
+    salesQty,
+    averagePrice: salesQty > 0 ? Math.round(sales / salesQty) : 0
+  };
 }
 
 export default function Dashboard() {
@@ -64,39 +105,6 @@ export default function Dashboard() {
 
     return () => unsubscribe();
   }, [roomId, isSubscribed]);
-
-  // 総合(overall)基準でプレイヤー1名分の集計値を算出する（タブ選択非依存）
-  const computeOverallPlayer = (player) => {
-    let sales = 0, profit = 0, salesQty = 0;
-    let latestNetAssets = 0;
-    if (player.periods) {
-      [1, 2, 3, 4, 5].forEach(p => {
-        const pData = getPeriodData(player, p);
-        if (pData) {
-          sales += (pData.sales || 0);
-          profit += (pData.profit || 0);
-          salesQty += (pData.salesQty || 0);
-          if (p <= player.currentPeriod) {
-            latestNetAssets = pData.totalNetAssets || 0;
-          }
-        }
-      });
-    } else {
-      sales = player.sales || 0;
-      profit = player.profit || 0;
-      salesQty = player.salesQty || 0;
-      latestNetAssets = player.totalNetAssets || 0;
-    }
-    return {
-      ...player,
-      displayPeriod: '総合',
-      totalNetAssets: latestNetAssets,
-      sales,
-      profit,
-      salesQty,
-      averagePrice: salesQty > 0 ? Math.round(sales / salesQty) : 0
-    };
-  };
 
   // 総合(overall)基準でソート済みプレイヤーリストを算出する（アーカイブ保存専用、selectedTabに非依存）
   const getOverallPlayers = () => {
@@ -138,6 +146,13 @@ export default function Dashboard() {
 
   const sortedPlayers = getProcessedPlayers();
 
+  // 期タブ: 第1〜5期は常に表示し、プレイヤーが第6期以降へ進んだら到達期まで自動で増やす
+  const maxReachedPeriod = Math.min(
+    TOTAL_PERIODS,
+    Math.max(5, ...Object.values(playersData).map(p => Number(p?.currentPeriod) || 1))
+  );
+  const periodTabs = Array.from({ length: maxReachedPeriod }, (_, i) => String(i + 1));
+
   if (!isSubscribed) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', padding: '20px' }}>
@@ -177,18 +192,18 @@ export default function Dashboard() {
   const topPlayer = sortedPlayers.length > 0 ? sortedPlayers[0] : null;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', width: '100%', minWidth: 0, backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column' }}>
       {/* 第5期でトッププレイヤーがいる場合は紙吹雪 */}
       {topPlayer && topPlayer.currentPeriod >= 5 && (
         <Confetti width={width} height={height} numberOfPieces={200} recycle={false} />
       )}
-      
-      {/* ヘッダー */}
-      <header style={{ padding: '20px 40px', background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: '2rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '2.5rem' }}>📊</span> 戦略MG リアルタイム成績表
+
+      {/* ヘッダー（スマホ幅でも操作できるよう折り返し・可変パディングにする） */}
+      <header style={{ padding: '16px clamp(12px, 4vw, 40px)', background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)', borderBottom: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+        <h1 style={{ margin: 0, fontSize: 'clamp(1.25rem, 3.5vw, 2rem)', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+          <span style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)' }}>📊</span> 戦略MG リアルタイム成績表
         </h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
           <button 
             onClick={() => navigate('/')} 
             className="btn-primary"
@@ -231,7 +246,7 @@ export default function Dashboard() {
       </header>
 
       {/* メインコンテンツ */}
-      <main style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
+      <main style={{ flex: 1, padding: 'clamp(12px, 3vw, 40px)', overflowY: 'auto' }}>
         {sortedPlayers.length === 0 ? (
           <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--text-secondary)' }}>
             <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📡</div>
@@ -240,9 +255,9 @@ export default function Dashboard() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* タブUI */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-              {['1', '2', '3', '4', '5', 'overall'].map(tab => (
+            {/* タブUI（期数が増えても・狭い画面でも折り返して全タブへ到達できる） */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+              {[...periodTabs, 'overall'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setSelectedTab(tab)}
@@ -263,6 +278,10 @@ export default function Dashboard() {
               ))}
             </div>
 
+            {/* ランキング表: グリッドの最小幅が広い（約850px）ため、
+                スマホ幅ではこのコンテナ内で横スクロールして全列に到達できるようにする */}
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <div style={{ minWidth: '880px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* テーブルヘッダー */}
             <div style={{
               display: 'grid',
@@ -354,6 +373,8 @@ export default function Dashboard() {
                 </div>
               );
             })}
+            </div>
+            </div>
           </div>
         )}
       </main>

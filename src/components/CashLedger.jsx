@@ -1,7 +1,7 @@
 import { CATEGORIES } from './cashledger/constants';
 import CompanyBoardMinimap from './CompanyBoardMinimap';
 import { useState, useRef } from 'react';
-import { buildTransactionEntries, removeEntry } from './cashledger/buildTransactionEntries';
+import { buildTransactionEntries, removeEntry, toSafeInt } from './cashledger/buildTransactionEntries';
 import AddTransactionModal from './cashledger/AddTransactionModal';
 import TimelineList from './cashledger/TimelineList';
 
@@ -194,7 +194,15 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     // 金額や数量は敢えて復元しない（打ち間違いを直すのが目的で、
     // 誤った値が入ったまま再登録される方が事故になりやすい）。
     resetForm();
-    const reopenCategory = entry.category === 'タ' ? 'オ' : entry.category;
+    let reopenCategory = entry.category === 'タ' ? 'オ' : entry.category;
+    if (entry.groupId) {
+      // 組で登録された取引（借入オ＋自動利息タ／売掛割引ア＋手数料タ）は、
+      // 組のどちらを選んでも「組の起点」の入力画面を開き直す。
+      // （リスクカード系の組は オ/ア を含まないため従来どおり entry.category ベース）
+      const group = ledger.filter(t => t.groupId === entry.groupId);
+      if (group.some(t => t.category === 'オ')) reopenCategory = 'オ';
+      else if (group.some(t => t.category === 'ア')) reopenCategory = '売掛割引';
+    }
     setSelectedCategory(reopenCategory);
     setShowAddModal(true);
     if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'auto' });
@@ -223,17 +231,20 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     if (symbol === "火災") setQuantity('');
   };
 
-  // 数量・単価変更時に金額を自動計算
+  // 数量・単価変更時に金額を自動計算。
+  // 入力途中の空文字は許容しつつ、値は0以上の整数に正規化する
+  // （Infinity/NaN・小数個の混入を入口で防ぐ）。
   const handleQtyPriceChange = (type, val) => {
+    const sanitized = val === '' ? '' : String(toSafeInt(val));
     if (type === 'qty') {
-      setQuantity(val);
-      const q = Number(val) || 0;
+      setQuantity(sanitized);
+      const q = Number(sanitized) || 0;
       const p = Number(price) || 0;
       setAmount((q * p).toString());
     } else {
-      setPrice(val);
+      setPrice(sanitized);
       const q = Number(quantity) || 0;
-      const p = Number(val) || 0;
+      const p = Number(sanitized) || 0;
       setAmount((q * p).toString());
     }
   };
@@ -248,8 +259,18 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
         // 安全な評価 (数値、小数点、四則演算記号のみ許容)
         if (/^[0-9.+\-*/\s()]+$/.test(calcInput)) {
           const evalResult = Function(`"use strict"; return (${calcInput})`)();
-          setAmount(evalResult.toString());
-          setCalcInput(evalResult.toString());
+          // 1/0=Infinity や 0/0=NaN は金額に反映しない（保存されると
+          // JSON化で null になりリロード時に画面が壊れるため、エラー表示で拒否する）
+          if (!Number.isFinite(evalResult)) {
+            setCalcInput('Error');
+            return;
+          }
+          // 金額は整数万円がゲーム仕様のため、小数の計算結果は四捨五入して反映する
+          // （丸めた値を電卓表示にも出し、入力欄との食い違いを見せない）。
+          // 負の結果はそのまま通し、登録時の「マイナスの金額」ガードに説明させる。
+          const rounded = Math.round(evalResult);
+          setAmount(rounded.toString());
+          setCalcInput(rounded.toString());
         } else {
           setCalcInput('Error');
         }

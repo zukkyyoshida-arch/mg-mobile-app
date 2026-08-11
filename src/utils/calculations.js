@@ -291,19 +291,29 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
   const estimatedSalesmanSev = totalSeveranceSalesmen * severanceUnit_early;
   const estimatedInsurance = maxTotalStaff * insuranceUnit_early;
 
-  // 出納帳に「シ」「セ」「ソ」が1件でもあれば、期末処理済み（または個別支払い済み）とみなす
   const actualWorkerSalary = ledgerTotals["シ"]?.amount || 0;
   const actualSalesmanSal = ledgerTotals["セ"]?.amount || 0;
   const actualInsurance = ledgerTotals["ソ"]?.amount || 0;
 
-  const hasProcessedPeriodEnd = actualWorkerSalary > 0 || actualSalesmanSal > 0 || actualInsurance > 0;
+  // 期末処理済みの判定（A2修正）:
+  // 第一判定は「期末ウィザード（PeriodEndWizard）が書き込むエントリの periodEnd: true フラグ」。
+  // 旧仕様の「シ・セ・ソのいずれかの金額>0」では、期中に普通に発生する
+  // セ（広告費・特別サービス・クレーム処理）や ソ（退職費用）が1件あるだけで
+  // 期末処理済みと誤判定され、給与見積が全消えして G が数十万円単位で振れていた。
+  // 後方互換: フラグの無い旧データは「シ」の存在で判定する
+  // （カテゴリ「シ」を書き込むのは PeriodEndWizard の confirmPeriodEnd のみ。
+  //   期中入力の経路＝AddTransactionModal のカテゴリボタン群・buildTransactionEntries には
+  //   シ を作るコードが無いことを確認済み。セ・ソは期中に作られるため判定に使わない）
+  const hasProcessedPeriodEnd = ledger.some(entry => entry.periodEnd === true) || actualWorkerSalary > 0;
 
   // PL用の最終的な給与・保険料
-  // 期末処理前：推定値を使う
-  // 期末処理後：出納帳の実績値を使う（二重計上を防ぐ）
-  const plWorkerSalary    = hasProcessedPeriodEnd ? actualWorkerSalary : (estimatedWorkerSalary + estimatedWorkerSeverance);
-  const plSalesmanSalary  = hasProcessedPeriodEnd ? actualSalesmanSal  : (estimatedSalesmanSal + estimatedSalesmanSev);
-  const plInsurance       = hasProcessedPeriodEnd ? actualInsurance    : estimatedInsurance;
+  // 期末処理前：給与・保険料の推定値 ＋ 出納帳に既に記帳済みの期中実績（広告費セ・退職費用ソ等）
+  //   （記帳済み実績を落とすと、支払済みの現金と費用が食い違い B/S が崩れるため必ず加算する。
+  //     推定給与の未払分は accruedLaborCost として負債計上され、貸借は一致する）
+  // 期末処理後：出納帳の実績値のみを使う（推定との二重計上を防ぐ）
+  const plWorkerSalary    = hasProcessedPeriodEnd ? actualWorkerSalary : (estimatedWorkerSalary + estimatedWorkerSeverance + actualWorkerSalary);
+  const plSalesmanSalary  = hasProcessedPeriodEnd ? actualSalesmanSal  : (estimatedSalesmanSal + estimatedSalesmanSev + actualSalesmanSal);
+  const plInsurance       = hasProcessedPeriodEnd ? actualInsurance    : (estimatedInsurance + actualInsurance);
 
 // 現金残高 = 期首 + 入金 - 出金（人件費は現金流出に含めない。ただし損益計算書の費用としては計上）
 const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
@@ -611,6 +621,11 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   const operatingCF =
     profitBeforeTax
     + depreciation
+    // 特別利益（機械売却イ・保険金エ・自動保険金）は profitBeforeTax に含まれるが、
+    // 投資CF側（investingCF = extraordinaryGain - purchasedMachineValue）でも計上されるため、
+    // 間接法の定石どおり営業CFから控除する。控除しないと totalCF が特別利益ぶん
+    // 二重計上され「期首現金 + totalCF = 期末現金」が成立しなくなる（A1修正）。
+    - extraordinaryGain
     - (endingReceivables - carryover.receivables)
     - (matEndingValue - matBeginningValue)
     - (wipEndingValue - wipBeginningValue)

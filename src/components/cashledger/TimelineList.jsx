@@ -72,7 +72,9 @@ function TimelineList({ visibleLedger, carryoverCash, onDelete, onRedo }) {
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '0 0 auto' }}>
                 <span className="electric-number" style={{ fontSize: '1.05rem', fontWeight: '700', whiteSpace: 'nowrap', color: catMeta.type === 'inflow' ? 'var(--mg-pink)' : 'var(--text-primary)' }}>
-                  {catMeta.type === 'inflow' ? '+' : '-'} ¥{entry.amount.toLocaleString()} 万
+                  {/* amount の null/非数値耐性: 過去の不具合で Infinity が JSON化→null で
+                      保存された端末の localStorage を読んでも白画面にしない（復旧経路） */}
+                  {catMeta.type === 'inflow' ? '+' : '-'} ¥{Number.isFinite(Number(entry.amount)) ? Number(entry.amount).toLocaleString() : '—'} 万
                 </span>
                 {onRedo && (
                   <button
