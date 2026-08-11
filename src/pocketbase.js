@@ -9,20 +9,43 @@ pb.autoCancellation(false);
 const PLAYERS_COLLECTION = 'players';
 const ARCHIVES_COLLECTION = 'archives';
 
+// サーバー側レコードの data.lastUpdated がローカル基準時刻より新しいかを判定する純粋関数。
+// C2（遅延到着した古いリクエストによる追い越し上書きの防止）と
+// C3（保存済み認証でのリロード時、無確認pushの前のサーバー確認）で共用する。
+// どちらかのタイムスタンプが欠落・不正な場合は「新しくない」扱い（＝従来どおり送信）にして、
+// 旧スキーマのレコードとの後方互換を保つ。
+export const isRemoteNewer = (serverData, localTs) => {
+  const remoteTs = Number(serverData?.lastUpdated);
+  const local = Number(localTs);
+  if (!Number.isFinite(remoteTs) || remoteTs <= 0) return false;
+  if (!Number.isFinite(local)) return false;
+  return remoteTs > local;
+};
+
 // Helper function to sync player data ((room, player) で upsert)
 // backup が渡されたときだけ仕訳明細フルバックアップ(json)も一緒に保存する（後方互換）
+// サーバー側の data.lastUpdated が送信ペイロードより新しい場合は上書きせず
+// { skipped: true } を resolve する（非アトミックだが追い越し上書きの窓を大幅に狭める）
 export const syncPlayerData = (roomId, playerId, data, backup) => {
   if (!roomId || !playerId) return Promise.resolve();
 
   const filter = pb.filter('room = {:room} && player = {:player}', { room: roomId, player: playerId });
 
-  // backup が undefined のときは body に含めない（旧サーバー/旧スキーマとの後方互換）
+  // backup が undefined のときは body に含めない（旧サーバー/旧スキーマとの後方互換。
+  // かつ C1: ローカルが実質空のとき呼び出し側が backup=undefined を渡すことで、
+  // サーバー上の既存バックアップ＝唯一の復元点を空データで潰さない）
   const body = backup === undefined ? { data } : { data, backup };
 
+  // 更新直前ガード: サーバー側が新しければ上書きしない
+  const guardAndUpdate = (record) => {
+    if (isRemoteNewer(record?.data, data?.lastUpdated)) {
+      return { skipped: true, reason: 'server-newer' };
+    }
+    return pb.collection(PLAYERS_COLLECTION).update(record.id, body);
+  };
+
   return pb.collection(PLAYERS_COLLECTION).getFirstListItem(filter)
-    .then((record) => {
-      return pb.collection(PLAYERS_COLLECTION).update(record.id, body);
-    })
+    .then(guardAndUpdate)
     .catch((error) => {
       if (error instanceof ClientResponseError && error.status === 404) {
         return pb.collection(PLAYERS_COLLECTION)
@@ -31,7 +54,7 @@ export const syncPlayerData = (roomId, playerId, data, backup) => {
             // ユニーク制約違反（他クライアントと同時作成）の場合は1回だけupdateにリトライ
             if (createError instanceof ClientResponseError && createError.status === 400) {
               return pb.collection(PLAYERS_COLLECTION).getFirstListItem(filter)
-                .then((record) => pb.collection(PLAYERS_COLLECTION).update(record.id, body));
+                .then(guardAndUpdate);
             }
             throw createError;
           });

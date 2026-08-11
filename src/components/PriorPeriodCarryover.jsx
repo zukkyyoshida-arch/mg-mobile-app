@@ -1,6 +1,10 @@
 import React from 'react';
+// 期の総数はアプリ全体で共有の定数を参照する（期選択グリッドとリセット説明文の両方で使う）。
+// 以前は説明文に「全5期分」とハードコードされており、実際は20期分あるため
+// データ全削除の説明が実態と食い違っていた（押す前に読む文章なので危険）。
+import { TOTAL_PERIODS } from '../utils/constants';
 
-function PriorPeriodCarryover({ 
+function PriorPeriodCarryover({
   carryover, 
   onUpdateCarryover, 
   currentPeriod, 
@@ -32,7 +36,7 @@ function PriorPeriodCarryover({
         </div>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', margin: '12px 0' }}>
-          {Array.from({ length: 20 }, (_, i) => i + 1).map((p) => (
+          {Array.from({ length: TOTAL_PERIODS }, (_, i) => i + 1).map((p) => (
             <button
               key={p}
               onClick={() => setCurrentPeriod(p)}
@@ -359,7 +363,7 @@ function PriorPeriodCarryover({
           </h3>
         </div>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-          現在入力されている全5期分のすべての取引データ、期首繰越データ、予算データを削除し、最初からやり直します。
+          現在入力されている全{TOTAL_PERIODS}期分のすべての取引データ、期首繰越データ、予算データを削除し、最初からやり直します。
         </p>
         <button
           onClick={resetAllData}

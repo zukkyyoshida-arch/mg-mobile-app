@@ -37,14 +37,14 @@ export default function Archives() {
     .slice(0, 10); // トップ10のみ取得
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column' }}>
-      {/* ヘッダー */}
-      <header style={{ padding: '20px 40px', background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: '2rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '2.5rem' }}>🏆</span> 歴代ランキング＆過去の記録
+    <div style={{ minHeight: '100vh', width: '100%', minWidth: 0, backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column' }}>
+      {/* ヘッダー（スマホ幅でも操作できるよう折り返し・可変パディングにする） */}
+      <header style={{ padding: '16px clamp(12px, 4vw, 40px)', background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)', borderBottom: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+        <h1 style={{ margin: 0, fontSize: 'clamp(1.25rem, 3.5vw, 2rem)', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+          <span style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)' }}>🏆</span> 歴代ランキング＆過去の記録
         </h1>
-        <button 
-          onClick={() => navigate('/dashboard')} 
+        <button
+          onClick={() => navigate('/dashboard')}
           className="btn-secondary"
           style={{ padding: '8px 16px', fontSize: '1rem' }}
         >
@@ -52,7 +52,7 @@ export default function Archives() {
         </button>
       </header>
 
-      <main style={{ flex: 1, padding: '40px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '40px' }}>
+      <main style={{ flex: 1, padding: 'clamp(12px, 3vw, 40px)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '40px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', fontSize: '1.5rem', color: 'var(--text-secondary)' }}>データを読み込み中...</div>
         ) : (
@@ -65,8 +65,10 @@ export default function Archives() {
               {allTimePlayers.length === 0 ? (
                 <p style={{ color: 'var(--text-secondary)' }}>まだ記録がありません。</p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ 
+                /* グリッドの最小幅が広いため、スマホ幅ではこのコンテナ内で横スクロールする */
+                <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <div style={{ minWidth: '860px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{
                     display: 'grid', 
                     gridTemplateColumns: '90px 1fr 120px 120px 120px 80px 120px', 
                     gap: '16px', 
@@ -144,6 +146,7 @@ export default function Archives() {
                       </div>
                     );
                   })}
+                </div>
                 </div>
               )}
             </section>

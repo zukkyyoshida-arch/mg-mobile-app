@@ -6,6 +6,7 @@
 // 動作・ビルドには影響しない。
 import { useMemo, useState } from 'react';
 import { calculateFinancials } from '../utils/calculations';
+import { TOTAL_PERIODS } from '../utils/constants';
 
 /**
  * 期別推移グラフ (TrendCharts)
@@ -46,14 +47,15 @@ export function isPeriodPopulated(periodData) {
 
 /**
  * periods オブジェクトから、期別の期末値サマリー配列を算出する純粋関数。
- * データが空の期は除外する。第1期〜第5期のみ対象（戦略MG研修の期数に合わせる）。
+ * データが空の期は除外する。第1期〜第TOTAL_PERIODS(20)期が対象
+ * （以前は第5期までハードコードされており、第6期以降がグラフから欠落していた）。
  *
  * 戻り値: [{ period, netAssets, sales, profit, cash }, ...] period昇順
  */
 export function buildTrendData(periods) {
   if (!periods) return [];
   const result = [];
-  for (let p = 1; p <= 5; p++) {
+  for (let p = 1; p <= TOTAL_PERIODS; p++) {
     const pData = periods[p];
     if (!isPeriodPopulated(pData)) continue;
     try {

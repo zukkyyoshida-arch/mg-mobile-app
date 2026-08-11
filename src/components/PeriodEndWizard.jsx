@@ -136,15 +136,18 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
       actualSalesmen: sCount
     });
 
+    // periodEnd: true は「期末ウィザードが書き込んだエントリ」の識別フラグ（A2修正）。
+    // calculations.js はこのフラグの存在で「期末処理済み」を判定する
+    // （期中に発生する広告費セ・退職費用ソを期末処理と誤判定しないため）。
     const newTransactions = [];
     if (workerSal > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-w-sal", category: "シ", quantity: 1, amount: workerSal, price: workerSal, timestamp: new Date(Date.now() + 1).toISOString(), customName: "ワーカー給与の支払", customShortName: "労務" });
+      newTransactions.push({ id: Date.now().toString() + "-w-sal", category: "シ", quantity: 1, amount: workerSal, price: workerSal, timestamp: new Date(Date.now() + 1).toISOString(), customName: "ワーカー給与の支払", customShortName: "労務", periodEnd: true });
     }
     if (salesmanSal > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-s-sal", category: "セ", quantity: 1, amount: salesmanSal, price: salesmanSal, timestamp: new Date(Date.now() + 2).toISOString(), customName: "セールス給与の支払", customShortName: "給与" });
+      newTransactions.push({ id: Date.now().toString() + "-s-sal", category: "セ", quantity: 1, amount: salesmanSal, price: salesmanSal, timestamp: new Date(Date.now() + 2).toISOString(), customName: "セールス給与の支払", customShortName: "給与", periodEnd: true });
     }
     if (insurance > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-ins", category: "ソ", quantity: 1, amount: insurance, price: insurance, timestamp: new Date(Date.now() + 3).toISOString(), customName: "社会保険料の支払", customShortName: "保険" });
+      newTransactions.push({ id: Date.now().toString() + "-ins", category: "ソ", quantity: 1, amount: insurance, price: insurance, timestamp: new Date(Date.now() + 3).toISOString(), customName: "社会保険料の支払", customShortName: "保険", periodEnd: true });
     }
 
     const safeMat = actualMaterials === '' ? 0 : actualMaterials;
@@ -156,15 +159,15 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
     const prodDiff = prodTheoretical - safeProd;
 
     if (matDiff > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-loss-mat", category: "棚卸ロス(材料)", quantity: matDiff, amount: 0, price: 0, timestamp: new Date(Date.now() + 4).toISOString(), customName: "期末棚卸による材料紛失", customShortName: "ロス" });
+      newTransactions.push({ id: Date.now().toString() + "-loss-mat", category: "棚卸ロス(材料)", quantity: matDiff, amount: 0, price: 0, timestamp: new Date(Date.now() + 4).toISOString(), customName: "期末棚卸による材料紛失", customShortName: "ロス", periodEnd: true });
     }
     if (wipDiff > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-loss-wip", category: "棚卸ロス(仕掛品)", quantity: wipDiff, amount: 0, price: 0, timestamp: new Date(Date.now() + 5).toISOString(), customName: "期末棚卸による仕掛品紛失", customShortName: "ロス" });
+      newTransactions.push({ id: Date.now().toString() + "-loss-wip", category: "棚卸ロス(仕掛品)", quantity: wipDiff, amount: 0, price: 0, timestamp: new Date(Date.now() + 5).toISOString(), customName: "期末棚卸による仕掛品紛失", customShortName: "ロス", periodEnd: true });
     }
-    
+
     const actualLossProd = prodDiff - (disposedState.required ? fireSaleCount : 0);
     if (actualLossProd > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-loss-prod", category: "棚卸ロス(製品)", quantity: actualLossProd, amount: 0, price: 0, timestamp: new Date(Date.now() + 6).toISOString(), customName: "期末棚卸による製品紛失", customShortName: "ロス" });
+      newTransactions.push({ id: Date.now().toString() + "-loss-prod", category: "棚卸ロス(製品)", quantity: actualLossProd, amount: 0, price: 0, timestamp: new Date(Date.now() + 6).toISOString(), customName: "期末棚卸による製品紛失", customShortName: "ロス", periodEnd: true });
     }
 
     if (disposedState.required && fireSaleCount > 0) {
@@ -176,17 +179,18 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
         amount: fireSaleCount * 18, 
         price: 18, 
         timestamp: new Date(Date.now() + 6.5).toISOString(), 
-        customName: `期末製品投げ売り(${isCash ? '現金' : '掛売'})`, 
-        customShortName: "投売" 
+        customName: `期末製品投げ売り(${isCash ? '現金' : '掛売'})`,
+        customShortName: "投売",
+        periodEnd: true
       });
     }
 
     if (remainingRepayment > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-loan-repay", category: "ナ", quantity: 1, amount: remainingRepayment, price: remainingRepayment, timestamp: new Date(Date.now() + 7).toISOString(), customName: "期末の自動借入返済 (20%)", customShortName: "返済" });
+      newTransactions.push({ id: Date.now().toString() + "-loan-repay", category: "ナ", quantity: 1, amount: remainingRepayment, price: remainingRepayment, timestamp: new Date(Date.now() + 7).toISOString(), customName: "期末の自動借入返済 (20%)", customShortName: "返済", periodEnd: true });
     }
 
     if (arToCollect > 0) {
-      newTransactions.push({ id: Date.now().toString() + "-ar-col", category: "ア", quantity: 1, amount: arToCollect, price: arToCollect, timestamp: new Date(Date.now() + 8).toISOString(), customName: "期末の売掛金回収", customShortName: "回収" });
+      newTransactions.push({ id: Date.now().toString() + "-ar-col", category: "ア", quantity: 1, amount: arToCollect, price: arToCollect, timestamp: new Date(Date.now() + 8).toISOString(), customName: "期末の売掛金回収", customShortName: "回収", periodEnd: true });
     }
 
     if (newTransactions.length === 0) {

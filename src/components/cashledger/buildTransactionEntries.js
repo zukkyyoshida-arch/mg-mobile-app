@@ -19,6 +19,16 @@
 import { MARKETS, MACHINES, ADS, CATEGORIES } from './constants';
 import { calculateFinancials } from '../../utils/calculations';
 
+// 入力値を「0以上の整数」へ防御的に正規化する共通ヘルパー。
+// Infinity・NaN（例: 内蔵電卓の 1/0、type=number 欄への 1e309 入力）は 0 に落とす。
+// ゲーム仕様上、金額（万円）・数量・人数・口数はすべて整数のため、小数は切り捨てる。
+// UI側（AddTransactionModal / CashLedger）のクランプもこの関数を使う。
+export function toSafeInt(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.floor(n));
+}
+
 // 現金残高チェック（追加すると現金がマイナスになる取引をブロックする）。
 // 残高は自前で足し引きせず calculateFinancials に委ねる。
 // カテゴリごとの入出金判定（isCash / type）が既にそこに集約されており、
@@ -40,7 +50,14 @@ export function checkCashBalance(ctx, updatedLedger) {
   // （= carryover.cash + cashInflow − cashOutflow）。
   const beforeCash = Number(before?.bookEndingCash);
   const afterCash = Number(after?.bookEndingCash);
-  if (!Number.isFinite(afterCash)) return null;
+  // 取引後残高が Infinity/NaN になる取引は登録自体を拒否する。
+  // 以前は「計算できないなら素通し（null）」だったが、非有限の金額が保存されると
+  // JSON.stringify で null 化し、リロード時に画面が壊れる事故につながるため。
+  if (!Number.isFinite(afterCash)) {
+    return {
+      error: 'この取引を登録すると現金残高が計算できない値（無限大など）になります。\n金額や数量の入力値を確認してください。'
+    };
+  }
 
   // 元々マイナスの状態からさらに減らす場合も止める。
   // 逆に、マイナスからの回復（入金）は通す。
@@ -130,8 +147,12 @@ function buildFactoring(ctx, form) {
   }
   const fee = Math.round(discountVal * 0.05);
   const newTransactions = [];
+  // ア(回収)とタ(手数料)は同時登録の組。groupId で結び、片方だけ削除されて
+  // 手数料だけが帳簿に残る不整合を防ぐ（removeEntry が組ごと削除する）。
+  const groupId = now.toString();
   newTransactions.push({
     id: now.toString() + '-ar',
+    groupId,
     category: 'ア',
     quantity: 1,
     amount: discountVal,
@@ -141,6 +162,7 @@ function buildFactoring(ctx, form) {
   if (fee > 0) {
     newTransactions.push({
       id: now.toString() + '-fee',
+      groupId,
       category: 'タ',
       quantity: 1,
       amount: fee,
@@ -159,8 +181,12 @@ function buildRiskCard(ctx, form) {
   const newTransactions = [];
   const timestamp = new Date(now).toISOString();
   const tsGroup = now.toString();
-  const q = Number(riskQty) || 0;
-  const p = Number(riskPrice) || 0;
+  // 数量・単価は 0以上の整数へ正規化する（Infinity/NaN は 0 に落とし、小数は切り捨て）。
+  // 小数個の販売や非有限値がそのまま帳簿に保存されるのを防ぐ。
+  const q = toSafeInt(riskQty);
+  const p = toSafeInt(riskPrice);
+  // 販売系の枝で使う手持在庫（完成品）。通常販売 buildSalesFinal と同じ基準。
+  const maxInventory = results?.prod?.endingCount || 0;
 
   if (riskTab === 'positive') {
     if (riskAction === 'monopoly_ad') {
@@ -168,17 +194,26 @@ function buildRiskCard(ctx, form) {
       const cat = transactionMode === 'credit' ? 'ネ' : 'キ';
       let totalQ = 0;
       Object.entries(riskMonopolyAdQtys).forEach(([market, qty]) => {
-        if (qty > 0) {
-          totalQ += qty;
-          newTransactions.push({ id: now.toString() + '-sale-' + market, category: cat, quantity: qty, amount: qty * adPrices[market], price: adPrices[market], timestamp: new Date(now + rand()).toISOString(), usedAd: true });
+        const qn = toSafeInt(qty);
+        if (qn > 0) {
+          totalQ += qn;
+          newTransactions.push({ id: now.toString() + '-sale-' + market, category: cat, quantity: qn, amount: qn * adPrices[market], price: adPrices[market], timestamp: new Date(now + rand()).toISOString(), usedAd: true });
         }
       });
       if (totalQ <= 0) {
         return { error: '販売する数量を入力してください' };
       }
+      // 在庫超過の販売をブロック（通常販売と同型のチェック）
+      if (totalQ > maxInventory) {
+        return { error: `手持在庫 (${maxInventory}個) を超える数量は販売できません` };
+      }
     } else if (riskAction === 'monopoly_salesman' || riskAction === 'rd_success') {
       if (q <= 0 || p <= 0) {
         return { error: '販売する数量と単価を入力してください' };
+      }
+      // 在庫超過の販売をブロック（通常販売と同型のチェック）
+      if (q > maxInventory) {
+        return { error: `手持在庫 (${maxInventory}個) を超える数量は販売できません` };
       }
       const cat = transactionMode === 'credit' ? 'ネ' : 'キ';
       newTransactions.push({ id: now.toString() + '-sale', category: cat, quantity: q, amount: q * p, price: p, timestamp, usedRD: riskAction === 'rd_success' });
@@ -513,11 +548,35 @@ function finalizeCommonEntry(ctx, form, final) {
   const { finalQuantity, finalPrice } = final;
   let { finalAmount } = final;
 
-  // 0円取引のブロック (非現金取引は除外)
+  // 0円・マイナス取引のブロック (非現金取引は除外)
+  //
+  // 以前は「<= 0」の一本の条件でゼロと負の数をまとめて弾き、どちらの場合も
+  // 「0万円の処理は登録できません」と出していた。そのため人数に -3 を入れて
+  // 合計が -15万 になった状態でも「0万円」と言われ、原因が伝わらなかった。
+  // ゼロと負の数を分けて、何が問題なのかを具体的に示す。
   const isCashTransaction = CATEGORIES[selectedCategory]?.isCash !== false;
   const actualAmount = finalAmount || (finalQuantity * finalPrice);
-  if (isCashTransaction && actualAmount <= 0 && !['火災', '製造ミス', '盗難'].includes(selectedCategory)) {
-    return { error: '0万円の処理は登録できません。金額や数量を確認してください。' };
+  const isLossCategory = ['火災', '製造ミス', '盗難'].includes(selectedCategory);
+
+  // 非有限の金額（Infinity/NaN）は損失系・非現金を含む全カテゴリで拒否する。
+  // 保存されると JSON.stringify で null 化し、リロード時の白画面事故につながるため。
+  if (!Number.isFinite(actualAmount)) {
+    return {
+      error: '金額の計算結果が正しくありません（大きすぎる数値、または数値以外が入力されています）。\n数量・単価・金額の入力値を確認してください。'
+    };
+  }
+
+  if (isCashTransaction && !isLossCategory) {
+    if (actualAmount < 0) {
+      return {
+        error: `マイナスの金額（¥${actualAmount.toLocaleString()}万）は登録できません。\n`
+          + `数量や人数にマイナスの値が入っていないか確認してください。\n\n`
+          + `取り消したい取引があるときは、タイムラインの「直す」または削除を使ってください。`
+      };
+    }
+    if (actualAmount === 0) {
+      return { error: '0万円の処理は登録できません。金額や数量を確認してください。' };
+    }
   }
 
   const newEntry = {
@@ -587,8 +646,13 @@ function finalizeCommonEntry(ctx, form, final) {
     const interestRate = (currentPeriod <= 3) ? 0.10 : 0.05;
     const interestAmount = Math.floor(finalAmount * interestRate); // 通常MGでは小数点切り捨てまたはそのまま、ここでは単純に計算
     if (interestAmount > 0) {
+      // 借入(オ)と自動利息(タ)は同時登録の組。groupId で結び、オだけ削除されて
+      // 利息が帳簿に残る不整合を防ぐ（removeEntry が組ごと削除する）。
+      const loanGroupId = now.toString();
+      newEntry.groupId = loanGroupId;
       const interestEntry = {
         id: (now + 1).toString(),
+        groupId: loanGroupId,
         voucherNo: getNextVoucherNo(updatedLedger).toString(),
         category: 'タ',
         quantity: 0,

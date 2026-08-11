@@ -66,6 +66,19 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
   };
   // pl is now defined with defaults above
 
+  // C/F内訳表示用の補助値（A1修正）:
+  // 営業CFの計算項目（calculations.js の operatingCF）と表示行を一致させる。
+  // ・特別利益（機械売却イ・保険金エ・自動保険金）は税引前利益に含まれるが
+  //   投資CF側で計上するため、営業CFでは控除している → その控除行
+  // ・未払費用（給与・保険料）の増減の足し戻し行
+  // ・法人税（ニ）納付の出金行
+  const cfExtraGain = pl.extraordinaryGain || 0;
+  const cfAccruedChange = (bs.accruedLaborCost || 0) - (safeCarry.accruedLaborCost || 0);
+  const cfTaxPaid = (ledger || []).reduce(
+    (sum, e) => (e?.category === 'ニ' ? sum + (Number(e.amount) || 0) : sum),
+    0
+  );
+
   return (
     <div style={{ padding: '0 0 24px 0' }}>
       
@@ -404,20 +417,41 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                   <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 減価償却費 (非資金)</td>
                   <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>+¥{(results.machines?.depreciation || 0).toLocaleString()}万</td>
                 </tr>
+                {cfExtraGain !== 0 && (
+                  <tr>
+                    {/* 特別利益（イ・エ・自動保険金）は投資CF側で計上するため営業CFから控除（A1修正） */}
+                    <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 特別利益 (投資CFへ振替)</td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>-¥{cfExtraGain.toLocaleString()}万</td>
+                  </tr>
+                )}
                 <tr>
                   <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 在庫増減 (材料・仕掛・製品)</td>
                   <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
                     -¥{((bs.materialsValue + bs.wipValue + bs.productValue) - (safeCarry.materialsValue + safeCarry.wipValue + safeCarry.productValue)).toLocaleString()}万
                   </td>
                 </tr>
-                <tr style={{ borderBottom: '1px solid var(--border-glass)' }}>
+                <tr>
                   <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 売掛・買掛増減</td>
                   <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
                     ¥{((bs.payables - safeCarry.payables) - (bs.receivables - safeCarry.receivables)).toLocaleString()}万
                   </td>
                 </tr>
-                
-                <tr>
+                {cfAccruedChange !== 0 && (
+                  <tr>
+                    <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 未払費用増減 (給与・保険料)</td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
+                      {cfAccruedChange >= 0 ? '+' : '-'}¥{Math.abs(cfAccruedChange).toLocaleString()}万
+                    </td>
+                  </tr>
+                )}
+                {cfTaxPaid > 0 && (
+                  <tr>
+                    <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 法人税等の納付 (ニ)</td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>-¥{cfTaxPaid.toLocaleString()}万</td>
+                  </tr>
+                )}
+
+                <tr style={{ borderTop: '1px solid var(--border-glass)' }}>
                   <td style={{ fontWeight: '700' }}>投資活動によるC/F (機械等)</td>
                   <td style={{ textAlign: 'right', fontWeight: '800', color: cf.investingCF >= 0 ? 'var(--mg-green)' : '#ef4444' }}>
                     ¥{cf.investingCF >= 0 ? '+' : ''}{cf.investingCF.toLocaleString()}万

@@ -573,3 +573,150 @@ describe('calculateFinancials - 法人税の均等割', () => {
     expect(res.pl.corporateTax).toBe(7);
   });
 });
+
+// A1: C/Fの特別利益二重計上の修正。
+// operatingCF は profitBeforeTax 起点で特別利益（イ・エ・自動保険金）を含むのに、
+// investingCF = extraordinaryGain − purchasedMachineValue で同額を再加算していたため、
+// 特別利益がある期は「期首現金 + totalCF ≠ 期末現金」になっていた
+// （検証済み再現値: イ50のみ→現金増減+50に対し totalCF=+100）。
+// 修正: 間接法の定石どおり営業CF側で特別利益を控除する。
+describe('calculateFinancials - C/Fの特別利益二重計上（A1）', () => {
+  it('機械売却（イ50万）のみ: 期首現金 + totalCF = 期末現金 が成立する', () => {
+    const carryover = freshCarryover();
+    const ledger = [{ category: 'イ', amount: 50 }];
+    const res = calculateFinancials(carryover, ledger, {}, 1);
+
+    expect(res.bs.cash).toBe(350); // 300 + 50
+    expect(carryover.cash + res.cf.totalCF).toBe(res.bs.cash); // 旧実装では +100 でズレていた
+    // 売却収入は投資CF側にのみ計上される（営業CFでは控除済み）
+    expect(res.cf.investingCF).toBe(50);
+    expect(res.cf.operatingCF).toBe(res.pl.profitBeforeTax - res.pl.extraordinaryGain);
+  });
+
+  it('受取保険金（エ30万）のみ: 帳尻が合う', () => {
+    const carryover = freshCarryover();
+    const ledger = [{ category: 'エ', amount: 30 }];
+    const res = calculateFinancials(carryover, ledger, {}, 1);
+
+    expect(res.bs.cash).toBe(330);
+    expect(carryover.cash + res.cf.totalCF).toBe(res.bs.cash);
+  });
+
+  it('保険チップ保有中の盗難（自動保険金）でも帳尻が合う', () => {
+    const carryover = freshCarryover();
+    const ledger = [
+      { category: 'ツ', amount: 30, quantity: 3 },
+      { category: 'コ', amount: 6, quantity: 3 },
+      { category: 'サ', amount: 3, quantity: 3 },
+      { category: '保険', amount: 20, quantity: 1 },
+      { category: '盗難', amount: 0, quantity: 0 }, // デフォルト2個の盗難
+    ];
+    const res = calculateFinancials(carryover, ledger, {}, 1);
+
+    // 自動保険金 = 盗難2個 × 10万 = 20万
+    expect(res.pl.extraordinaryGain).toBe(20);
+    expect(carryover.cash + res.cf.totalCF).toBe(res.bs.cash);
+  });
+
+  it('売却（イ）と保険金（エ）が併発しても帳尻が合う', () => {
+    const carryover = freshCarryover();
+    const ledger = [
+      { category: 'イ', amount: 50 },
+      { category: 'エ', amount: 30 },
+    ];
+    const res = calculateFinancials(carryover, ledger, {}, 1);
+
+    expect(res.bs.cash).toBe(380);
+    expect(carryover.cash + res.cf.totalCF).toBe(res.bs.cash);
+    expect(res.cf.investingCF).toBe(80);
+  });
+
+  it('特別利益ゼロの期は修正の影響を受けない（従来どおり帳尻が合う）', () => {
+    const carryover = freshCarryover();
+    const ledger = [
+      { category: 'ツ', amount: 20, quantity: 2 },
+      { category: 'キ', amount: 40, quantity: 0 },
+    ];
+    const res = calculateFinancials(carryover, ledger, {}, 1);
+    expect(res.pl.extraordinaryGain).toBe(0);
+    expect(carryover.cash + res.cf.totalCF).toBe(res.bs.cash);
+  });
+});
+
+// A2: hasProcessedPeriodEnd の誤判定修正。
+// 旧仕様「シ・セ・ソのいずれかの金額>0」では、期中に普通に発生する
+// セ（広告費・特別サービス・クレーム処理）や ソ（退職費用）1件で
+// 期末処理済みと誤判定され、給与見積が全消えしていた
+// （検証済み再現値: W2+S1第1期でセ5万→Fが90→5に）。
+// 修正: PeriodEndWizard が書き込むエントリの periodEnd: true フラグを第一判定とし、
+// 旧データ互換は「シ」の存在のみで判定する（シはウィザードしか書かない）。
+describe('calculateFinancials - 期末処理判定（A2: periodEndフラグ）', () => {
+  // ワーカー2名・セールスマン1名の期首体制（第1期: 給与単価18万・保険単価12万）
+  // → 見積: 労務費36 + 販売費18 + 保険36 = 90（未払費用も90）
+  const staffCarry = () => freshCarryover({ workers: 2, salesmen: 1 });
+
+  it('期中の広告費（セ5万）を登録しても給与見積・未払費用が消えない', () => {
+    const before = calculateFinancials(staffCarry(), [], {}, 1);
+    const after = calculateFinancials(staffCarry(), [
+      { category: 'セ', amount: 5, quantity: 1, customName: '特別サービス(広告)の支払' },
+    ], {}, 1);
+
+    // 旧実装ではセ1件で F が 90 → 5 に振れていた（給与見積85万の全消え）
+    expect(before.pl.fixedCost).toBe(90);
+    expect(before.bs.accruedLaborCost).toBe(90);
+    expect(after.pl.laborCost).toBe(36);           // 労務費の見積が維持される
+    expect(after.bs.accruedLaborCost).toBe(90);    // 未払費用が変わらない
+    // F・G は広告費5万ぶんだけ動く（実費計上。見積の全消えは起きない）
+    expect(after.pl.fixedCost).toBe(before.pl.fixedCost + 5);
+    expect(after.pl.operatingProfit).toBe(before.pl.operatingProfit - 5);
+    // 両モードとも B/S は貸借一致・C/Fの帳尻も合う
+    expect(before.bs.difference).toBe(0);
+    expect(after.bs.difference).toBe(0);
+    expect(300 + after.cf.totalCF).toBe(after.bs.cash);
+  });
+
+  it('期中の退職費用（ソ5万）を登録しても給与見積が消えず、B/Sが一致する', () => {
+    const res = calculateFinancials(staffCarry(), [
+      { category: 'ソ', amount: 5, quantity: 1, customName: '退職費用 (ワーカー)' },
+    ], {}, 1);
+    expect(res.pl.laborCost).toBe(36);
+    expect(res.bs.accruedLaborCost).toBe(90);
+    expect(res.bs.difference).toBe(0);
+  });
+
+  it('periodEnd: true フラグ付きエントリがあれば期末処理済みとして実績値へ切り替わる', () => {
+    const res = calculateFinancials(staffCarry(), [
+      { category: 'シ', amount: 36, quantity: 1, periodEnd: true },
+      { category: 'セ', amount: 18, quantity: 1, periodEnd: true },
+      { category: 'ソ', amount: 36, quantity: 1, periodEnd: true },
+    ], { actualWorkers: 2, actualSalesmen: 1 }, 1);
+    expect(res.pl.laborCost).toBe(36);
+    expect(res.pl.salesCost).toBe(18);
+    expect(res.bs.accruedLaborCost).toBe(0); // 支払済みなので未払費用は消える
+    expect(res.bs.difference).toBe(0);
+  });
+
+  it('期中の広告費セ + フラグ付き期末エントリの併存でも二重計上せずB/Sが一致する', () => {
+    const res = calculateFinancials(staffCarry(), [
+      { category: 'セ', amount: 5, quantity: 1 },                    // 期中の広告
+      { category: 'シ', amount: 36, quantity: 1, periodEnd: true },  // 期末ウィザード分
+      { category: 'セ', amount: 18, quantity: 1, periodEnd: true },
+      { category: 'ソ', amount: 36, quantity: 1, periodEnd: true },
+    ], { actualWorkers: 2, actualSalesmen: 1 }, 1);
+    // 実績モード: 販売費 = 広告5 + セールス給与18（見積との二重計上なし）
+    expect(res.pl.salesCost).toBe(23);
+    expect(res.bs.accruedLaborCost).toBe(0);
+    expect(res.bs.difference).toBe(0);
+  });
+
+  it('旧データ互換: フラグの無い「シ」があれば期末処理済みとみなす', () => {
+    const res = calculateFinancials(staffCarry(), [
+      { category: 'シ', amount: 36, quantity: 1 },
+      { category: 'セ', amount: 18, quantity: 1 },
+      { category: 'ソ', amount: 36, quantity: 1 },
+    ], { actualWorkers: 2, actualSalesmen: 1 }, 1);
+    expect(res.pl.laborCost).toBe(36);
+    expect(res.bs.accruedLaborCost).toBe(0);
+    expect(res.bs.difference).toBe(0);
+  });
+});

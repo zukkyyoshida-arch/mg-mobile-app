@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildTransactionEntries, getNextVoucherNo } from '../../src/components/cashledger/buildTransactionEntries.js';
+import { buildTransactionEntries, getNextVoucherNo, removeEntry, toSafeInt, checkCashBalance } from '../../src/components/cashledger/buildTransactionEntries.js';
 
 // CashLedger のフォーム state 初期値（resetForm 相当）。テストごとに複製して使う。
 function makeForm(overrides = {}) {
@@ -337,8 +337,9 @@ describe('buildTransactionEntries - 生産（早期リターン枝）', () => {
 
 describe('buildTransactionEntries - リスクカード', () => {
   it('ポジティブ独占販売(Sマン)は販売エントリを1件生成', () => {
+    // 在庫チェック追加（B2）に伴い、手持在庫を持つ ctx で検証する
     const res = buildTransactionEntries(
-      makeCtx({ transactionMode: 'cash' }),
+      makeCtx({ transactionMode: 'cash', results: { prod: { endingCount: 5 } } }),
       makeForm({ selectedCategory: 'リスクカード', riskTab: 'positive', riskAction: 'monopoly_salesman', riskQty: '2', riskPrice: '32' })
     );
     expect(res.ledger).toHaveLength(1);
@@ -539,5 +540,230 @@ describe('現金残高のガード', () => {
       selectedCategory: '生産', productionKo: '5', productionSa: '5'
     }));
     expect(res.error).toBeTruthy();
+  });
+});
+
+// 負の金額の拒否メッセージ。
+// 以前は「<= 0」の一本の条件でゼロと負の数をまとめて弾いていたため、
+// 人数に -3 を入れて合計 -15万 になった状態でも「0万円の処理は登録できません」と
+// 表示され、原因が伝わらなかった（実機検査で確認）。
+describe('負の金額の扱い', () => {
+  it('負の金額は「マイナスの金額」と明示して拒否する', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: '採用', workersHired: '-3', salesmenHired: '0', hirePrice: 5 })
+    );
+    expect(res.error).toBeTruthy();
+    expect(res.error).toContain('マイナスの金額');
+    expect(res.error).toContain('-15');       // 実際の金額を示す
+    expect(res.error).not.toContain('0万円'); // ゼロ扱いのメッセージを出さない
+    expect(res.ledger).toBeUndefined();
+  });
+
+  it('ゼロは従来どおり「0万円の処理は登録できません」で拒否する', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'ス', amount: '0' })
+    );
+    expect(res.error).toContain('0万円');
+    expect(res.error).not.toContain('マイナスの金額');
+  });
+
+  it('負の金額のメッセージに復旧手段（直す・削除）の案内を含む', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'ス', amount: '-100' })
+    );
+    expect(res.error).toContain('マイナスの金額');
+    expect(res.error).toContain('直す');
+  });
+
+  it('正の金額は通る（誤ってブロックしない）', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'ス', amount: '50' })
+    );
+    expect(res.error).toBeUndefined();
+    expect(res.ledger).toHaveLength(1);
+  });
+});
+
+// 入力の防御的正規化ヘルパー（B1/B3）。
+// UI（AddTransactionModal / CashLedger）の全クランプ箇所がこの関数を通る。
+describe('toSafeInt - 入力の防御的正規化', () => {
+  it('小数は切り捨てる（数量1.5個・採用2.5人の混入防止）', () => {
+    expect(toSafeInt('2.5')).toBe(2);
+    expect(toSafeInt(1.9)).toBe(1);
+  });
+  it('負の値は0に丸める', () => {
+    expect(toSafeInt('-3')).toBe(0);
+    expect(toSafeInt(-0.5)).toBe(0);
+  });
+  it('Infinity/NaN/数値以外は0に落とす', () => {
+    expect(toSafeInt('1e309')).toBe(0); // 有限数の範囲を超える入力
+    expect(toSafeInt(Infinity)).toBe(0);
+    expect(toSafeInt(-Infinity)).toBe(0);
+    expect(toSafeInt(NaN)).toBe(0);
+    expect(toSafeInt('abc')).toBe(0);
+    expect(toSafeInt('')).toBe(0);
+  });
+  it('通常の整数はそのまま通す', () => {
+    expect(toSafeInt('5')).toBe(5);
+    expect(toSafeInt(0)).toBe(0);
+    expect(toSafeInt(100)).toBe(100);
+  });
+});
+
+// B1: Infinity/NaN が帳簿に保存されると JSON.stringify で null 化し、
+// リロード時に白画面が永続する事故（実ブラウザで確認済み）を多層で防ぐ。
+describe('非有限金額の拒否（B1）', () => {
+  it('金額欄にInfinityが渡っても保存されない', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'ス', amount: 'Infinity' })
+    );
+    expect(res.error).toBeTruthy();
+    expect(res.ledger).toBeUndefined();
+  });
+
+  it('有限巨大数の乗算で金額がInfinityになる採用も拒否する（1e308人 × 5万）', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: '採用', workersHired: '1e308', salesmenHired: '0', hirePrice: 5 })
+    );
+    expect(res.error).toBeTruthy();
+    expect(res.ledger).toBeUndefined();
+  });
+
+  it('非現金の損失カテゴリでもNaN金額（Infinity個 × 単価0）は拒否する', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: '盗難', quantity: 'Infinity', price: '' })
+    );
+    expect(res.error).toBeTruthy();
+    expect(res.ledger).toBeUndefined();
+  });
+
+  it('checkCashBalance は残高が非有限になる取引を素通しせず拒否する', () => {
+    const ctx = makeCtx();
+    const res = checkCashBalance(ctx, [
+      { id: '1', voucherNo: '1', category: 'ス', quantity: 0, price: 0, amount: Infinity }
+    ]);
+    expect(res).not.toBeNull();
+    expect(res.error).toBeTruthy();
+  });
+
+  it('通常の有限金額は従来どおり通る（誤ブロックしない）', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'ス', amount: '100' })
+    );
+    expect(res.error).toBeUndefined();
+    expect(res.ledger).toHaveLength(1);
+  });
+});
+
+// B2: リスクカード販売系の在庫チェック。
+// 修正前は在庫5個でも999999個販売でき、製品在庫マイナス・現金+3200万円が恒久保存された。
+describe('リスクカード販売の在庫チェック（B2）', () => {
+  it('独占販売(Sマン)は在庫超過を拒否する', () => {
+    const res = buildTransactionEntries(
+      makeCtx({ results: { prod: { endingCount: 5 } } }),
+      makeForm({ selectedCategory: 'リスクカード', riskTab: 'positive', riskAction: 'monopoly_salesman', riskQty: '999999', riskPrice: '32' })
+    );
+    expect(res.error).toContain('手持在庫');
+    expect(res.ledger).toBeUndefined();
+  });
+
+  it('研究開発成功(rd_success)も在庫超過を拒否する', () => {
+    const res = buildTransactionEntries(
+      makeCtx({ results: { prod: { endingCount: 3 } } }),
+      makeForm({ selectedCategory: 'リスクカード', riskTab: 'positive', riskAction: 'rd_success', riskQty: '4', riskPrice: '32' })
+    );
+    expect(res.error).toContain('手持在庫');
+  });
+
+  it('独占販売(広告)は合計数量が在庫を超えると拒否する', () => {
+    const res = buildTransactionEntries(
+      makeCtx({ results: { prod: { endingCount: 3 } } }),
+      makeForm({
+        selectedCategory: 'リスクカード', riskTab: 'positive', riskAction: 'monopoly_ad',
+        riskMonopolyAdQtys: { sapporo: 2, sendai: 2, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0 }
+      })
+    );
+    expect(res.error).toContain('手持在庫');
+  });
+
+  it('在庫ちょうどまでの販売は通る（境界値）', () => {
+    const res = buildTransactionEntries(
+      makeCtx({ results: { prod: { endingCount: 5 } } }),
+      makeForm({ selectedCategory: 'リスクカード', riskTab: 'positive', riskAction: 'monopoly_salesman', riskQty: '5', riskPrice: '32' })
+    );
+    expect(res.error).toBeUndefined();
+    expect(res.ledger[0].quantity).toBe(5);
+    expect(res.ledger[0].amount).toBe(160);
+  });
+
+  it('数量の小数は切り捨てて整数個で計上する（B3）', () => {
+    const res = buildTransactionEntries(
+      makeCtx({ results: { prod: { endingCount: 5 } } }),
+      makeForm({ selectedCategory: 'リスクカード', riskTab: 'positive', riskAction: 'monopoly_salesman', riskQty: '2.9', riskPrice: '32' })
+    );
+    expect(res.error).toBeUndefined();
+    expect(res.ledger[0].quantity).toBe(2);
+    expect(res.ledger[0].amount).toBe(64);
+  });
+
+  it('特別サービス(広告)の口数も整数化される（B3）', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'リスクカード', riskTab: 'positive', riskAction: 'special_ad', riskQty: '1.5' })
+    );
+    expect(res.error).toBeUndefined();
+    expect(res.ledger[0].quantity).toBe(1);
+    expect(res.ledger[0].amount).toBe(5);
+  });
+});
+
+// 借入(オ)＋自動利息(タ)、売掛割引(ア)＋手数料(タ)の組に groupId を付け、
+// 片方だけ削除されて帳簿が不整合になる事故を防ぐ（removeEntry は組ごと削除する）。
+describe('同時登録の組（groupId）と一括削除', () => {
+  it('借入(オ)と自動利息(タ)は同一groupIdを持ち、どちらを削除しても組ごと消える', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'オ', amount: '100' })
+    );
+    expect(res.ledger).toHaveLength(2);
+    const [loan, interest] = res.ledger;
+    expect(loan.groupId).toBeTruthy();
+    expect(loan.groupId).toBe(interest.groupId);
+    // オを消してもタを消しても、組ごと消えて孤児が残らない
+    expect(removeEntry(res.ledger, loan)).toHaveLength(0);
+    expect(removeEntry(res.ledger, interest)).toHaveLength(0);
+  });
+
+  it('利息が発生しない少額の借入は組を作らない（単独削除できる）', () => {
+    // 期1（利率10%）で9万借入 → floor(0.9)=0 で利息エントリなし
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: 'オ', amount: '9' })
+    );
+    expect(res.ledger).toHaveLength(1);
+    expect(res.ledger[0].groupId).toBeUndefined();
+  });
+
+  it('売掛割引(ア)と手数料(タ)は同一groupIdを持ち、組ごと消える', () => {
+    const res = buildTransactionEntries(
+      makeCtx(),
+      makeForm({ selectedCategory: '売掛割引', factoringAmount: '100' })
+    );
+    expect(res.ledger).toHaveLength(2);
+    const [ar, fee] = res.ledger;
+    expect(ar.category).toBe('ア');
+    expect(fee.category).toBe('タ');
+    expect(ar.groupId).toBeTruthy();
+    expect(ar.groupId).toBe(fee.groupId);
+    expect(removeEntry(res.ledger, ar)).toHaveLength(0);
+    expect(removeEntry(res.ledger, fee)).toHaveLength(0);
   });
 });
