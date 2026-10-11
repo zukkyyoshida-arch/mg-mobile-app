@@ -1,18 +1,27 @@
 import { useState } from 'react';
 import { SALARY_TABLE } from '../utils/calculations';
 import { getRealtimeAdvice } from '../utils/aiRules';
+// toSafeInt: 数値入力の防御的サニタイズ（非有限=Infinity/NaN拒否・下限0・整数化）。
+// 実棚・人数はマイナスや小数が入ると actuals→翌期繰越へ伝播して給与が負値になる
+// （＝利益の水増し）ため、state に入る前にここで確実に落とす。
+import { toSafeInt } from '../utils/inputSanitizers';
+// hasPeriodEndEntries: 期末ウィザードが書き込んだ periodEnd: true フラグ付き仕訳の有無。
+// 確定済みの期で再実行するとシ・セ・ソが同額で二重計上されるため、再確定をブロックする。
+import { hasPeriodEndEntries } from '../utils/constants';
 
 function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdateLedger, currentPeriod, results, onShowPerformance }) {
   const [currentStep, setCurrentStep] = useState(1);
   
   // Step 1: Inventory state
-  const [actualMaterials, setActualMaterials] = useState(actuals?.actualMaterials ?? '');
-  const [actualWip, setActualWip] = useState(actuals?.actualWip ?? '');
-  const [actualProduct, setActualProduct] = useState(actuals?.actualProduct ?? '');
+  // （過去バージョンで保存された負数・小数の残渣が actuals に残っていても、
+  //   初期表示の時点で 0以上の整数へ正規化して再汚染を防ぐ）
+  const [actualMaterials, setActualMaterials] = useState(() => (actuals?.actualMaterials ?? '') === '' ? '' : toSafeInt(actuals.actualMaterials));
+  const [actualWip, setActualWip] = useState(() => (actuals?.actualWip ?? '') === '' ? '' : toSafeInt(actuals.actualWip));
+  const [actualProduct, setActualProduct] = useState(() => (actuals?.actualProduct ?? '') === '' ? '' : toSafeInt(actuals.actualProduct));
 
   // Step 2: Salary state
-  const [periodEndWorkers, setPeriodEndWorkers] = useState(() => (results?.workers || 0).toString());
-  const [periodEndSalesmen, setPeriodEndSalesmen] = useState(() => (results?.salesmen || 0).toString());
+  const [periodEndWorkers, setPeriodEndWorkers] = useState(() => String(toSafeInt(results?.workers)));
+  const [periodEndSalesmen, setPeriodEndSalesmen] = useState(() => String(toSafeInt(results?.salesmen)));
 
   // Step 3: AR Collection state
   const [arCollection, setArCollection] = useState('');
@@ -28,8 +37,10 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
 
 
   const handleActualChange = (field, val) => {
-    const rawVal = val === '' ? '' : Number(val);
-    const updateVal = val === '' ? 0 : Number(val);
+    // 実棚は0以上の整数のみ受け付ける（負数は「理論値+α」の架空棚卸ロス取引を、
+    // 小数・Infinityは理論値照合の恒久不一致を生むため、入口で整数化する）
+    const rawVal = val === '' ? '' : toSafeInt(val);
+    const updateVal = val === '' ? 0 : toSafeInt(val);
     
     if (field === 'mat') {
       setActualMaterials(rawVal);
@@ -104,9 +115,16 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const requiredRepayment = Math.ceil(totalLoan * 0.2);
   const remainingRepayment = Math.max(0, requiredRepayment - currentLedgerRepay);
 
+  // 実行済みガード: この期の ledger に期末ウィザードの仕訳（periodEnd: true）が
+  // 既にあれば、確定済みとみなして再実行をブロックする（給与・保険料の二重計上防止）。
+  // 確定後は App.jsx 側の key（ledger.length を含む）でリマウントされ、この判定が効く。
+  const alreadyProcessed = hasPeriodEndEntries(ledger);
+
   // 計算のヘルパー
-  const wCount = Number(periodEndWorkers) || 0;
-  const sCount = Number(periodEndSalesmen) || 0;
+  // 人数は0以上の整数のみ（-3 が actuals→翌期繰越に伝播すると給与が負の固定費になり
+  // 利益が水増しされるため、Number() の生値でなく toSafeInt で受ける）
+  const wCount = toSafeInt(periodEndWorkers);
+  const sCount = toSafeInt(periodEndSalesmen);
   const totalStaff = wCount + sCount;
   const periodKey = Math.min(5, Math.max(1, currentPeriod));
   const salaryUnit = SALARY_TABLE.normal[periodKey] || 0;
@@ -116,7 +134,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const insurance = totalStaff * insuranceUnit;
   const totalAmount = workerSal + salesmanSal + insurance;
   const currentCash = results.bookEndingCash || 0;
-  const arToCollect = Number(arCollection) || 0;
+  const arToCollect = toSafeInt(arCollection);
   
   const fireSaleRevenue = (disposedState.required && fireSaleType === 'cash') ? (fireSaleCount * 18) : 0;
   const finalCash = currentCash - totalAmount - remainingRepayment + arToCollect + fireSaleRevenue;
@@ -130,6 +148,11 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   );
 
   const confirmPeriodEnd = () => {
+    // 二重確定の最終ガード（画面側の実行済み表示をすり抜けた場合の保険）
+    if (alreadyProcessed) {
+      alert("この期の期末処理はすでに確定済みです。\nもう一度実行すると給与・保険料が二重計上されるため、再実行はできません。");
+      return;
+    }
     onUpdateActuals({
       ...actuals,
       actualWorkers: wCount,
@@ -208,10 +231,44 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
 
 
 
+  // 実行済みの期では、ウィザードの各ステップを出さず案内カードだけを表示する
+  // （Step1の照合画面が再表示されると受講者がそのまま進めて二重計上する導線になるため）
+  if (alreadyProcessed) {
+    return (
+      <div style={{ padding: '0 0 24px 0' }}>
+        <div className="tab-panel">
+          <div className="glass-card">
+            <div className="glass-card-header">
+              <h3 className="glass-card-title">
+                ✅ 第{currentPeriod}期の期末処理は完了しています
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: 1.6 }}>
+              給与・保険料などの期末仕訳は、すでにこの期の出納帳へ登録済みです。
+              もう一度実行すると労務費(シ)・販売費(セ)・社会保険料(ソ)が二重計上されるため、
+              このウィザードは再実行できません。
+            </p>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.6 }}>
+              金額を直したい場合は、出納帳タブで該当の仕訳を「入力し直す」で修正してください。
+              次の期へ進むには、設定タブで期を切り替えて「決算データを期首に引き継ぐ」を実行します。
+            </p>
+            <button
+              onClick={() => { if (onShowPerformance) onShowPerformance(); }}
+              className="btn-premium btn-primary"
+              style={{ width: '100%', padding: '12px' }}
+            >
+              🏆 成績発表を見る
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: '0 0 24px 0' }}>
       <div className="tab-panel">
-        
+
         {currentStep === 1 && (
           <div className="glass-card">
             <div className="glass-card-header">
@@ -237,6 +294,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <input
                         type="number"
+                        inputMode="numeric"
                         value={actualMaterials ?? ''}
                         onChange={(e) => handleActualChange('mat', e.target.value)}
                         placeholder="盤の上の材料数"
@@ -268,6 +326,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <input
                         type="number"
+                        inputMode="numeric"
                         value={actualWip ?? ''}
                         onChange={(e) => handleActualChange('wip', e.target.value)}
                         placeholder="盤の上の仕掛品数"
@@ -299,6 +358,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <input
                         type="number"
+                        inputMode="numeric"
                         value={actualProduct ?? ''}
                         onChange={(e) => handleActualChange('prod', e.target.value)}
                         placeholder="盤の上の製品数"
@@ -365,8 +425,9 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                     <label style={{ fontSize: '0.85rem', display: 'block', marginBottom: '4px' }}>投げ売りする数 (1個18万)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={fireSaleCount}
-                      onChange={(e) => setFireSaleCount(Math.min(disposedState.prod, Math.max(0, Number(e.target.value) || 0)))}
+                      onChange={(e) => setFireSaleCount(Math.min(disposedState.prod, toSafeInt(e.target.value)))}
                       min="0"
                       max={disposedState.prod}
                       className="form-input"
@@ -500,7 +561,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                       type="number"
                       inputMode="numeric"
                       value={periodEndWorkers}
-                      onChange={(e) => setPeriodEndWorkers(e.target.value)}
+                      onChange={(e) => { const v = e.target.value; setPeriodEndWorkers(v === '' ? '' : String(toSafeInt(v))); }}
                       placeholder="実際の人数"
                       min="0"
                       step="1"
@@ -532,7 +593,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                       type="number"
                       inputMode="numeric"
                       value={periodEndSalesmen}
-                      onChange={(e) => setPeriodEndSalesmen(e.target.value)}
+                      onChange={(e) => { const v = e.target.value; setPeriodEndSalesmen(v === '' ? '' : String(toSafeInt(v))); }}
                       placeholder="実際の人数"
                       min="0"
                       step="1"
@@ -552,8 +613,8 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
             </div>
             
             {(() => {
-              const wCount = Number(periodEndWorkers) || 0;
-              const sCount = Number(periodEndSalesmen) || 0;
+              const wCount = toSafeInt(periodEndWorkers);
+              const sCount = toSafeInt(periodEndSalesmen);
               const totalStaff = wCount + sCount;
               const periodKey = Math.min(5, Math.max(1, currentPeriod));
               const salaryUnit = SALARY_TABLE.normal[periodKey] || 0;
@@ -718,8 +779,9 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                   </label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     value={arCollection}
-                    onChange={(e) => setArCollection(Math.min(results.endingReceivables, Math.max(0, Number(e.target.value) || 0)))}
+                    onChange={(e) => setArCollection(Math.min(results.endingReceivables, toSafeInt(e.target.value)))}
                     placeholder="回収する金額を入力"
                     className="form-input"
                     style={{ width: '100%', padding: '10px' }}

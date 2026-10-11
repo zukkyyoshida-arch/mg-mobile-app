@@ -68,11 +68,16 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
 
   // C/F内訳表示用の補助値（A1修正）:
   // 営業CFの計算項目（calculations.js の operatingCF）と表示行を一致させる。
-  // ・特別利益（機械売却イ・保険金エ・自動保険金）は税引前利益に含まれるが
-  //   投資CF側で計上するため、営業CFでは控除している → その控除行
+  // ・特別損益（機械売却イ・保険金エ・自動保険金）は税引前利益に含まれるが
+  //   投資CF側で計上するため、営業CFでは控除している → その控除行。
+  //   機械売却で売却損が出た期はマイナス（＝営業CFへの足し戻し）になるため、
+  //   calculations.js が返す振替額 cf.extraGainAdjustment をそのまま使う
+  //   （旧データ互換のため未定義なら pl.extraordinaryGain にフォールバック）
   // ・未払費用（給与・保険料）の増減の足し戻し行
   // ・法人税（ニ）納付の出金行
-  const cfExtraGain = pl.extraordinaryGain || 0;
+  const cfExtraGain = cf.extraGainAdjustment !== undefined
+    ? cf.extraGainAdjustment
+    : (pl.extraordinaryGain || 0);
   const cfAccruedChange = (bs.accruedLaborCost || 0) - (safeCarry.accruedLaborCost || 0);
   const cfTaxPaid = (ledger || []).reduce(
     (sum, e) => (e?.category === 'ニ' ? sum + (Number(e.amount) || 0) : sum),
@@ -352,6 +357,13 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                       <td>未払法人税等</td>
                       <td style={{ textAlign: 'right' }}>¥{bs.unpaidTax.toLocaleString()}万</td>
                     </tr>
+                    {(bs.priorUnpaidTax || 0) > 0 && (
+                      <tr>
+                        {/* 前期から繰り越した未払税金。期首処理のニ納付で消し込まれる */}
+                        <td>未払法人税等 (前期分)</td>
+                        <td style={{ textAlign: 'right' }}>¥{bs.priorUnpaidTax.toLocaleString()}万</td>
+                      </tr>
+                    )}
                     {bs.accruedLaborCost > 0 && (
                       <tr style={{ color: 'var(--mg-pink)' }}>
                         <td>未払費用 (給与・保険料)</td>
@@ -419,9 +431,12 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                 </tr>
                 {cfExtraGain !== 0 && (
                   <tr>
-                    {/* 特別利益（イ・エ・自動保険金）は投資CF側で計上するため営業CFから控除（A1修正） */}
-                    <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 特別利益 (投資CFへ振替)</td>
-                    <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>-¥{cfExtraGain.toLocaleString()}万</td>
+                    {/* 特別損益（イ・エ・自動保険金）は投資CF側で計上するため営業CFから控除（A1修正）。
+                        機械売却損の期は振替額がマイナス＝営業CFへの足し戻し（+表示）になる */}
+                    <td style={{ color: 'var(--text-muted)', paddingLeft: '20px' }}>┗ 特別損益 (投資CFへ振替)</td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
+                      {cfExtraGain > 0 ? '-' : '+'}¥{Math.abs(cfExtraGain).toLocaleString()}万
+                    </td>
                   </tr>
                 )}
                 <tr>

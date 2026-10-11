@@ -38,7 +38,10 @@ function TimelineList({ visibleLedger, carryoverCash, onDelete, onRedo }) {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '0.88rem', fontWeight: '700' }}>{labelText}</span>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>#{entry.voucherNo}</span>
+                    {/* 採番前の旧データは裸の「#」を出さない（番号がある取引だけ表示） */}
+                    {entry.voucherNo != null && (
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>#{entry.voucherNo}</span>
+                    )}
                   </div>
                   {["コ", "サ", "ツ", "ノ", "ケ"].includes(entry.category) && (
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
@@ -76,6 +79,9 @@ function TimelineList({ visibleLedger, carryoverCash, onDelete, onRedo }) {
                       保存された端末の localStorage を読んでも白画面にしない（復旧経路） */}
                   {catMeta.type === 'inflow' ? '+' : '-'} ¥{Number.isFinite(Number(entry.amount)) ? Number(entry.amount).toLocaleString() : '—'} 万
                 </span>
+                {/* 「直す」「削除」は誤タップが致命傷（削除は取引が消える）になるため、
+                    タップ領域を44×44pxに確保する（Apple HIG / WCAG 2.5.8）。
+                    アイコンは18pxのまま、padding で領域だけを広げる。 */}
                 {onRedo && (
                   <button
                     onClick={() => onRedo(entry.id)}
@@ -86,9 +92,12 @@ function TimelineList({ visibleLedger, carryoverCash, onDelete, onRedo }) {
                       color: 'var(--text-secondary)',
                       opacity: 0.75,
                       cursor: 'pointer',
-                      padding: '4px',
+                      padding: 0,
+                      minWidth: '44px',
+                      minHeight: '44px',
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       flex: '0 0 auto'
                     }}
                     aria-label={`${labelText} を入力し直す`}
@@ -100,7 +109,20 @@ function TimelineList({ visibleLedger, carryoverCash, onDelete, onRedo }) {
                 )}
                 <button
                   onClick={() => onDelete(entry.id)}
-                  style={{ background: 'none', border: 'none', color: '#ef4444', opacity: 0.4, cursor: 'pointer', padding: '4px' }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#ef4444',
+                    opacity: 0.4,
+                    cursor: 'pointer',
+                    padding: 0,
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: '0 0 auto'
+                  }}
                   aria-label={`${labelText} を削除する`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px' }}>

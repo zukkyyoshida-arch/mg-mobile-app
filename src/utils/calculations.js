@@ -117,7 +117,18 @@ export const DEFAULT_PERIOD_DATA = {
  * 帳簿データを元にすべての数値を再計算するメイン関数
  */
 export function calculateFinancials(carryover, ledger, actuals, period = 1) {
-  // 期番号を1〜5にクランプ
+  // 防御: 旧5期版のlocalStorage・サーバーバックアップから復元したデータでは
+  // periods[6]以降が {ledger:[…]} だけの部分オブジェクトになることがあり、
+  // carryover が undefined のまま渡ってくると TypeError → 白画面になる。
+  // ここで空オブジェクトに正規化し、以降は全プロパティを || 0 で読む
+  // （空繰越＝現金0・資本金0の「まっさらな期」として計算が完走する）。
+  carryover = carryover || {};
+  ledger = Array.isArray(ledger) ? ledger : [];
+
+  // 期番号を1〜5にクランプ。
+  // 【仕様】第6期以降も給与・保険・退職金の単価は第5期の値に固定される
+  // （SALARY_TABLE は1〜5期分しか持たない。期選択UIは20期まで開放されているが、
+  //   単価テーブルの拡張は行わない＝5期制の研修設計を単価の正とする）。
   const periodKey = Math.min(5, Math.max(1, Number(period) || 1));
   // 1. 現金の出入金集計
   let cashInflow = 0;
@@ -316,7 +327,7 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
   const plInsurance       = hasProcessedPeriodEnd ? actualInsurance    : (estimatedInsurance + actualInsurance);
 
 // 現金残高 = 期首 + 入金 - 出金（人件費は現金流出に含めない。ただし損益計算書の費用としては計上）
-const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
+const bookEndingCash = (carryover.cash || 0) + cashInflow - cashOutflow;
 
   // 2. 在庫・原価計算 (材料 -> 仕掛品 -> 製品)
   
@@ -460,16 +471,38 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   // 購入された機械工具 (ケ)
   const purchasedMachineValue = ledgerTotals["ケ"].amount;
 
-  // 減価償却費 (期首の機械資産簿価 + 当期新規購入額 の 20% = 耐用年数5年)
+  // ── 機械売却（イ）の簿価除却 ──
+  // 正しい会計: 売却損益 = 売却額 − 売却機械の簿価。簿価は固定資産から除却する。
+  // 個別の機械ごとの簿価は持っていないため、機械簿価プール
+  // （期首簿価 + 当期購入額）を「標準取得価額 × 台数」の重みで按分して
+  // 売却機械の簿価を求める（大型200・小型100・アタッチメント20＝MACHINESマスタと同値）。
+  // 全台売却すれば簿価プール全額が除却され、翌期に幽霊簿価は残らない。
+  const MACHINE_UNIT_WEIGHTS = { large: 200, small: 100, attachment: 20 };
+  const machineBookPool = (carryover.machinesValue || 0) + purchasedMachineValue;
+  const totalMachineWeight =
+    ((carryover.largeMachines || 0) + newLargeMachines) * MACHINE_UNIT_WEIGHTS.large +
+    ((carryover.smallMachines || 0) + newSmallMachines) * MACHINE_UNIT_WEIGHTS.small +
+    ((carryover.attachments || 0) + newAttachments) * MACHINE_UNIT_WEIGHTS.attachment;
+  const soldMachineWeight =
+    Math.min(soldLargeMachines, (carryover.largeMachines || 0) + newLargeMachines) * MACHINE_UNIT_WEIGHTS.large +
+    Math.min(soldSmallMachines, (carryover.smallMachines || 0) + newSmallMachines) * MACHINE_UNIT_WEIGHTS.small +
+    Math.min(soldAttachments, (carryover.attachments || 0) + newAttachments) * MACHINE_UNIT_WEIGHTS.attachment;
+  // sold*フィールドの無い旧形式の売却エントリは soldWeight=0 → 除却0（後方互換: 従来どおり売却額全額が特別利益）
+  const soldMachinesBookValue = totalMachineWeight > 0
+    ? Math.min(machineBookPool, Math.round(machineBookPool * (soldMachineWeight / totalMachineWeight)))
+    : 0;
+
+  // 減価償却費 (期首の機械資産簿価 + 当期新規購入額 − 売却機械の簿価 の 20% = 耐用年数5年)
+  // 売却した機械は期首簿価で除却し、当期の償却対象には含めない
+  // （旧実装は売却済みの機械も償却母数に含めており、保有0台でも償却が発生していた）。
   // 第1期は練習期のため、ルール上減価償却費は発生しない
   const depreciation = periodKey === 1
     ? 0
-    : Math.round((carryover.machinesValue + purchasedMachineValue) * 0.2);
-  
-  // 機械資産の期末残高 (理論値)
-  // 台数はトラッキング済み、簿価は簡略化継続（売却額を引かない）。
-  // ※機械売却は売却益として extraordinaryGain 側で処理済みのため、簿価から売却額を引くと二重マイナスになる。
-  const bookEndingMachines = Math.max(0, carryover.machinesValue + purchasedMachineValue - depreciation);
+    : Math.round((machineBookPool - soldMachinesBookValue) * 0.2);
+
+  // 機械資産の期末残高 (理論値) = 期首簿価 + 当期購入 − 売却簿価除却 − 減価償却
+  // 売却損益は extraordinaryGain / extraordinaryLoss 側で「売却額 − 簿価」として計上する。
+  const bookEndingMachines = Math.max(0, machineBookPool - soldMachinesBookValue - depreciation);
 
   // 4. P/L (変動損益計算書) の計算
   const salesRevenue = ledgerTotals["キ"].amount + ledgerTotals["ネ"].amount; // 売上高 PQ
@@ -512,12 +545,16 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   const operatingProfit = margin - fixedCost; // 経常利益 G
   const fmRatio = margin > 0 ? (fixedCost / margin) * 100 : 0; // f/m比率
 
-  // 特別損益 (災害損失 + 受取保険金など)
+  // 特別損益 (災害損失 + 受取保険金 + 機械売却損益)
   // 事故災害損失 = 火災金額 + 製造ミス金額 + 盗難金額
   const accidentLoss = matFireValue + wipMissValue + prodTheftValue;
-  const extraordinaryLoss = accidentLoss;
-  // 保険金(自動算出) + 保険金(エの手入力分) + 機械売却収入
-  const extraordinaryGain = autoInsurancePayout + ledgerTotals["エ"].amount + ledgerTotals["イ"].amount;
+  // 機械売却損益 = 売却額 − 売却機械の簿価（プラスなら売却益、マイナスなら売却損）
+  // 旧実装は売却額全額を特別利益にしていたため、簿価分だけ利益と法人税が過大だった。
+  const machineSaleProceeds = ledgerTotals["イ"].amount;
+  const machineSaleGainLoss = machineSaleProceeds - soldMachinesBookValue;
+  const extraordinaryLoss = accidentLoss + Math.max(0, -machineSaleGainLoss);
+  // 保険金(自動算出) + 保険金(エの手入力分) + 機械売却益（売却損は extraordinaryLoss 側）
+  const extraordinaryGain = autoInsurancePayout + ledgerTotals["エ"].amount + Math.max(0, machineSaleGainLoss);
   const extraordinaryProfit = extraordinaryGain - extraordinaryLoss;
 
   const profitBeforeTax = operatingProfit + extraordinaryProfit; // 税引前当期純利益
@@ -548,13 +585,13 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   // 5. B/S (貸借対照表) の計算
   const endingCash = bookEndingCash;
   // 売掛金: 期首 + 新規売掛発生(ネ) - 回収(ア) - 売掛割引
-  const endingReceivables = Math.max(0, carryover.receivables + ledgerTotals["ネ"].amount - ledgerTotals["ア"].amount - ledgerTotals["売掛割引"].amount);
-  
+  const endingReceivables = Math.max(0, (carryover.receivables || 0) + ledgerTotals["ネ"].amount - ledgerTotals["ア"].amount - ledgerTotals["売掛割引"].amount);
+
   // 買掛金: 期首 + 新規材料買掛仕入(ノ) - 支払(ヌ)
-  const endingPayables = Math.max(0, carryover.payables + (ledgerTotals["ノ"]?.amount || 0) - ledgerTotals["ヌ"].amount);
-  
+  const endingPayables = Math.max(0, (carryover.payables || 0) + (ledgerTotals["ノ"]?.amount || 0) - ledgerTotals["ヌ"].amount);
+
   // 借入金: 期首 + 新規借入(オ) - 返済(ナ)
-  const endingLoans = Math.max(0, carryover.loan + ledgerTotals["オ"].amount - ledgerTotals["ナ"].amount);
+  const endingLoans = Math.max(0, (carryover.loan || 0) + ledgerTotals["オ"].amount - ledgerTotals["ナ"].amount);
   
   // 資産合計
   const totalCurrentAssets = endingCash + endingReceivables + matEndingValue + wipEndingValue + prodEndingValue;
@@ -562,16 +599,23 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   const totalAssets = totalCurrentAssets + totalFixedAssets;
 
   // 負債合計
-  const unpaidTax = corporateTax; // 未払法人税
-  
+  const unpaidTax = corporateTax; // 未払法人税（当期発生分）
+
+  // 未払法人税等（前期分）: 前期から繰り越した未払税金（carryover.taxes）は、
+  // 期首処理でニを納付するまで負債として残る。ここに計上しないと、
+  // 正常フロー（期末処理→引き継ぎ）でも翌期期首に繰越税額分だけ資産超過になり、
+  // 「🚨貸借対照表が不一致です」バナーが誤表示されていた。
+  // ニ納付額で消し込む（納付後は残高0で、現金減少と負債減少が対応して貸借一致に戻る）。
+  const priorUnpaidTax = Math.max(0, (carryover.taxes || 0) - ledgerTotals["ニ"].amount);
+
   // ハイブリッドPL予測による未払給与・社会保険料の計上
   // 期末処理前の場合、予想利益としてすでにPLから引かれているため、同額を未払金として負債に計上しB/Sを一致させる
   const accruedLaborCost = hasProcessedPeriodEnd ? 0 : (estimatedWorkerSalary + estimatedWorkerSeverance + estimatedSalesmanSal + estimatedSalesmanSev + estimatedInsurance);
-  
-  const totalLiabilities = endingPayables + endingLoans + unpaidTax + accruedLaborCost;
+
+  const totalLiabilities = endingPayables + endingLoans + unpaidTax + priorUnpaidTax + accruedLaborCost;
 
   // 純資産合計
-  const endingCapital = carryover.capital + ledgerTotals["カ"].amount; // 資本金
+  const endingCapital = (carryover.capital || 0) + ledgerTotals["カ"].amount; // 資本金
   const totalNetAssets = endingCapital + endingRetained;
 
   // 各種チップと人員の実効数
@@ -618,24 +662,30 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
   // 期末処理後は accruedLaborCost が 0 になり（実際に支払われる）、この項も自動的に消える。
   const accruedExpenseChange = accruedLaborCost - (carryover.accruedLaborCost || 0);
 
+  // 特別損益の営業CF→投資CF振替額:
+  // ・保険金（エ・自動保険金）は「利益計上額 = 入金額」なので全額を振り替える
+  // ・機械売却は利益計上額が「売却額 − 簿価」なので売却損益分だけを控除する
+  //   （売却損の期はマイナス＝営業CFに足し戻し）。入金額（売却額）は投資CF側で全額計上する。
+  const extraGainAdjustment = autoInsurancePayout + ledgerTotals["エ"].amount + machineSaleGainLoss;
+
   const operatingCF =
     profitBeforeTax
     + depreciation
-    // 特別利益（機械売却イ・保険金エ・自動保険金）は profitBeforeTax に含まれるが、
-    // 投資CF側（investingCF = extraordinaryGain - purchasedMachineValue）でも計上されるため、
-    // 間接法の定石どおり営業CFから控除する。控除しないと totalCF が特別利益ぶん
-    // 二重計上され「期首現金 + totalCF = 期末現金」が成立しなくなる（A1修正）。
-    - extraordinaryGain
-    - (endingReceivables - carryover.receivables)
+    // 特別損益（機械売却イ・保険金エ・自動保険金）は profitBeforeTax に含まれるが、
+    // 投資CF側でも計上されるため、間接法の定石どおり営業CFから控除する。
+    // 控除しないと totalCF が特別利益ぶん二重計上され
+    // 「期首現金 + totalCF = 期末現金」が成立しなくなる（A1修正）。
+    - extraGainAdjustment
+    - (endingReceivables - (carryover.receivables || 0))
     - (matEndingValue - matBeginningValue)
     - (wipEndingValue - wipBeginningValue)
     - (prodEndingValue - prodBeginningValue)
-    + (endingPayables - carryover.payables)
+    + (endingPayables - (carryover.payables || 0))
     + accruedExpenseChange // 未払費用の増減（未支出の給与・保険料を足し戻す）
     - ledgerTotals["ニ"].amount; // 納税出金
-  
-  // 投資キャッシュフロー
-  const investingCF = extraordinaryGain - purchasedMachineValue; // 売却/保険収入 - 新規購入
+
+  // 投資キャッシュフロー = 保険収入 + 機械売却収入（売却額全額） - 新規購入
+  const investingCF = autoInsurancePayout + ledgerTotals["エ"].amount + machineSaleProceeds - purchasedMachineValue;
   
   // 財務キャッシュフロー
   const financingCF = ledgerTotals["カ"].amount + ledgerTotals["オ"].amount - ledgerTotals["ナ"].amount; // 資本金増 + 新規借入 - 返済
@@ -708,6 +758,8 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
       attachments: attachments,
       purchased: purchasedMachineValue,
       depreciation: depreciation,
+      // 売却機械の簿価除却額（固定資産台帳の「当期売却」行に表示）
+      soldBookValue: soldMachinesBookValue,
       endingValue: bookEndingMachines
     },
 
@@ -745,6 +797,10 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
       extraordinaryGain,
       extraordinaryLoss,
       extraordinaryProfit,
+      // 機械売却の内訳（売却額・除却簿価・売却損益）
+      machineSaleProceeds,
+      machineSaleBookValue: soldMachinesBookValue,
+      machineSaleGainLoss,
       profitBeforeTax,
       corporateTax,
       netProfit,
@@ -765,6 +821,8 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
       payables: endingPayables,
       loans: endingLoans,
       unpaidTax: unpaidTax,
+      // 前期から繰り越した未払法人税等（ニ納付で消し込まれる残高）
+      priorUnpaidTax: priorUnpaidTax,
       accruedLaborCost: accruedLaborCost,
       totalLiabilities,
       
@@ -781,7 +839,10 @@ const bookEndingCash = carryover.cash + cashInflow - cashOutflow;
       investingCF,
       financingCF,
       freeCF,
-      totalCF
+      totalCF,
+      // 営業CFで控除している特別損益の振替額（C/F内訳の表示用。
+      // 機械売却損の期はマイナス＝営業CFへの足し戻しになる）
+      extraGainAdjustment
     },
     
     activeRdChips,

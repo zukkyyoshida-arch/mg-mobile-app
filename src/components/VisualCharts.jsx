@@ -126,7 +126,9 @@ function VisualCharts({ results, carryover, ledger }) {
   // 固定資産
   const macBegVal = carryover.machinesValue || 0;
   const macInVal = ledger?.filter(e => e.category === 'ケ').reduce((sum, e) => sum + (Number(e.amount)||0), 0) || 0;
-  const macEndVal = bs.fixedAssets || (macBegVal + macInVal - depreciation);
+  // 機械売却（イ）の簿価除却額。期首 + 購入 − 売却簿価 − 償却 = 期末 が台帳として成立する
+  const macSoldVal = results.machines?.soldBookValue || 0;
+  const macEndVal = bs.fixedAssets || (macBegVal + macInVal - macSoldVal - depreciation);
 
   const resourceCardStyle = {
     flex: 1,
@@ -347,6 +349,12 @@ function VisualCharts({ results, carryover, ledger }) {
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>当期購入</span>
               <span style={{ fontWeight: '800', color: 'var(--mg-blue)', fontVariantNumeric: 'tabular-nums' }}>+¥{macInVal.toLocaleString()}</span>
             </div>
+            {macSoldVal > 0 && (
+              <div style={resourceRowStyle}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>当期売却 (簿価除却)</span>
+                <span style={{ fontWeight: '800', color: '#dc2626', fontVariantNumeric: 'tabular-nums' }}>-¥{macSoldVal.toLocaleString()}</span>
+              </div>
+            )}
             <div style={{ ...resourceRowStyle, borderBottom: 'none' }}>
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>減価償却</span>
               <span style={{ fontWeight: '800', color: '#dc2626', fontVariantNumeric: 'tabular-nums' }}>-¥{depreciation.toLocaleString()}</span>

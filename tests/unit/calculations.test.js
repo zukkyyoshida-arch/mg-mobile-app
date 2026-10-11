@@ -720,3 +720,163 @@ describe('calculateFinancials - 期末処理判定（A2: periodEndフラグ）',
     expect(res.bs.difference).toBe(0);
   });
 });
+
+// 機械売却（イ）の簿価除却。
+// 旧実装は売却額全額を特別利益にし、簿価を資産から除却しなかったため、
+// (1)特別利益と法人税が簿価分過大 (2)保有0台の幽霊簿価が翌期以降も20%ずつ償却され続けていた。
+// 修正: 売却損益 = 売却額 − 売却機械の簿価（簿価は台数×標準取得価額の重みでプールから按分）。
+// 簿価は固定資産から除却し、当期の償却母数にも含めない。
+describe('calculateFinancials - 機械売却の簿価除却', () => {
+  // 期首B/Sが貸借一致する繰越（現金300 + 機械100 = 資本300 + 剰余100）
+  const machineCarry = () => freshCarryover({
+    machinesValue: 100, largeMachines: 1, machinesCount: 1, retainedEarnings: 100,
+  });
+
+  it('簿価100の大型1台を50万で売却すると売却損50になり、特別利益は計上されない', () => {
+    const ledger = [{ category: 'イ', amount: 50, quantity: 1, soldLargeMachines: 1 }];
+    const res = calculateFinancials(machineCarry(), ledger, {}, 2);
+
+    // 旧実装: extraordinaryGain=50（売却額全額）→ 税も過大だった
+    expect(res.pl.machineSaleProceeds).toBe(50);
+    expect(res.pl.machineSaleBookValue).toBe(100);
+    expect(res.pl.machineSaleGainLoss).toBe(-50);
+    expect(res.pl.extraordinaryGain).toBe(0);
+    expect(res.pl.extraordinaryLoss).toBe(50);
+    expect(res.pl.extraordinaryProfit).toBe(-50);
+    // 赤字なので法人税は均等割7万のみ（旧実装は利益50に30%課税していた）
+    expect(res.pl.profitBeforeTax).toBe(-50);
+    expect(res.pl.corporateTax).toBe(7);
+  });
+
+  it('売却した機械の簿価は固定資産から除却され、当期の償却母数にも含まれない（幽霊簿価が残らない）', () => {
+    const ledger = [{ category: 'イ', amount: 50, quantity: 1, soldLargeMachines: 1 }];
+    const res = calculateFinancials(machineCarry(), ledger, {}, 2);
+
+    // 全台売却 → 償却0・期末簿価0（旧実装は償却20・期末簿価80が翌期へ繰り越されていた）
+    expect(res.machines.soldBookValue).toBe(100);
+    expect(res.machines.depreciation).toBe(0);
+    expect(res.machines.endingValue).toBe(0);
+    expect(res.bs.fixedAssets).toBe(0);
+
+    // 翌期（rollForwardは machinesValue: prevBS.fixedAssets を引き継ぐ）: 償却は発生しない
+    const next = calculateFinancials(
+      freshCarryover({ machinesValue: res.bs.fixedAssets, retainedEarnings: 0 }), [], {}, 3
+    );
+    expect(next.machines.depreciation).toBe(0);
+    expect(next.machines.endingValue).toBe(0);
+  });
+
+  it('簿価100の機械を150万で売却すると売却益50が特別利益になる', () => {
+    const ledger = [{ category: 'イ', amount: 150, quantity: 1, soldLargeMachines: 1 }];
+    const res = calculateFinancials(machineCarry(), ledger, {}, 2);
+
+    expect(res.pl.machineSaleGainLoss).toBe(50);
+    expect(res.pl.extraordinaryGain).toBe(50);
+    expect(res.pl.extraordinaryLoss).toBe(0);
+    expect(res.pl.corporateTax).toBe(15); // 50 * 30%
+    expect(res.bs.difference).toBe(0);
+  });
+
+  it('一部売却では標準取得価額の重み（大型200・小型100・アタッチ20）で簿価が按分される', () => {
+    // 機械簿価プール300（大型1 + 小型1）の小型だけを60万で売却
+    const carryover = freshCarryover({
+      machinesValue: 300, largeMachines: 1, smallMachines: 1, machinesCount: 2, retainedEarnings: 300,
+    });
+    const ledger = [{ category: 'イ', amount: 60, quantity: 1, soldSmallMachines: 1 }];
+    const res = calculateFinancials(carryover, ledger, {}, 2);
+
+    // 小型の按分簿価 = 300 × 100/(200+100) = 100
+    expect(res.machines.soldBookValue).toBe(100);
+    expect(res.pl.machineSaleGainLoss).toBe(-40);
+    // 償却は残存分（300-100=200）の20% = 40。期末簿価 = 300-100-40 = 160
+    expect(res.machines.depreciation).toBe(40);
+    expect(res.machines.endingValue).toBe(160);
+    expect(res.bs.difference).toBe(0);
+  });
+
+  it('売却損の期もB/S貸借一致とC/F帳尻（期首現金+totalCF=期末現金）が成立する', () => {
+    const carryover = machineCarry();
+    const ledger = [{ category: 'イ', amount: 50, quantity: 1, soldLargeMachines: 1 }];
+    const res = calculateFinancials(carryover, ledger, {}, 2);
+
+    expect(res.bs.difference).toBe(0);
+    expect(carryover.cash + res.cf.totalCF).toBe(res.bs.cash);
+    // 投資CFには売却額全額（簿価ではなく入金額）が計上される
+    expect(res.cf.investingCF).toBe(50);
+  });
+
+  it('売却益の期もC/F帳尻が成立する', () => {
+    const carryover = machineCarry();
+    const ledger = [{ category: 'イ', amount: 150, quantity: 1, soldLargeMachines: 1 }];
+    const res = calculateFinancials(carryover, ledger, {}, 2);
+    expect(carryover.cash + res.cf.totalCF).toBe(res.bs.cash);
+    expect(res.cf.investingCF).toBe(150);
+  });
+
+  it('sold*フィールドの無い旧形式エントリは簿価除却なし＝従来どおり売却額全額が特別利益（後方互換）', () => {
+    const res = calculateFinancials(machineCarry(), [{ category: 'イ', amount: 50 }], {}, 2);
+    expect(res.machines.soldBookValue).toBe(0);
+    expect(res.pl.extraordinaryGain).toBe(50);
+    // 台数トラッキング外なので簿価100は従来どおり償却される（20%）
+    expect(res.machines.depreciation).toBe(20);
+  });
+});
+
+// 繰越未払税金（carryover.taxes）のB/S計上。
+// 旧実装は前期から繰り越した未払税金を負債に計上しなかったため、
+// 正常フロー（期末処理→引き継ぎ）でも翌期期首〜ニ納付までの間、
+// B/Sが繰越税額分だけ資産超過になり「🚨不一致」バナーが誤表示されていた。
+describe('calculateFinancials - 繰越未払税金のB/S計上', () => {
+  // 第1期を空のまま期末処理した直後の引き継ぎ状態を再現:
+  // 現金300・未払税金7・剰余金-7（期首B/Sは 300 = 7 + 300 - 7 で一致）
+  const carriedTaxCarry = () => freshCarryover({ taxes: 7, retainedEarnings: -7 });
+
+  it('引き継ぎ直後（ledger空）でも繰越税額が負債に立ち、B/Sが一致する', () => {
+    const res = calculateFinancials(carriedTaxCarry(), [], {}, 2);
+    expect(res.bs.priorUnpaidTax).toBe(7);
+    // 旧実装では diff=7 で不一致バナーが誤表示されていた
+    expect(res.bs.difference).toBe(0);
+  });
+
+  it('期首処理でニを納付すると繰越税の負債が消し込まれ、B/S一致が保たれる', () => {
+    const carryover = carriedTaxCarry();
+    const res = calculateFinancials(carryover, [{ category: 'ニ', amount: 7, quantity: 1 }], {}, 2);
+    expect(res.bs.priorUnpaidTax).toBe(0);
+    expect(res.bs.cash).toBe(293); // 300 - 7
+    expect(res.bs.difference).toBe(0);
+    // C/F帳尻も成立（ニは営業CFの納税出金）
+    expect(carryover.cash + res.cf.totalCF).toBe(res.bs.cash);
+  });
+
+  it('繰越税額が無い期は priorUnpaidTax=0 で従来と同じ負債合計になる', () => {
+    const res = calculateFinancials(freshCarryover(), [], {}, 1);
+    expect(res.bs.priorUnpaidTax).toBe(0);
+    expect(res.bs.totalLiabilities).toBe(7); // 当期発生の均等割のみ
+  });
+});
+
+// 旧5期版localStorage・バックアップからの継続ユーザー防御。
+// periods[6]以降が {ledger:[…]} だけの部分オブジェクトになると carryover が undefined のまま
+// calculateFinancials に渡り、carryover.materialsCount 参照で TypeError → 白画面になっていた。
+describe('calculateFinancials - carryover未定義への防御（旧5期版データ）', () => {
+  it('carryoverがundefinedでも例外を投げず、空繰越として計算が完走する', () => {
+    const ledger = [{ category: 'ツ', amount: 30, quantity: 3 }];
+    expect(() => calculateFinancials(undefined, ledger, undefined, 6)).not.toThrow();
+    const res = calculateFinancials(undefined, ledger, undefined, 6);
+    // 空繰越（現金0・資本0）として素直に計算される
+    expect(res.bookEndingCash).toBe(-30);
+    expect(res.mat.endingCount).toBe(3);
+    expect(res.bs.capital).toBe(0);
+  });
+
+  it('carryover・ledger・actualsが全てundefinedでも例外を投げない', () => {
+    expect(() => calculateFinancials(undefined, undefined, undefined, 6)).not.toThrow();
+    const res = calculateFinancials(undefined, undefined, undefined, 6);
+    expect(res.bookEndingCash).toBe(0);
+    expect(res.bs.totalAssets).toBe(0);
+  });
+
+  it('carryoverがnull・第20期でも例外を投げない（期番号は第5期の単価にクランプ）', () => {
+    expect(() => calculateFinancials(null, [], {}, 20)).not.toThrow();
+  });
+});

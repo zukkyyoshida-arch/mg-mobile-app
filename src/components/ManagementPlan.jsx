@@ -1,5 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { calculateBudget } from '../utils/calculations';
+// toSafeInt: 数値入力の防御的サニタイズ（非有限=Infinity/NaN拒否・下限0・整数化）。
+// 予算入力に負数・小数・1e999（→Infinity→JSON保存でnull化）が入ると
+// budget が汚染され導出値（必要売上数量等）が負値/∞表示になるため、入口で落とす。
+import { toSafeInt } from '../utils/inputSanitizers';
 
 const SCENARIOS = ['A', 'B', 'C'];
 
@@ -76,8 +80,13 @@ const cardStyle = {
   boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)'
 };
 
-function ManagementPlan({ carryover, onUpdateBudget, results }) {
-  const period = Number(results?.currentPeriod || results?.period || 1);
+function ManagementPlan({ carryover, onUpdateBudget, results, currentPeriod }) {
+  // 期の判定は App.jsx から渡される currentPeriod prop を正とする。
+  // calculateFinancials の戻り値には currentPeriod / period キーが存在しないため、
+  // 旧実装（results?.currentPeriod || results?.period || 1）では常に第1期に落ち、
+  // 借入利息の予算が第4期以降も10%で計上されて期首処理の実績(5%)と食い違っていた。
+  // prop 未指定の旧呼び出しでは従来のフォールバック連鎖を残す。
+  const period = Number(currentPeriod ?? results?.currentPeriod ?? results?.period ?? 1) || 1;
   const [activeTab, setActiveTab] = useState('input');
   const [currentScenario, setCurrentScenario] = useState('A');
   const [meta, setMeta] = useState({ companyName: '', presidentName: '' });
@@ -188,7 +197,7 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
   const activeResult = calculated[currentScenario];
 
   const handleChange = (field, value) => {
-    const parsed = value === '' ? 0 : Number(value);
+    const parsed = value === '' ? 0 : toSafeInt(value);
     const next = { ...activeScenario, [field]: parsed };
     setScenarios((prev) => ({ ...prev, [currentScenario]: next }));
     if (currentScenario === 'A') onUpdateBudget(deriveTotals(next));
@@ -199,6 +208,7 @@ function ManagementPlan({ carryover, onUpdateBudget, results }) {
       <label style={{ fontSize: '0.74rem', lineHeight: 1.35, color: 'var(--text-secondary)', fontWeight: '600' }}>{opts.label}</label>
       <input
         type="number"
+        inputMode="numeric"
         value={activeScenario[field] ?? ''}
         onChange={(e) => handleChange(field, e.target.value)}
         className="form-input"

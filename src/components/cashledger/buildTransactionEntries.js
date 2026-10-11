@@ -19,14 +19,38 @@
 import { MARKETS, MACHINES, ADS, CATEGORIES } from './constants';
 import { calculateFinancials } from '../../utils/calculations';
 
-// 入力値を「0以上の整数」へ防御的に正規化する共通ヘルパー。
-// Infinity・NaN（例: 内蔵電卓の 1/0、type=number 欄への 1e309 入力）は 0 に落とす。
-// ゲーム仕様上、金額（万円）・数量・人数・口数はすべて整数のため、小数は切り捨てる。
-// UI側（AddTransactionModal / CashLedger）のクランプもこの関数を使う。
-export function toSafeInt(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return 0;
-  return Math.max(0, Math.floor(n));
+// 入力値の上限 MAX_AMOUNT と「0以上の整数」への防御的正規化 toSafeInt は
+// src/utils/inputSanitizers.js が正（単一実装）。既存の参照元（AddTransactionModal /
+// CashLedger / テスト）のためにここから re-export する。
+import { MAX_AMOUNT, toSafeInt } from '../../utils/inputSanitizers';
+export { MAX_AMOUNT, toSafeInt };
+
+// ledger 内の指定カテゴリの金額合計（残高バリデーション用）。
+function sumAmount(ledger, category) {
+  return (ledger || []).reduce(
+    (sum, e) => (e.category === category ? sum + (Number(e.amount) || 0) : sum),
+    0
+  );
+}
+
+// 現在の売掛金残高。calculations.js の endingReceivables（L551）と同じ式で求める。
+// （掛売ネで増え、回収ア・旧データの売掛割引カテゴリで減る）
+function getReceivablesBalance(carryover, ledger) {
+  return Math.max(
+    0,
+    (carryover?.receivables || 0)
+      + sumAmount(ledger, 'ネ')
+      - sumAmount(ledger, 'ア')
+      - sumAmount(ledger, '売掛割引')
+  );
+}
+
+// 現在の借入金残高。calculations.js の endingLoans（L557）と同じ式で求める。
+function getLoanBalance(carryover, ledger) {
+  return Math.max(
+    0,
+    (carryover?.loan || 0) + sumAmount(ledger, 'オ') - sumAmount(ledger, 'ナ')
+  );
 }
 
 // 現金残高チェック（追加すると現金がマイナスになる取引をブロックする）。
@@ -93,6 +117,33 @@ export function getNextVoucherNo(list) {
   return maxNo + 1;
 }
 
+// 新規エントリ群へ伝票番号を一括採番する（エントリを直接書き換えて返す）。
+// - 全エントリ生成経路（売掛割引・リスクカード・期首処理・生産・緑チップ・共通枝）が
+//   この関数を通ることで、画面に裸の「#」が出る番号なし取引をなくす。
+// - 「直す」からの再登録（ctx.redoVoucherNo あり）は、先頭のエントリへ元の伝票番号を
+//   引き継ぐ。修正のたびに欠番が増えて番号が付け替わるのを防ぐため。
+// - 「期首処理」マーカーは画面に表示されない管理用レコードのため採番しない
+//   （採番すると受講者から見えない欠番になる）。
+// PeriodEndWizard 側の採番でも共有できるよう export する。
+export function assignVoucherNos(ctx, ledger, newTransactions) {
+  const redo = Number.parseInt(ctx?.redoVoucherNo, 10);
+  const hasRedo = Number.isFinite(redo) && redo > 0;
+  let next = getNextVoucherNo(ledger);
+  let redoUsed = false;
+  newTransactions.forEach(tx => {
+    if (tx.voucherNo != null || tx.category === '期首処理') return;
+    if (hasRedo && !redoUsed) {
+      tx.voucherNo = String(redo);
+      redoUsed = true;
+      // 引き継いだ番号が現在の最大番号だった場合の重複を防ぐ
+      next = Math.max(next, redo + 1);
+    } else {
+      tx.voucherNo = String(next++);
+    }
+  });
+  return newTransactions;
+}
+
 // 販売系（キ / ネ）: 通常販売 or 投げ売り。
 // finalQuantity / finalAmount / finalPrice と salesDetails を返す（共通エントリ生成側で使う）。
 function buildSalesFinal(ctx, form) {
@@ -140,10 +191,17 @@ function buildSalesFinal(ctx, form) {
 
 // 売掛割引（早期リターン枝）
 function buildFactoring(ctx, form) {
-  const { ledger, now } = ctx;
+  const { carryover, ledger, now } = ctx;
   const discountVal = Number(form.factoringAmount) || 0;
   if (discountVal <= 0) {
     return { error: '割引する売掛金の金額を入力してください' };
+  }
+  // 売掛金残高を超える割引をブロック（通常販売の在庫チェックと同型）。
+  // 超過分は calculations.js 側の Math.max(0,…) クランプで消え、現金流入と
+  // 売掛金の減少が対応しなくなって B/S・C/F が同時に崩れるため。
+  const receivables = getReceivablesBalance(carryover, ledger);
+  if (discountVal > receivables) {
+    return { error: `売掛金残高 (${receivables}万) を超える金額は割引できません。` };
   }
   const fee = Math.round(discountVal * 0.05);
   const newTransactions = [];
@@ -170,6 +228,7 @@ function buildFactoring(ctx, form) {
       timestamp: new Date(now).toISOString()
     });
   }
+  assignVoucherNos(ctx, ledger, newTransactions);
   return { ledger: [...ledger, ...newTransactions] };
 }
 
@@ -268,6 +327,7 @@ function buildRiskCard(ctx, form) {
     }
   }
 
+  assignVoucherNos(ctx, ledger, newTransactions);
   return { ledger: [...ledger, ...newTransactions] };
 }
 
@@ -298,10 +358,29 @@ function buildPeriodOpening(ctx, form) {
   }
   const repay = Number(form.repaymentAmount) || 0;
   if (repay > 0) {
+    // 借入金残高を超える任意返済をブロック（借入返済ナの残高チェックと同型）。
+    const loanBalance = getLoanBalance(carryover, ledger);
+    if (repay > loanBalance) {
+      return { error: `借入金残高 (${loanBalance}万) を超える金額は返済できません。` };
+    }
     newTransactions.push({ id: now.toString() + '-na', category: 'ナ', quantity: 1, amount: repay, price: repay, timestamp });
   }
 
-  // ボタンを消すためのマーカーとして「期首処理」を追加
+  // 記帳する期首仕訳が1件もない（繰越の売掛・買掛・税金・借入がすべて0）場合は、
+  // マーカーだけを残す「空実行」をブロックする。
+  // 前期データの引き継ぎ前に期首処理を押すと、空マーカーだけが記帳されて
+  // 期首処理ボタンが二度と出なくなり、後から引き継いでも期首仕訳
+  // （売掛回収ア・買掛支払ヌ・納税ニ・支払利息タ）が永久に欠落するため。
+  if (newTransactions.length === 0) {
+    return {
+      error: '期首処理の対象となる繰越（売掛金・買掛金・未払税金・借入金）がすべて0のため、記帳する期首仕訳がありません。\n\n'
+        + '前期にデータがある場合は、先に設定タブの「前期末の決算データを期首に引き継ぐ」を実行してから、もう一度この期首処理を行ってください。'
+    };
+  }
+
+  assignVoucherNos(ctx, ledger, newTransactions);
+
+  // ボタンを消すためのマーカーとして「期首処理」を追加（画面には出ないため採番しない）
   newTransactions.push({ id: now.toString() + '-kisho', category: '期首処理', quantity: 0, amount: 0, price: 0, timestamp });
 
   return { ledger: [...ledger, ...newTransactions], resetSelectedCategory: true };
@@ -323,7 +402,6 @@ function buildProduction(ctx, form) {
   if (saQty > 0) {
     newTransactions.push({
       id: now.toString() + '-sa',
-      voucherNo: getNextVoucherNo([...ledger, ...newTransactions]).toString(),
       category: 'サ',
       quantity: saQty,
       amount: saQty * 1,
@@ -334,7 +412,6 @@ function buildProduction(ctx, form) {
   if (koQty > 0) {
     newTransactions.push({
       id: now.toString() + '-ko',
-      voucherNo: getNextVoucherNo([...ledger, ...newTransactions]).toString(),
       category: 'コ',
       quantity: koQty,
       amount: koQty * 2,
@@ -343,6 +420,7 @@ function buildProduction(ctx, form) {
     });
   }
 
+  assignVoucherNos(ctx, ledger, newTransactions);
   return { ledger: [...ledger, ...newTransactions] };
 }
 
@@ -358,12 +436,11 @@ function buildGreenChips(ctx, form) {
     return { error: '購入する緑チップの数量を入力してください' };
   }
 
-  const updatedLedger = [...ledger];
+  const newTransactions = [];
 
   for (let i = 0; i < pacQty; i++) {
-    updatedLedger.push({
+    newTransactions.push({
       id: now.toString() + `-pac-${i}`,
-      voucherNo: getNextVoucherNo(updatedLedger).toString(),
       category: 'PAC',
       quantity: 1,
       price: 10,
@@ -373,9 +450,8 @@ function buildGreenChips(ctx, form) {
     });
   }
   for (let i = 0; i < mdQty; i++) {
-    updatedLedger.push({
+    newTransactions.push({
       id: now.toString() + `-md-${i}`,
-      voucherNo: getNextVoucherNo(updatedLedger).toString(),
       category: 'MD',
       quantity: 1,
       price: 10,
@@ -385,9 +461,8 @@ function buildGreenChips(ctx, form) {
     });
   }
   for (let i = 0; i < researchQty; i++) {
-    updatedLedger.push({
+    newTransactions.push({
       id: now.toString() + `-research-${i}`,
-      voucherNo: getNextVoucherNo(updatedLedger).toString(),
       category: 'リサーチ',
       quantity: 1,
       price: 10,
@@ -397,7 +472,8 @@ function buildGreenChips(ctx, form) {
     });
   }
 
-  return { ledger: updatedLedger };
+  assignVoucherNos(ctx, ledger, newTransactions);
+  return { ledger: [...ledger, ...newTransactions] };
 }
 
 // 材料仕入（ツ / ノ）: 複数市場合算。fall-through 用の final を返す
@@ -560,10 +636,22 @@ function finalizeCommonEntry(ctx, form, final) {
 
   // 非有限の金額（Infinity/NaN）は損失系・非現金を含む全カテゴリで拒否する。
   // 保存されると JSON.stringify で null 化し、リロード時の白画面事故につながるため。
-  if (!Number.isFinite(actualAmount)) {
+  // 有限でも上限（MAX_AMOUNT）を超える金額は拒否する。単独の入力欄は toSafeInt が
+  // 上限クランプするため、ここに来るのは数量×単価の掛け算で膨れたケースだけ。
+  if (!Number.isFinite(actualAmount) || Math.abs(actualAmount) > MAX_AMOUNT) {
     return {
       error: '金額の計算結果が正しくありません（大きすぎる数値、または数値以外が入力されています）。\n数量・単価・金額の入力値を確認してください。'
     };
+  }
+
+  // 借入返済（ナ）: 借入金残高を超える返済をブロック（通常販売の在庫チェックと同型）。
+  // 超過分は calculations.js 側の Math.max(0,…) クランプで消え、現金流出と
+  // 借入金の減少が対応しなくなって B/S が不一致になるため。
+  if (selectedCategory === 'ナ') {
+    const loanBalance = getLoanBalance(carryover, ledger);
+    if (actualAmount > loanBalance) {
+      return { error: `借入金残高 (${loanBalance}万) を超える金額は返済できません。` };
+    }
   }
 
   if (isCashTransaction && !isLossCategory) {
@@ -581,7 +669,7 @@ function finalizeCommonEntry(ctx, form, final) {
 
   const newEntry = {
     id: now.toString(),
-    voucherNo: getNextVoucherNo(ledger).toString(),
+    // voucherNo は最後に assignVoucherNos で採番する（「直す」の元番号引き継ぎ対応）
     category: selectedCategory,
     quantity: finalQuantity,
     price: finalPrice,
@@ -644,7 +732,10 @@ function finalizeCommonEntry(ctx, form, final) {
     }
 
     const interestRate = (currentPeriod <= 3) ? 0.10 : 0.05;
-    const interestAmount = Math.floor(finalAmount * interestRate); // 通常MGでは小数点切り捨てまたはそのまま、ここでは単純に計算
+    // 丸めは Math.round に統一する（期首処理 buildPeriodOpening・予算 calculateBudget と
+    // 同じ丸め）。経路によって floor/round が混在すると、同じ借入残高でも
+    // 期首利息と期中借入利息が1万ずれ、予実の突き合わせが合わなくなるため。
+    const interestAmount = Math.round(finalAmount * interestRate);
     if (interestAmount > 0) {
       // 借入(オ)と自動利息(タ)は同時登録の組。groupId で結び、オだけ削除されて
       // 利息が帳簿に残る不整合を防ぐ（removeEntry が組ごと削除する）。
@@ -653,7 +744,6 @@ function finalizeCommonEntry(ctx, form, final) {
       const interestEntry = {
         id: (now + 1).toString(),
         groupId: loanGroupId,
-        voucherNo: getNextVoucherNo(updatedLedger).toString(),
         category: 'タ',
         quantity: 0,
         price: 0,
@@ -666,6 +756,9 @@ function finalizeCommonEntry(ctx, form, final) {
       infoAlerts.push(`借入金 ¥${finalAmount}万に対し、${interestRate * 100}% の利息（¥${interestAmount}万）を自動で「営業外費用(タ)」として追加しました。`);
     }
   }
+
+  // 追加した全エントリ（本体＋自動利息）へ伝票番号を採番する
+  assignVoucherNos(ctx, ledger, updatedLedger.slice(ledger.length));
 
   return { ledger: updatedLedger, infoAlerts };
 }
