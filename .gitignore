@@ -40,3 +40,7 @@ venv/
 playwright-report
 test-results
 scratch
+
+# Local npm cache（綴り違いの両方）
+npm_cache/
+npm-cache/
