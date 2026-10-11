@@ -252,7 +252,7 @@ function AddTransactionModal({
                         setProductionSa(maxSa);
                         setProductionKo(maxKo);
                       }}
-                      style={{ padding: '6px 12px', fontSize: '0.75rem', background: 'var(--mg-green)', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}
+                      style={{ padding: '6px 12px', minHeight: '44px', fontSize: '0.75rem', background: 'var(--mg-green)', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}
                     >
                       MAXセット
                     </button>
@@ -271,16 +271,16 @@ function AddTransactionModal({
                         <span style={{ fontSize: '0.7rem', color: '#ff5252' }}>単価: 2万</span>
                       </label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <button type="button" onClick={() => setProductionKo(Math.max(0, (Number(productionKo) || 0) - 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>-</button>
+                        <button type="button" onClick={() => setProductionKo(Math.max(0, (Number(productionKo) || 0) - 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px', minWidth: '44px', minHeight: '44px' }}>-</button>
                         <input 
-                          type="number" 
+                          type="number" inputMode="numeric" 
                           value={productionKo} 
                           onChange={(e) => setProductionKo(Math.min(Math.min(results?.mat?.endingCount || 0, results?.productionCapacity || 0), toSafeInt(e.target.value)))}
                           placeholder="0"
                           className="form-input"
                           style={{ textAlign: 'center' }}
                         />
-                        <button type="button" onClick={() => setProductionKo(Math.min(Math.min(results?.mat?.endingCount || 0, results?.productionCapacity || 0), (Number(productionKo) || 0) + 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>+</button>
+                        <button type="button" onClick={() => setProductionKo(Math.min(Math.min(results?.mat?.endingCount || 0, results?.productionCapacity || 0), (Number(productionKo) || 0) + 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px', minWidth: '44px', minHeight: '44px' }}>+</button>
                       </div>
                     </div>
                     <div className="form-group">
@@ -289,16 +289,16 @@ function AddTransactionModal({
                         <span style={{ fontSize: '0.7rem', color: '#ff5252' }}>単価: 1万</span>
                       </label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <button type="button" onClick={() => setProductionSa(Math.max(0, (Number(productionSa) || 0) - 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>-</button>
+                        <button type="button" onClick={() => setProductionSa(Math.max(0, (Number(productionSa) || 0) - 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px', minWidth: '44px', minHeight: '44px' }}>-</button>
                         <input 
-                          type="number" 
+                          type="number" inputMode="numeric" 
                           value={productionSa} 
                           onChange={(e) => setProductionSa(Math.min(Math.min(results?.wip?.endingCount || 0, results?.productionCapacity || 0), toSafeInt(e.target.value)))}
                           placeholder="0"
                           className="form-input"
                           style={{ textAlign: 'center' }}
                         />
-                        <button type="button" onClick={() => setProductionSa(Math.min(Math.min(results?.wip?.endingCount || 0, results?.productionCapacity || 0), (Number(productionSa) || 0) + 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px' }}>+</button>
+                        <button type="button" onClick={() => setProductionSa(Math.min(Math.min(results?.wip?.endingCount || 0, results?.productionCapacity || 0), (Number(productionSa) || 0) + 1))} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '6px', minWidth: '44px', minHeight: '44px' }}>+</button>
                       </div>
                     </div>
                   </div>
@@ -344,7 +344,7 @@ function AddTransactionModal({
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontWeight: 'bold' }}>-</span>
                         <input 
-                          type="number" 
+                          type="number" inputMode="numeric" 
                           value={repaymentAmount} 
                           onChange={(e) => setRepaymentAmount(Math.min(carryover?.loan || 0, toSafeInt(e.target.value)))}
                           placeholder="0"
@@ -418,13 +418,13 @@ function AddTransactionModal({
                                 const capacity = riskAction === 'monopoly_salesman' ? (results?.activeSalesmen || 0) * 2
                                   : (results?.activeRdChips || 0) * 2;
                                 setRiskQty(Math.min(capacity, results?.prod?.endingCount || 0));
-                              }} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'var(--text-primary)', fontWeight: 'bold' }}>MAX</button>
+                              }} style={{ fontSize: '0.75rem', padding: '4px 10px', minWidth: '44px', minHeight: '44px', background: 'var(--color-accent)', border: 'none', borderRadius: '6px', color: 'var(--text-primary)', fontWeight: 'bold' }}>MAX</button>
                             </label>
-                            <input type="number" min="0" className="form-input" value={riskQty} onChange={e => { const v = e.target.value; setRiskQty(v === '' ? '' : String(toSafeInt(v))); }} />
+                            <input type="number" inputMode="numeric" min="0" className="form-input" value={riskQty} onChange={e => { const v = e.target.value; setRiskQty(v === '' ? '' : String(toSafeInt(v))); }} />
                           </div>
                           <div className="form-group">
                             <label className="form-label">販売単価</label>
-                            <input type="number" className="form-input" value={riskPrice} disabled />
+                            <input type="number" inputMode="numeric" className="form-input" value={riskPrice} disabled />
                           </div>
                           <div className="form-group" style={{ gridColumn: 'span 2' }}>
                             <label className="form-label">売上計上先</label>
@@ -456,9 +456,9 @@ function AddTransactionModal({
                                   <span style={{ color: 'var(--mg-pink)' }}>{m.maxPrice}万</span>
                                 </label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <button type="button" onClick={() => setRiskMonopolyAdQtys(prev => ({ ...prev, [m.id]: Math.max(0, (prev[m.id] || 0) - 1) }))} className="btn-secondary" style={{ padding: '6px 12px' }}>-</button>
-                                  <input type="number" min="0" className="form-input" style={{ textAlign: 'center' }} value={riskMonopolyAdQtys[m.id] || 0} onChange={e => setRiskMonopolyAdQtys(prev => ({ ...prev, [m.id]: toSafeInt(e.target.value) }))} />
-                                  <button type="button" onClick={() => setRiskMonopolyAdQtys(prev => ({ ...prev, [m.id]: (prev[m.id] || 0) + 1 }))} className="btn-secondary" style={{ padding: '6px 12px' }}>+</button>
+                                  <button type="button" onClick={() => setRiskMonopolyAdQtys(prev => ({ ...prev, [m.id]: Math.max(0, (prev[m.id] || 0) - 1) }))} className="btn-secondary" style={{ padding: '6px 12px', minWidth: '44px', minHeight: '44px' }}>-</button>
+                                  <input type="number" inputMode="numeric" min="0" className="form-input" style={{ textAlign: 'center' }} value={riskMonopolyAdQtys[m.id] || 0} onChange={e => setRiskMonopolyAdQtys(prev => ({ ...prev, [m.id]: toSafeInt(e.target.value) }))} />
+                                  <button type="button" onClick={() => setRiskMonopolyAdQtys(prev => ({ ...prev, [m.id]: (prev[m.id] || 0) + 1 }))} className="btn-secondary" style={{ padding: '6px 12px', minWidth: '44px', minHeight: '44px' }}>+</button>
                                 </div>
                               </div>
                             ))}
@@ -483,16 +483,16 @@ function AddTransactionModal({
                               <button type="button" onClick={() => {
                                 const maxAllowed = Math.max(0, (results?.productionCapacity || 0) * 2 - (results?.mat?.endingCount || 0));
                                 setRiskQty(Math.min(riskAction === 'special_mat' ? 5 : 3, maxAllowed));
-                              }} style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'var(--color-accent)', border: 'none', borderRadius: '4px', color: 'var(--text-primary)', fontWeight: 'bold' }}>MAX</button>
+                              }} style={{ fontSize: '0.75rem', padding: '4px 10px', minWidth: '44px', minHeight: '44px', background: 'var(--color-accent)', border: 'none', borderRadius: '6px', color: 'var(--text-primary)', fontWeight: 'bold' }}>MAX</button>
                             </label>
-                            <input type="number" min="0" className="form-input" value={riskQty} onChange={e => {
+                            <input type="number" inputMode="numeric" min="0" className="form-input" value={riskQty} onChange={e => {
                                 const maxAllowed = Math.max(0, (results?.productionCapacity || 0) * 2 - (results?.mat?.endingCount || 0));
                                 setRiskQty(Math.min(riskAction === 'special_mat' ? 5 : 3, Math.min(maxAllowed, toSafeInt(e.target.value))));
                             }} />
                           </div>
                           <div className="form-group">
                             <label className="form-label">単価 (1個)</label>
-                            <input type="number" className="form-input" value={riskAction === 'special_mat' ? 10 : 12} disabled />
+                            <input type="number" inputMode="numeric" className="form-input" value={riskAction === 'special_mat' ? 10 : 12} disabled />
                           </div>
                         </div>
                       )}
@@ -500,11 +500,11 @@ function AddTransactionModal({
                         <div className="grid-2" style={{ background: 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '8px' }}>
                           <div className="form-group">
                             <label className="form-label">購入口数 (広告 セ)</label>
-                            <input type="number" min="0" className="form-input" value={riskQty} onChange={e => { const v = e.target.value; setRiskQty(v === '' ? '' : String(toSafeInt(v))); }} />
+                            <input type="number" inputMode="numeric" min="0" className="form-input" value={riskQty} onChange={e => { const v = e.target.value; setRiskQty(v === '' ? '' : String(toSafeInt(v))); }} />
                           </div>
                           <div className="form-group">
                             <label className="form-label">単価 (1口)</label>
-                            <input type="number" className="form-input" value={5} disabled />
+                            <input type="number" inputMode="numeric" className="form-input" value={5} disabled />
                           </div>
                         </div>
                       )}
@@ -549,7 +549,7 @@ function AddTransactionModal({
                   <div className="form-group" style={{ marginBottom: '16px' }}>
                     <label className="form-label">回収する売掛金額 (万)</label>
                     <input 
-                      type="number" 
+                      type="number" inputMode="numeric" 
                       value={factoringAmount} 
                       onChange={(e) => setFactoringAmount(Math.min(Math.max(0, results?.endingReceivables || 0), toSafeInt(e.target.value)))}
                       placeholder="0"
@@ -596,7 +596,7 @@ function AddTransactionModal({
                     <div className="form-group">
                       <label className="form-label">ワーカー採用数 (人)</label>
                       <input 
-                        type="number" 
+                        type="number" inputMode="numeric" 
                         min="0"
                         value={workersHired}
                         onChange={(e) => { const v = e.target.value; setWorkersHired(v === '' ? '' : String(toSafeInt(v))); }}
@@ -607,7 +607,7 @@ function AddTransactionModal({
                     <div className="form-group">
                       <label className="form-label">セールスマン採用数 (人)</label>
                       <input 
-                        type="number" 
+                        type="number" inputMode="numeric" 
                         min="0"
                         value={salesmenHired}
                         onChange={(e) => { const v = e.target.value; setSalesmenHired(v === '' ? '' : String(toSafeInt(v))); }}
@@ -635,10 +635,10 @@ function AddTransactionModal({
                         <button 
                           type="button" 
                           onClick={() => setTransferW2S(Math.max(0, transferW2S - 1))}
-                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px' }}
+                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px', minWidth: '44px', minHeight: '44px' }}
                         >-</button>
                         <input 
-                          type="number" 
+                          type="number" inputMode="numeric" 
                           value={transferW2S} 
                           onChange={(e) => setTransferW2S(Math.min(results?.workers || 0, toSafeInt(e.target.value)))}
                           className="form-input" 
@@ -647,7 +647,7 @@ function AddTransactionModal({
                         <button 
                           type="button" 
                           onClick={() => setTransferW2S(Math.min(results?.workers || 0, transferW2S + 1))}
-                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px' }}
+                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px', minWidth: '44px', minHeight: '44px' }}
                         >+</button>
                       </div>
                     </div>
@@ -662,10 +662,10 @@ function AddTransactionModal({
                         <button 
                           type="button" 
                           onClick={() => setTransferS2W(Math.max(0, transferS2W - 1))}
-                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px' }}
+                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px', minWidth: '44px', minHeight: '44px' }}
                         >-</button>
                         <input 
-                          type="number" 
+                          type="number" inputMode="numeric" 
                           value={transferS2W} 
                           onChange={(e) => setTransferS2W(Math.min(results?.salesmen || 0, toSafeInt(e.target.value)))}
                           className="form-input"
@@ -674,7 +674,7 @@ function AddTransactionModal({
                         <button 
                           type="button" 
                           onClick={() => setTransferS2W(Math.min(results?.salesmen || 0, transferS2W + 1))}
-                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px' }}
+                          className="btn-secondary" style={{ padding: '8px 12px', borderRadius: '8px', minWidth: '44px', minHeight: '44px' }}
                         >+</button>
                       </div>
                     </div>
@@ -719,7 +719,7 @@ function AddTransactionModal({
                     <div className="form-group">
                       <label className="form-label">{selectedCategory === '製造ミス' ? '仕掛品のロス数量 (個)' : '製品の盗難数量 (個)'}</label>
                       <input 
-                        type="number" 
+                        type="number" inputMode="numeric" 
                         min="0"
                         value={quantity}
                         onChange={(e) => { const v = e.target.value; setQuantity(v === '' ? '' : String(toSafeInt(v))); }}
@@ -773,17 +773,17 @@ function AddTransactionModal({
                                   単価: {discountedPrice} {maxLimit !== undefined && `(上限 ${maxLimit}個)`}
                                 </span>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <button 
                                   type="button"
                                   onClick={() => setMarketQuantities(prev => ({ ...prev, [m.id]: Math.max(0, qty - 1) }))}
-                                  style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >-</button>
                                 <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
                                 <button 
                                   type="button"
                                   onClick={() => setMarketQuantities(prev => ({ ...prev, [m.id]: maxLimit !== undefined ? Math.min(maxLimit, qty + 1) : qty + 1 }))}
-                                  style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (maxLimit !== undefined && qty >= maxLimit) || totalQty >= maxTotalPurchase ? 0.3 : 1 }}
+                                  style={{ background: 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (maxLimit !== undefined && qty >= maxLimit) || totalQty >= maxTotalPurchase ? 0.3 : 1 }}
                                   disabled={(maxLimit !== undefined && qty >= maxLimit) || totalQty >= maxTotalPurchase}
                                 >+</button>
                                 {maxLimit !== undefined && (
@@ -797,7 +797,7 @@ function AddTransactionModal({
                                         setMarketQuantities(prev => ({ ...prev, [m.id]: qty + actualAdd }));
                                       }
                                     }}
-                                    style={{ background: 'var(--color-accent)', border: 'none', color: 'var(--text-primary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', opacity: (qty >= maxLimit) || totalQty >= maxTotalPurchase ? 0.3 : 1 }}
+                                    style={{ background: 'var(--color-accent)', border: 'none', color: 'var(--text-primary)', padding: '4px 8px', minWidth: '44px', minHeight: '44px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', opacity: (qty >= maxLimit) || totalQty >= maxTotalPurchase ? 0.3 : 1 }}
                                     disabled={(qty >= maxLimit) || totalQty >= maxTotalPurchase}
                                   >MAX</button>
                                 )}
@@ -842,19 +842,19 @@ function AddTransactionModal({
                               </div>
                               <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{chip.desc}</div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <button 
                                 type="button"
                                 disabled={isBought}
                                 onClick={() => setGreenChips(prev => ({ ...prev, [chip.id]: Math.max(0, qty - 1) }))}
-                                style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isBought ? 0.5 : 1 }}
+                                style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isBought ? 0.5 : 1 }}
                               >-</button>
                               <span style={{ fontSize: '1.1rem', fontWeight: 'bold', width: '24px', textAlign: 'center' }}>{qty}</span>
                               <button 
                                 type="button"
                                 disabled={isBought || qty >= 1}
                                 onClick={() => setGreenChips(prev => ({ ...prev, [chip.id]: Math.min(1, qty + 1) }))}
-                                style={{ background: isBought || qty >= 1 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isBought || qty >= 1 ? 0.5 : 1 }}
+                                style={{ background: isBought || qty >= 1 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.3)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isBought || qty >= 1 ? 0.5 : 1 }}
                               >+</button>
                             </div>
                           </div>
@@ -892,17 +892,17 @@ function AddTransactionModal({
                                 <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--mg-purple)' }}>単価: {m.basePrice}</span>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <button 
                                   type="button"
                                   onClick={() => setMachineQuantities(prev => ({ ...prev, [m.id]: Math.max(0, qty - 1) }))}
-                                  style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >-</button>
                                 <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
                                 <button 
                                   type="button"
                                   onClick={() => setMachineQuantities(prev => ({ ...prev, [m.id]: qty + 1 }))}
-                                  style={{ background: 'rgba(156, 39, 176, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ background: 'rgba(156, 39, 176, 0.3)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >+</button>
                               </div>
                             </div>
@@ -941,18 +941,18 @@ function AddTransactionModal({
                                 <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>保有: {maxHeld}台</span>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <button
                                   type="button"
                                   onClick={() => setMachineSaleQuantities(prev => ({ ...prev, [m.id]: Math.max(0, qty - 1) }))}
-                                  style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >-</button>
                                 <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
                                 <button
                                   type="button"
                                   onClick={() => setMachineSaleQuantities(prev => ({ ...prev, [m.id]: Math.min(maxHeld, qty + 1) }))}
                                   disabled={qty >= maxHeld}
-                                  style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: qty >= maxHeld ? 0.3 : 1 }}
+                                  style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: qty >= maxHeld ? 0.3 : 1 }}
                                 >+</button>
                               </div>
                             </div>
@@ -963,7 +963,7 @@ function AddTransactionModal({
                       <div className="form-group" style={{ marginBottom: '12px' }}>
                         <label className="form-label">売却額（入金額 / 万）</label>
                         <input
-                          type="number"
+                          type="number" inputMode="numeric"
                           min="0"
                           value={amount}
                           onChange={(e) => { const v = e.target.value; setAmount(v === '' ? '' : String(toSafeInt(v))); }}
@@ -1005,17 +1005,17 @@ function AddTransactionModal({
                                 <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{m.name}</span>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--mg-blue)' }}>単価: {m.basePrice}</span>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <button 
                                   type="button"
                                   onClick={() => setAdQuantities(prev => ({ ...prev, [m.id]: Math.max(0, qty - 1) }))}
-                                  style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >-</button>
                                 <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
                                 <button 
                                   type="button"
                                   onClick={() => setAdQuantities(prev => ({ ...prev, [m.id]: qty + 1 }))}
-                                  style={{ background: 'rgba(33, 150, 243, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ background: 'rgba(33, 150, 243, 0.3)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >+</button>
                               </div>
                             </div>
@@ -1059,7 +1059,7 @@ function AddTransactionModal({
 
                       {/* 投げ売りトグル */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', padding: '8px 12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer', color: isFireSale ? 'var(--mg-pink)' : 'var(--text-secondary)' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', minHeight: '44px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer', color: isFireSale ? 'var(--mg-pink)' : 'var(--text-secondary)' }}>
                           <input 
                             type="checkbox" 
                             checked={isFireSale} 
@@ -1067,7 +1067,7 @@ function AddTransactionModal({
                               setIsFireSale(e.target.checked);
                               setFireSaleQty('');
                             }}
-                            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                            style={{ width: '22px', height: '22px', cursor: 'pointer' }}
                           />
                           🔥 投げ売りを行う (単価 18万 固定)
                         </label>
@@ -1087,10 +1087,10 @@ function AddTransactionModal({
                                 const qty = Number(fireSaleQty) || 0;
                                 setFireSaleQty(Math.max(0, qty - 1).toString());
                               }}
-                              style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '36px', height: '36px', borderRadius: '6px', fontSize: '1.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '6px', fontSize: '1.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                             >-</button>
                             <input 
-                              type="number"
+                              type="number" inputMode="numeric"
                               placeholder="数量"
                               value={fireSaleQty}
                               onChange={(e) => {
@@ -1110,12 +1110,12 @@ function AddTransactionModal({
                                   setFireSaleQty((qty + 1).toString());
                                 }
                               }}
-                              style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'var(--text-primary)', width: '36px', height: '36px', borderRadius: '6px', fontSize: '1.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (Number(fireSaleQty) || 0) >= (results?.prod?.endingCount || 0) ? 0.5 : 1 }}
+                              style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '6px', fontSize: '1.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (Number(fireSaleQty) || 0) >= (results?.prod?.endingCount || 0) ? 0.5 : 1 }}
                             >+</button>
                             <button
                               type="button"
                               onClick={() => setFireSaleQty((results?.prod?.endingCount || 0).toString())}
-                              style={{ background: 'var(--color-accent)', border: 'none', color: 'var(--text-primary)', padding: '8px 12px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold' }}
+                              style={{ background: 'var(--color-accent)', border: 'none', color: 'var(--text-primary)', padding: '8px 12px', minWidth: '44px', minHeight: '44px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold' }}
                             >MAX</button>
                           </div>
                         </div>
@@ -1134,7 +1134,7 @@ function AddTransactionModal({
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>@</span>
                                     <input 
-                                      type="number"
+                                      type="number" inputMode="numeric"
                                       placeholder="単価"
                                       value={prc}
                                       onChange={(e) => {
@@ -1149,11 +1149,11 @@ function AddTransactionModal({
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'right' }}>MAX: {m.max}個</span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <button 
                                       type="button"
                                       onClick={() => setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: Math.max(0, qty - 1) } }))}
-                                      style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                      style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                     >-</button>
                                     <span style={{ width: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>{qty}</span>
                                     <button 
@@ -1164,7 +1164,7 @@ function AddTransactionModal({
                                           setSalesData(prev => ({ ...prev, [m.id]: { ...prev[m.id], qty: qty + 1 } }));
                                         }
                                       }}
-                                      style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'var(--text-primary)', width: '28px', height: '28px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: ((results?.prod?.endingCount || 0) - totalQty > 0 && qty < m.max) ? 1 : 0.5 }}
+                                      style={{ background: 'rgba(233, 30, 99, 0.3)', border: 'none', color: 'var(--text-primary)', width: '44px', height: '44px', borderRadius: '4px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: ((results?.prod?.endingCount || 0) - totalQty > 0 && qty < m.max) ? 1 : 0.5 }}
                                     >+</button>
                                   </div>
                                 </div>
@@ -1192,7 +1192,7 @@ function AddTransactionModal({
                       数量 (個数)
                     </label>
                     <input 
-                      type="number" 
+                      type="number" inputMode="numeric" 
                       value={quantity} 
                       onChange={(e) => handleQtyPriceChange('qty', e.target.value)}
                       placeholder="0"
@@ -1202,7 +1202,7 @@ function AddTransactionModal({
                   <div className="form-group">
                     <label className="form-label">単価 (万/個)</label>
                     <input 
-                      type="number" 
+                      type="number" inputMode="numeric" 
                       value={price} 
                       onChange={(e) => handleQtyPriceChange('price', e.target.value)}
                       placeholder="0"
@@ -1227,7 +1227,7 @@ function AddTransactionModal({
                 </div>
                 
                 <input 
-                  type="number" 
+                  type="number" inputMode="numeric" 
                   min="0"
                   value={amount} 
                   onChange={(e) => { const v = e.target.value; setAmount(v === '' ? '' : String(toSafeInt(v))); }}

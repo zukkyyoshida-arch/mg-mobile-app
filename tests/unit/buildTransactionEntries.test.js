@@ -278,7 +278,7 @@ describe('buildTransactionEntries - 保険の保有上限', () => {
 describe('buildTransactionEntries - 売掛割引（早期リターン枝）', () => {
   it('割引額に対しア(回収)とタ(手数料5%)の2エントリを生成', () => {
     const res = buildTransactionEntries(
-      makeCtx(),
+      makeCtx({ carryover: { cash: 300, capital: 300, retainedEarnings: 0, loan: 0, receivables: 200, payables: 0, taxes: 0 } }),
       makeForm({ selectedCategory: '売掛割引', factoringAmount: '100' })
     );
     expect(res.ledger).toHaveLength(2);
@@ -291,6 +291,14 @@ describe('buildTransactionEntries - 売掛割引（早期リターン枝）', ()
   it('割引額ゼロはエラー', () => {
     const res = buildTransactionEntries(makeCtx(), makeForm({ selectedCategory: '売掛割引', factoringAmount: '' }));
     expect(res.error).toBe('割引する売掛金の金額を入力してください');
+  });
+
+  it('売掛金残高を超える割引はエラー', () => {
+    const res = buildTransactionEntries(
+      makeCtx({ ledger: [{ id: 'n', category: 'ネ', quantity: 1, amount: 50, price: 50 }] }),
+      makeForm({ selectedCategory: '売掛割引', factoringAmount: '100' })
+    );
+    expect(res.error).toBe('売掛金残高 (50万) を超える金額は割引できません。');
   });
 });
 
@@ -743,10 +751,10 @@ describe('同時登録の組（groupId）と一括削除', () => {
   });
 
   it('利息が発生しない少額の借入は組を作らない（単独削除できる）', () => {
-    // 期1（利率10%）で9万借入 → floor(0.9)=0 で利息エントリなし
+    // 期1（利率10%）で4万借入 → round(0.4)=0 で利息エントリなし
     const res = buildTransactionEntries(
       makeCtx(),
-      makeForm({ selectedCategory: 'オ', amount: '9' })
+      makeForm({ selectedCategory: 'オ', amount: '4' })
     );
     expect(res.ledger).toHaveLength(1);
     expect(res.ledger[0].groupId).toBeUndefined();
@@ -754,7 +762,7 @@ describe('同時登録の組（groupId）と一括削除', () => {
 
   it('売掛割引(ア)と手数料(タ)は同一groupIdを持ち、組ごと消える', () => {
     const res = buildTransactionEntries(
-      makeCtx(),
+      makeCtx({ carryover: { cash: 300, capital: 300, retainedEarnings: 0, loan: 0, receivables: 200, payables: 0, taxes: 0 } }),
       makeForm({ selectedCategory: '売掛割引', factoringAmount: '100' })
     );
     expect(res.ledger).toHaveLength(2);

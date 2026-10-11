@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { calculateFinancials, DEFAULT_PERIOD_DATA } from './utils/calculations';
+import { calculateFinancials } from './utils/calculations';
 import CashLedger from './components/CashLedger';
 import FinancialStatements from './components/FinancialStatements';
 import PeriodEndWizard from './components/PeriodEndWizard';
@@ -8,7 +8,7 @@ import PriorPeriodCarryover from './components/PriorPeriodCarryover';
 import PerformanceReport from './components/PerformanceReport';
 import ErrorBoundary from './components/ErrorBoundary';
 import { syncPlayerData, fetchPlayerRecord, isRemoteNewer } from './pocketbase';
-import { TOTAL_PERIODS, isAllLedgersEmpty, buildPeriodsSummary } from './utils/constants';
+import { TOTAL_PERIODS, isAllLedgersEmpty, buildPeriodsSummary, normalizePeriods, buildNextCarryover, createDefaultPeriodData } from './utils/constants';
 import { useDebounce } from 'react-use';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, FileText, CalendarCheck, Target, Settings, Sun, Moon } from 'lucide-react';
@@ -38,17 +38,14 @@ function App() {
     const saved = safeStorage.getItem('mg_periods_data');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        // 旧データ（キー1〜5のみ）や欠損フィールドを20期分に補完（第6期以降の白画面対策）
+        return normalizePeriods(JSON.parse(saved));
       } catch (e) {
         console.error("Failed to parse periods data", e);
       }
     }
     // 初期データ (1期〜20期)
-    const initialData = {};
-    for (let i = 1; i <= TOTAL_PERIODS; i++) {
-      initialData[i] = JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA));
-    }
-    return initialData;
+    return normalizePeriods(null);
   });
 
   // 現在の期 (1〜5)
@@ -147,7 +144,7 @@ function App() {
   };
 
   // 現在の期のデータを取得
-  const currentData = periods[currentPeriod] || JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA));
+  const currentData = periods[currentPeriod] || createDefaultPeriodData();
 
   // リアルタイム財務計算を実行
   const results = calculateFinancials(currentData.carryover, currentData.ledger, currentData.actuals, currentPeriod);
@@ -264,9 +261,10 @@ function App() {
           if (load) {
             const backup = record.backup;
             if (backup && backup.periods) {
-              setPeriods(backup.periods);
+              const restored = normalizePeriods(backup.periods);
+              setPeriods(restored);
               setCurrentPeriod(backup.currentPeriod || 1);
-              safeStorage.setItem('mg_periods_data', JSON.stringify(backup.periods));
+              safeStorage.setItem('mg_periods_data', JSON.stringify(restored));
               safeStorage.setItem('mg_current_period', String(backup.currentPeriod || 1));
             } else {
               alert('サーバーに読み込める明細データ（バックアップ）がありませんでした。この端末のデータで続行します。');
@@ -369,7 +367,7 @@ function App() {
 
       const freshData = {};
       for (let i = 1; i <= TOTAL_PERIODS; i++) {
-        freshData[i] = JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA));
+        freshData[i] = createDefaultPeriodData();
       }
       setPeriods(freshData);
       setCurrentPeriod(1);
@@ -399,7 +397,7 @@ function App() {
     }
     const when = parsed.ts ? new Date(parsed.ts).toLocaleString() : '不明';
     if (window.confirm(`${when} のリセットを取り消し、その直前の状態に戻しますか？\n（現在の入力内容は失われます）`)) {
-      setPeriods(parsed.periods);
+      setPeriods(normalizePeriods(parsed.periods));
       setCurrentPeriod(parsed.currentPeriod || 1);
       try { localStorage.removeItem('mg_reset_backup'); } catch { /* ignore */ }
       setResetBackupInfo(null);
@@ -422,37 +420,9 @@ function App() {
     const prevMat = prevResults.mat;
     const prevWip = prevResults.wip;
     const prevProd = prevResults.prod;
-    const prevMach = prevResults.machines;
 
-    // B/S残高を引き継ぎ（次期に必要な全情報を網羅）
-    const nextCarryover = {
-      // 現金
-      cash: prevBS.cash,
-      // 棚卸資産
-      materialsCount: prevMat.endingCount,
-      materialsValue: prevMat.endingValue,
-      wipCount: prevWip.endingCount,
-      wipValue: prevWip.endingValue,
-      productCount: prevProd.endingCount,
-      productValue: prevProd.endingValue,
-      // 機械設備
-      largeMachines: prevMach.large,
-      smallMachines: prevMach.small,
-      attachments: prevMach.attachments,
-      machinesCount: prevMach.large + prevMach.small,
-      machinesValue: prevBS.fixedAssets,
-      // 負債
-      loan: prevBS.loans,
-      receivables: prevBS.receivables,
-      payables: prevBS.payables,
-      taxes: prevBS.unpaidTax,       // 未払法人税等
-      // 純資産
-      retainedEarnings: prevBS.retainedEarnings,
-      capital: prevBS.capital,
-      // 人員
-      workers: prevResults.workers || 0,
-      salesmen: prevResults.salesmen || 0
-    };
+    // B/S残高を引き継ぎ（未払給与 accruedLaborCost を含む全項目。仕様は constants.js 参照）
+    const nextCarryover = buildNextCarryover(prevResults);
 
     if (window.confirm(`第${prevPeriod}期末の決算データ（現金: ¥${prevBS.cash}万、純資産: ¥${prevBS.totalNetAssets}万）を、第${currentPeriod}期の期首データとして自動引き継ぎしますか？`)) {
       setPeriods(prev => ({
@@ -898,7 +868,7 @@ function App() {
 
                       const freshData = {};
                       for (let i = 1; i <= TOTAL_PERIODS; i++) {
-                        freshData[i] = JSON.parse(JSON.stringify(DEFAULT_PERIOD_DATA));
+                        freshData[i] = createDefaultPeriodData();
                       }
                       setPeriods(freshData);
                       setCurrentPeriod(1);
@@ -933,9 +903,10 @@ function App() {
                     }
                     const backup = serverRecord.backup;
                     if (backup && backup.periods) {
-                      setPeriods(backup.periods);
+                      const restored = normalizePeriods(backup.periods);
+                      setPeriods(restored);
                       setCurrentPeriod(backup.currentPeriod || 1);
-                      safeStorage.setItem('mg_periods_data', JSON.stringify(backup.periods));
+                      safeStorage.setItem('mg_periods_data', JSON.stringify(restored));
                       safeStorage.setItem('mg_current_period', String(backup.currentPeriod || 1));
                       setActiveTab('ledger');
                     } else {

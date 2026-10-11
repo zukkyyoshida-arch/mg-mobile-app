@@ -3,6 +3,10 @@ import React from 'react';
 // 以前は説明文に「全5期分」とハードコードされており、実際は20期分あるため
 // データ全削除の説明が実態と食い違っていた（押す前に読む文章なので危険）。
 import { TOTAL_PERIODS } from '../utils/constants';
+// toSafeInt: 数値入力の防御的サニタイズ（非有限=Infinity/NaN拒否・下限0・整数化）。
+// 期首繰越は資本金・現金・在庫・人数などすべて0以上の整数が前提のため、
+// 負数や 1e999（→Infinity→JSON保存でnull化→リロードで0円化）をここで確実に落とす。
+import { toSafeInt } from '../utils/inputSanitizers';
 
 function PriorPeriodCarryover({
   carryover, 
@@ -15,7 +19,7 @@ function PriorPeriodCarryover({
 }) {
   
   const handleInputChange = (field, value) => {
-    const numVal = value === '' ? 0 : Number(value);
+    const numVal = value === '' ? 0 : toSafeInt(value);
     onUpdateCarryover({
       ...carryover,
       [field]: numVal
@@ -81,9 +85,10 @@ function PriorPeriodCarryover({
                   <label className="form-label">資本金 (万)</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     value={carryover.capital || ''}
                     onChange={(e) => {
-                      const val = e.target.value === '' ? 0 : Number(e.target.value);
+                      const val = e.target.value === '' ? 0 : toSafeInt(e.target.value);
                       onUpdateCarryover({ ...carryover, capital: val, cash: val + (carryover.loan || 0) });
                     }}
                     placeholder="300"
@@ -94,9 +99,10 @@ function PriorPeriodCarryover({
                   <label className="form-label">⑰ 借入金 (万)</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     value={carryover.loan || ''}
                     onChange={(e) => {
-                      const val = e.target.value === '' ? 0 : Number(e.target.value);
+                      const val = e.target.value === '' ? 0 : toSafeInt(e.target.value);
                       onUpdateCarryover({ ...carryover, loan: val, cash: (carryover.capital || 0) + val });
                     }}
                     placeholder="0"
@@ -127,6 +133,7 @@ function PriorPeriodCarryover({
                     <label className="form-label">⑬ 現金 (万)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.cash || ''}
                       onChange={(e) => handleInputChange('cash', e.target.value)}
                       placeholder="0"
@@ -137,6 +144,7 @@ function PriorPeriodCarryover({
                     <label className="form-label">⑱ 売掛金 (万)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.receivables || ''}
                       onChange={(e) => handleInputChange('receivables', e.target.value)}
                       placeholder="0"
@@ -151,6 +159,7 @@ function PriorPeriodCarryover({
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>⑧ 材料 (原料)</span>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.materialsCount || ''}
                       onChange={(e) => handleInputChange('materialsCount', e.target.value)}
                       placeholder="個数"
@@ -159,6 +168,7 @@ function PriorPeriodCarryover({
                     />
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.materialsValue || ''}
                       onChange={(e) => handleInputChange('materialsValue', e.target.value)}
                       placeholder="金額(万)"
@@ -171,6 +181,7 @@ function PriorPeriodCarryover({
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>⑯ 仕掛品 (生産中)</span>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.wipCount || ''}
                       onChange={(e) => handleInputChange('wipCount', e.target.value)}
                       placeholder="個数"
@@ -179,6 +190,7 @@ function PriorPeriodCarryover({
                     />
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.wipValue || ''}
                       onChange={(e) => handleInputChange('wipValue', e.target.value)}
                       placeholder="金額(万)"
@@ -191,6 +203,7 @@ function PriorPeriodCarryover({
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>⑧ 製品 (完成品)</span>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.productCount || ''}
                       onChange={(e) => handleInputChange('productCount', e.target.value)}
                       placeholder="個数"
@@ -199,6 +212,7 @@ function PriorPeriodCarryover({
                     />
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.productValue || ''}
                       onChange={(e) => handleInputChange('productValue', e.target.value)}
                       placeholder="金額(万)"
@@ -217,6 +231,7 @@ function PriorPeriodCarryover({
                     <label className="form-label">ワーカー (人)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.workers || ''}
                       onChange={(e) => handleInputChange('workers', e.target.value)}
                       placeholder="0"
@@ -227,6 +242,7 @@ function PriorPeriodCarryover({
                     <label className="form-label">セールスマン (人)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.salesmen || ''}
                       onChange={(e) => handleInputChange('salesmen', e.target.value)}
                       placeholder="0"
@@ -246,6 +262,7 @@ function PriorPeriodCarryover({
                     <label className="form-label" style={{ fontSize: '0.65rem' }}>大型機械 (台)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.largeMachines || ''}
                       onChange={(e) => handleInputChange('largeMachines', e.target.value)}
                       placeholder="0"
@@ -257,6 +274,7 @@ function PriorPeriodCarryover({
                     <label className="form-label" style={{ fontSize: '0.65rem' }}>小型機械 (台)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={smallMachinesCount(carryover)}
                       onChange={(e) => handleInputChange('smallMachines', e.target.value)}
                       placeholder="0"
@@ -268,6 +286,7 @@ function PriorPeriodCarryover({
                     <label className="form-label" style={{ fontSize: '0.65rem' }}>アタッチ (個)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.attachments || ''}
                       onChange={(e) => handleInputChange('attachments', e.target.value)}
                       placeholder="0"
@@ -280,6 +299,7 @@ function PriorPeriodCarryover({
                   <label className="form-label">⑭ 機械固定資産 簿価合計 (万)</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     value={carryover.machinesValue || ''}
                     onChange={(e) => handleInputChange('machinesValue', e.target.value)}
                     placeholder="0"
@@ -298,6 +318,7 @@ function PriorPeriodCarryover({
                     <label className="form-label">⑰ 借入金 (万)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.loan || ''}
                       onChange={(e) => handleInputChange('loan', e.target.value)}
                       placeholder="0"
@@ -310,6 +331,7 @@ function PriorPeriodCarryover({
                     <label className="form-label">⑲ 買掛金 (万)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.payables || ''}
                       onChange={(e) => handleInputChange('payables', e.target.value)}
                       placeholder="0"
@@ -320,6 +342,7 @@ function PriorPeriodCarryover({
                     <label className="form-label">⑳ 未払税金 (万)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.taxes || ''}
                       onChange={(e) => handleInputChange('taxes', e.target.value)}
                       placeholder="0"
@@ -332,6 +355,7 @@ function PriorPeriodCarryover({
                     <label className="form-label">資本金 (万)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.capital || ''}
                       onChange={(e) => handleInputChange('capital', e.target.value)}
                       placeholder="300"
@@ -342,6 +366,7 @@ function PriorPeriodCarryover({
                     <label className="form-label">繰越利益剰余金 (万)</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={carryover.retainedEarnings || ''}
                       onChange={(e) => handleInputChange('retainedEarnings', e.target.value)}
                       placeholder="0"

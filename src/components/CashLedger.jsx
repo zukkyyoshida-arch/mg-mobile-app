@@ -9,6 +9,10 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
   const modalContentRef = useRef(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // 「直す」で取り消した取引の元伝票番号。次の登録1回に引き継ぎ、
+  // 修正のたびに欠番が増えて番号が付け替わるのを防ぐ。
+  const [redoVoucherNo, setRedoVoucherNo] = useState(null);
+
   const [selectedCategory, setSelectedCategory] = useState('キ'); // Default to現金売上
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
@@ -134,7 +138,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       marketQuantities, salesData, machineQuantities, machineSaleQuantities,
       adQuantities, rdPrice, greenChips
     };
-    const ctx = { carryover, ledger, results, currentPeriod, transactionMode };
+    const ctx = { carryover, ledger, results, currentPeriod, transactionMode, redoVoucherNo };
 
     const result = buildTransactionEntries(ctx, form);
 
@@ -147,6 +151,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     (result.infoAlerts || []).forEach(msg => alert(msg));
 
     onUpdateLedger(result.ledger);
+
+    // 引き継ぎ用の元伝票番号は登録1回で使い切る
+    setRedoVoucherNo(null);
 
     // フォームリセット
     resetForm();
@@ -195,15 +202,27 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     // 誤った値が入ったまま再登録される方が事故になりやすい）。
     resetForm();
     let reopenCategory = entry.category === 'タ' ? 'オ' : entry.category;
+    let group = [entry];
     if (entry.groupId) {
       // 組で登録された取引（借入オ＋自動利息タ／売掛割引ア＋手数料タ）は、
       // 組のどちらを選んでも「組の起点」の入力画面を開き直す。
-      // （リスクカード系の組は オ/ア を含まないため従来どおり entry.category ベース）
-      const group = ledger.filter(t => t.groupId === entry.groupId);
+      group = ledger.filter(t => t.groupId === entry.groupId);
       if (group.some(t => t.category === 'オ')) reopenCategory = 'オ';
       else if (group.some(t => t.category === 'ア')) reopenCategory = '売掛割引';
+      // オ/ア を含まない組はリスクカード由来（退職＋退職費用・盗難＋保険金など）。
+      // 元カテゴリ（退職 等）を直接開くと、必須属性（workersResigned 等）を持たない
+      // 裸のエントリが検証なしで作られてしまうため、リスクカードの選択画面へ戻す。
+      else reopenCategory = 'リスクカード';
     }
-    setSelectedCategory(reopenCategory);
+
+    // 元の伝票番号（組は先頭の番号）を控えて、次の登録で引き継ぐ
+    const nums = group.map(t => Number.parseInt(t.voucherNo, 10)).filter(n => Number.isFinite(n) && n > 0);
+    setRedoVoucherNo(nums.length > 0 ? Math.min(...nums) : null);
+
+    // setSelectedCategory 直呼びではなく handleCategorySelect を通す。
+    // コ=単価2・サ=単価1 などのプリセットが入らないと、単価欄が disabled かつ空のまま
+    // 金額が常に0になり、生産エントリが二度と再登録できなくなるため。
+    handleCategorySelect(reopenCategory);
     setShowAddModal(true);
     if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'auto' });
   };
@@ -496,7 +515,12 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
           handleCategorySelect={handleCategorySelect}
           handleQtyPriceChange={handleQtyPriceChange}
           handleCalcBtnClick={handleCalcBtnClick}
-          setShowAddModal={setShowAddModal}
+          setShowAddModal={(open) => {
+            // 「直す」を途中でやめてモーダルを閉じたら、伝票番号の引き継ぎも破棄する
+            // （別カテゴリの次の登録に元番号が誤って付くのを防ぐ）
+            if (!open) setRedoVoucherNo(null);
+            setShowAddModal(open);
+          }}
         />
       )}
     </div>
