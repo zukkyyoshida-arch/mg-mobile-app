@@ -1,4 +1,3 @@
-import React from 'react';
 import { calculateAnalytics } from '../utils/analytics';
 
 export default function PerformanceReport({ ledger, results, prevLedger, prevResults, currentPeriod, onClose }) {

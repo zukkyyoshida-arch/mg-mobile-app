@@ -156,9 +156,9 @@ export function generateReport(results, currentPeriod) {
   const avgPrice = results.averagePrice ?? ((results.minPrice + results.maxPrice) / 2);
   const cap = priceCapByCity[city] ?? 30;
   if (avgPrice > cap) {
-    report += `#### 0. 市場単価評価\n- 現在の平均販売単価は ${avgPrice.toFixed(1)} 万円で、${city} の上限 ${cap} 万円を超えています。\n- 価格調整は不要と判断し、より高価格の市場（${Object.entries(priceCapByCity).filter(([c, v]) => v > cap).map(([c]) => c).join('、')}）での販売を検討してください。\n\n`;
+    report += `#### 0. 市場単価評価\n- 現在の平均販売単価は ${avgPrice.toFixed(1)} 万円で、${city} の上限 ${cap} 万円を超えています。\n- 価格調整は不要と判断し、より高価格の市場（${Object.entries(priceCapByCity).filter(([, v]) => v > cap).map(([c]) => c).join('、')}）での販売を検討してください。\n\n`;
   } else {
-    report += `#### 0. 市場単価評価\n- 現在の平均販売単価は ${avgPrice.toFixed(1)} 万円で、${city} の上限 ${cap} 万円以内です。高価格市場（${Object.entries(priceCapByCity).filter(([c, v]) => v >= cap).map(([c]) => c).join('、')}）での販売が有望です。\n\n`;
+    report += `#### 0. 市場単価評価\n- 現在の平均販売単価は ${avgPrice.toFixed(1)} 万円で、${city} の上限 ${cap} 万円以内です。高価格市場（${Object.entries(priceCapByCity).filter(([, v]) => v >= cap).map(([c]) => c).join('、')}）での販売が有望です。\n\n`;
   }
   // 1. 総合評価
   if (operatingProfit > 0) {

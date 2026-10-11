@@ -11,21 +11,21 @@ import { syncPlayerData, fetchPlayerRecord, isRemoteNewer } from './pocketbase';
 import { TOTAL_PERIODS, isAllLedgersEmpty, buildPeriodsSummary, normalizePeriods, buildNextCarryover, createDefaultPeriodData } from './utils/constants';
 import { useDebounce } from 'react-use';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, FileText, CalendarCheck, Target, Settings, Sun, Moon } from 'lucide-react';
+import { BookOpen, FileText, CalendarCheck, Target, Settings } from 'lucide-react';
 
 // 安全な localStorage ラッパー
 const safeStorage = {
   getItem: (key) => {
-    try { return localStorage.getItem(key); } catch (e) { return null; }
+    try { return localStorage.getItem(key); } catch { return null; }
   },
   setItem: (key, value) => {
-    try { localStorage.setItem(key, value); } catch (e) {}
+    try { localStorage.setItem(key, value); } catch { /* 無視 */ }
   }
 };
 
 function App() {
   // テーマの状態 (ダーク / ライト)
-  const [theme, setTheme] = useState(() => {
+  const [theme] = useState(() => {
     const saved = safeStorage.getItem('mg_theme');
     return saved || 'dark';
   });
@@ -138,10 +138,6 @@ function App() {
     document.documentElement.dataset.theme = theme;
     safeStorage.setItem('mg_theme', theme);
   }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
-  };
 
   // 現在の期のデータを取得
   const currentData = periods[currentPeriod] || createDefaultPeriodData();

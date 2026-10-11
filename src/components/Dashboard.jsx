@@ -76,10 +76,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
   // localStorageから前回の状態を復元
   const [roomId, setRoomId] = useState(() => {
-    try { return localStorage.getItem('dashboard_room_id') || ''; } catch (e) { return ''; }
+    try { return localStorage.getItem('dashboard_room_id') || ''; } catch { return ''; }
   });
   const [isSubscribed, setIsSubscribed] = useState(() => {
-    try { return localStorage.getItem('dashboard_is_subscribed') === 'true'; } catch (e) { return false; }
+    try { return localStorage.getItem('dashboard_is_subscribed') === 'true'; } catch { return false; }
   });
   const [selectedTab, setSelectedTab] = useState('overall');
   const [playersData, setPlayersData] = useState({});
@@ -87,11 +87,11 @@ export default function Dashboard() {
 
   // 状態が変わるたびにlocalStorageに保存
   useEffect(() => {
-    try { localStorage.setItem('dashboard_room_id', roomId); } catch (e) {}
+    try { localStorage.setItem('dashboard_room_id', roomId); } catch { /* 無視 */ }
   }, [roomId]);
 
   useEffect(() => {
-    try { localStorage.setItem('dashboard_is_subscribed', isSubscribed); } catch (e) {}
+    try { localStorage.setItem('dashboard_is_subscribed', isSubscribed); } catch { /* 無視 */ }
   }, [isSubscribed]);
 
   useEffect(() => {
