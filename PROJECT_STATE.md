@@ -17,6 +17,14 @@
 - **追加機能**: AIアドバイザー機能 (`AIAdvisor`)
 
 ## 最新の更新内容（Recent Updates）
+- **2026-10-11**: 20期対応の仕上げ（PR #2 マージ、a13acb2）＋ Vercel撤去
+  - **PR #2 の要点**: 旧データ（1〜5期のみ）読込時に第6期以降が白画面になる不具合を根治（`normalizePeriods` を localStorage読込／サーバー復元2経路／リセット取り消しの全経路に配線）。前期引き継ぎを `buildNextCarryover` に一本化。売掛割引・借入返済の残高超過をブロック。`assignVoucherNos` による伝票番号の一括採番。入力上限 `MAX_AMOUNT` を `src/utils/inputSanitizers.js` に一本化
+  - **テスト**: `npx vitest run` 194件通過（マージ前148件）。`npx vite build` 成功。ブラウザ実機で旧形式データ投入→第6期が正常描画、コンソールエラーなし
+  - **Vercel撤去**: Vercelプロジェクト4件（mg-mobile-app / mg-mobile-app-ce1m / mg-mobile-app-ribiyou / mg-ipad-app）を削除。旧 `*.vercel.app` URLは404。以後、下記2026-07-23の「Vercel」記述は履歴であり現行構成ではない
+  - **現行の本番構成**: 配信は Cloudflare Workers `https://mg-mobile-app.zukky-yoshida.workers.dev/` と M1 Funnel `https://kazukiyoshidamacbook-air-2.tail4dd8e5.ts.net/` の2本（post-commitフックが dist をM1へscp）。DBはM1のPocketBase（LaunchAgent `com.zukky.pocketbase`）。姉妹アプリは `mg-mobile-app-ribiyou` / `mg-ipad-app`（同じ `zukky-yoshida.workers.dev` 配下）
+  - **受講者への案内URL**: 上記2本のみ。旧Vercel URLをブックマークしている受講者には差し替えを案内する（localStorageはオリジン別なのでゲーム中のURL切り替えは不可）
+  - **運用ルール**: main への直接pushは禁止、PR経由（GitHubの自動マージは無効のため手動マージ）
+  - **残課題**: `npx eslint src` に以前からの24件（本番影響なし）
 - **2026-07-24**: 改善レビュー指摘13項目を一括実装（5観点マルチエージェントレビュー→全件実装）
   - **データ保全**: 仕訳明細を含む全期データをサーバー(playersのbackup)へ同期。同名参加時の復元/上書き確認フロー、リセット取り消し（1世代退避）、同期自動リトライ(5s/15s/30s)
   - **荒らし対策**: playersのdelete管理者専用化（外部から403確認済み）、PocketBase管理画面(/_/)と管理者認証APIをFunnel層で遮断。archivesの改ざん防止も実値確認済み
@@ -48,5 +56,6 @@
 
 ## 次にやるべきこと（Next Action）
 （※新しいチャットを開始した際、ここからタスクを再開します）
-- [ ] 未使用ファイル（test_*.js, TESTING_GUIDE.md, playwright.config.js など）の整理検討
+- [ ] 未使用ファイル（test_*.js, TESTING_GUIDE.md, playwright.config.js など）の整理検討（削除は本人判断）
+- [ ] `npx eslint src` の24件を分類し、機械修正できるものだけ直す
 - [ ] AIアドバイザー機能の詳細実装・テスト（対応状況確認） 
