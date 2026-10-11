@@ -1,4 +1,3 @@
-import React from 'react';
 
 function VisualCharts({ results, carryover, ledger }) {
   if (!results || !carryover) return null;
@@ -54,7 +53,6 @@ function VisualCharts({ results, carryover, ledger }) {
 
   // --- 追加の計算 (資産・間接費・人員・借入・キャッシュ) ---
   const bs = results.bs || {};
-  const cf = results.cf || {};
 
   // 借入金
   const loanBeg = carryover.loan || 0;

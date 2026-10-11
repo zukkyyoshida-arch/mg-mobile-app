@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { calculateBudget } from '../utils/calculations';
 // toSafeInt: 数値入力の防御的サニタイズ（非有限=Infinity/NaN拒否・下限0・整数化）。
 // 予算入力に負数・小数・1e999（→Infinity→JSON保存でnull化）が入ると

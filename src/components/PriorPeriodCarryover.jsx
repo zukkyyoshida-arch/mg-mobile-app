@@ -1,4 +1,3 @@
-import React from 'react';
 // 期の総数はアプリ全体で共有の定数を参照する（期選択グリッドとリセット説明文の両方で使う）。
 // 以前は説明文に「全5期分」とハードコードされており、実際は20期分あるため
 // データ全削除の説明が実態と食い違っていた（押す前に読む文章なので危険）。
@@ -12,7 +11,6 @@ function PriorPeriodCarryover({
   carryover, 
   onUpdateCarryover, 
   currentPeriod, 
-  periods, 
   setCurrentPeriod, 
   rollForwardFromPrevious, 
   resetAllData 

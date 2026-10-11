@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listArchives } from '../pocketbase';
-import Confetti from 'react-confetti';
-import { useWindowSize } from 'react-use';
 
 export default function Archives() {
   const navigate = useNavigate();
   const [archives, setArchives] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { width, height } = useWindowSize();
 
   useEffect(() => {
     const fetchArchives = async () => {
