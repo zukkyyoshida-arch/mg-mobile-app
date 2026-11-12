@@ -113,6 +113,21 @@ export const DEFAULT_PERIOD_DATA = {
   }
 };
 
+// 保険チップの判定（集計側 calculateFinancials とタイムライン側 buildTransactionEntries の共通ルール）
+// ・被害が0個の火災・盗難では、保険チップは消費されず保険金も入らない
+// ・被害があれば保険チップを1枚消費し、被害個数 × unitPayout 万の保険金が入る
+// ・消費後は保険を買い直せる（chips が減る）
+export function resolveInsuranceEvent(chips, lostCount, unitPayout) {
+  const have = Math.max(0, Number(chips) || 0);
+  const lost = Math.max(0, Number(lostCount) || 0);
+  if (lost > 0 && have > 0) {
+    return { chips: have - 1, payout: lost * unitPayout, consumed: true };
+  }
+  return { chips: have, payout: 0, consumed: false };
+}
+export const FIRE_INSURANCE_UNIT = 8;
+export const THEFT_INSURANCE_UNIT = 10;
+
 /**
  * 帳簿データを元にすべての数値を再計算するメイン関数
  */
@@ -186,13 +201,10 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
           if (lostMat > 0) {
             totalFireCount += lostMat;
             currentMatCount = 0;
-            if (insuranceChips > 0) {
-              autoInsurancePayout += lostMat * 8;
-            }
           }
-          if (insuranceChips > 0) {
-            insuranceChips -= 1;
-          }
+          const ins = resolveInsuranceEvent(insuranceChips, lostMat, FIRE_INSURANCE_UNIT);
+          insuranceChips = ins.chips;
+          autoInsurancePayout += ins.payout;
           break;
         }
         case "製造ミス": {
@@ -210,13 +222,10 @@ export function calculateFinancials(carryover, ledger, actuals, period = 1) {
           if (lostProd > 0) {
             totalTheftCount += lostProd;
             currentProdCount -= lostProd;
-            if (insuranceChips > 0) {
-              autoInsurancePayout += lostProd * 10;
-            }
           }
-          if (insuranceChips > 0) {
-            insuranceChips -= 1;
-          }
+          const ins = resolveInsuranceEvent(insuranceChips, lostProd, THEFT_INSURANCE_UNIT);
+          insuranceChips = ins.chips;
+          autoInsurancePayout += ins.payout;
           break;
         }
         case "棚卸ロス(材料)": {
@@ -363,9 +372,10 @@ const bookEndingCash = (carryover.cash || 0) + cashInflow - cashOutflow;
   const wipBeginningCount = carryover.wipCount || 0;
   const wipBeginningValue = carryover.wipValue || 0;
   
-  // WIPへのインプット：材料投入金額 + 投入費(コ) + 完成費(サ) の支払金額
+  // WIPへのインプット：材料投入金額 + 投入費(コ)。完成費(サ)は完成品の原価にだけ乗せ、仕掛品評価には含めない
   const wipInputCount = matInputCount; 
-  const wipInputValue = matInputValue + ledgerTotals["コ"].amount + ledgerTotals["サ"].amount; // 材料費 + 投入加工費 + 完成加工費
+  const wipInputValue = matInputValue + ledgerTotals["コ"].amount; // 材料費 + 投入加工費
+  const completionCost = ledgerTotals["サ"].amount; // 完成加工費（完成品専用）
   
   const wipTotalCount = wipBeginningCount + wipInputCount;
   const wipTotalValue = wipBeginningValue + wipInputValue;
@@ -374,9 +384,9 @@ const bookEndingCash = (carryover.cash || 0) + cashInflow - cashOutflow;
   
   // 完成 (サ の生産個数) → 比例配分で計算
   const wipCompletedCount = ledgerTotals["サ"].quantity;
-  const wipCompletedValue = wipTotalCount > 0
+  const wipCompletedValue = (wipTotalCount > 0
     ? Math.round((wipCompletedCount / wipTotalCount) * wipTotalValue)
-    : 0;
+    : 0) + completionCost;
   
   // 事故災害：製造ミス (仕掛品) → 比例配分
   const missCount = totalMissCount;
@@ -386,7 +396,7 @@ const bookEndingCash = (carryover.cash || 0) + cashInflow - cashOutflow;
   
   // 仕掛品の次期繰越 (理論値) → 差引きで正確に計算
   const wipEndingCount = wipTotalCount - wipCompletedCount - missCount;
-  const wipEndingValue = Math.max(0, wipTotalValue - wipCompletedValue - wipMissValue);
+  const wipEndingValue = Math.max(0, wipTotalValue - (wipCompletedValue - completionCost) - wipMissValue);
 
   // C. 製品 (Finished Goods)
   const prodBeginningCount = carryover.productCount || 0;
@@ -620,11 +630,16 @@ const bookEndingCash = (carryover.cash || 0) + cashInflow - cashOutflow;
 
   // 各種チップと人員の実効数
   const activeRdChips = Math.max(0, Math.floor(ledgerTotals["チ"].amount / 20) - (ledgerTotals["研究開発失敗"]?.quantity || 0) - (ledgerTotals["研究開発成功"]?.quantity || 0));
-  const activeAdChips = Math.floor(ledgerTotals["セ"].amount / 5);
+  // 広告チップは広告の購入取引（セ のうち広告）の購入枚数だけで数える。
+  // クレーム処理費や期末セールスマン給与も セ に入るため、金額÷5 では過大になる。
+  const activeAdChips = ledger.reduce((sum, tx) => {
+    if (tx.category !== 'セ') return sum;
+    const isAd = tx.customShortName === '広告' || (typeof tx.customName === 'string' && tx.customName.includes('広告'));
+    return isAd ? sum + Math.max(0, Number(tx.quantity) || 0) : sum;
+  }, 0);
   
-  const purchasedIns = ledgerTotals["保険"]?.quantity || 0;
-  const usedIns = ledger.filter(tx => tx.category === '特別利益' && tx.customName?.includes('保険金')).length;
-  const activeInsuranceChips = Math.max(0, purchasedIns - usedIns);
+  // 保険チップ残数は時系列シミュレーション（resolveInsuranceEvent）の結果をそのまま使う
+  const activeInsuranceChips = Math.max(0, insuranceChips);
 
   const activeMdChips = ledgerTotals["MD"]?.quantity || 0;
   const activePacChips = ledgerTotals["PAC"]?.quantity || 0;
