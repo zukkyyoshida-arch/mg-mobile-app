@@ -2,8 +2,8 @@
 
 ## プロジェクト概要
 - **対象**: 戦略MG（製造業）のモバイル向けWebアプリケーション
-- **技術スタック**: React (Vite) + Streamlit (フロントエンドのビルド結果を単一HTMLとして `streamlit_app.py` で配信)
-- **ワークフロー**: コード修正後、必ず `npm run build` を実行して `dist/index.html` を更新してからGit Pushしてデプロイする。
+- **技術スタック**: React 19 (Vite) を単一HTMLにビルドし Cloudflare Workers で配信。同期は `worker/`（/api/*）＋ Cloudflare D1（`mg-mobile-sync`）
+- **ワークフロー**: ブランチで修正 → `npm run build` → テスト → PR → squash merge。本番反映は `npx wrangler deploy`（本人承認のうえ）。main直pushは禁止
 
 ## 主な実装機能（現在の状態）
 - **UI/UX**: スマホ用ボトムナビゲーション、ダーク/ライトテーマの切り替え
@@ -17,6 +17,13 @@
 - **追加機能**: AIアドバイザー機能 (`AIAdvisor`)
 
 ## 最新の更新内容（Recent Updates）
+- **2026-11-12**: UI/UX改善・会計ロジック修正・同期のCloudflare D1移行（PR #8 squash merge、917fa46）
+  - **同期**: M1 PocketBase を廃止し、Workers の `/api/*` ＋ D1 `mg-mobile-sync`（APACリージョン）へ移行。本番でルーム作成・参加・PIN誤り403を確認済み
+  - **旧データ**: PocketBase のアーカイブ・ランキングは移行しない（本人裁定）。D1 は空から開始
+  - **M1 URL**: `https://kazukiyoshidamacbook-air-2.tail4dd8e5.ts.net/` は本番URLへの転送ページのみ配信（旧アプリは M1 の `~/pocketbase/index.html.old-pocketbase-app-20261112` に退避）。`deploy:m1` スクリプトと `src/pocketbase.js` は削除
+  - **受講者への案内URL**: Workers の本番URL 1本のみ
+  - **テスト**: vitest・Playwright E2E 全通過、375px/1280px で横スクロールなし
+  - 以下の 2026-10-11 以前の記述にある PocketBase・M1配信・post-commit配送は履歴であり現行構成ではない
 - **2026-10-11**: 20期対応の仕上げ（PR #2 マージ、a13acb2）＋ Vercel撤去
   - **PR #2 の要点**: 旧データ（1〜5期のみ）読込時に第6期以降が白画面になる不具合を根治（`normalizePeriods` を localStorage読込／サーバー復元2経路／リセット取り消しの全経路に配線）。前期引き継ぎを `buildNextCarryover` に一本化。売掛割引・借入返済の残高超過をブロック。`assignVoucherNos` による伝票番号の一括採番。入力上限 `MAX_AMOUNT` を `src/utils/inputSanitizers.js` に一本化
   - **テスト**: `npx vitest run` 194件通過（マージ前148件）。`npx vite build` 成功。ブラウザ実機で旧形式データ投入→第6期が正常描画、コンソールエラーなし

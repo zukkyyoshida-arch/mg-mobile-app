@@ -1,4 +1,4 @@
-// 同期API（/api/*）のクライアント。pocketbase.js の代わりに App / Dashboard / Archives から使う。
+// 同期API（/api/*、Cloudflare Workers + D1）のクライアント。App / Dashboard / Archives から使う。
 import { getDeviceToken, setDeviceToken, deviceTokensForRoom, getSyncState, setSyncState, getTeacherInfo, setTeacherInfo } from './store.js';
 
 export const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || '';
