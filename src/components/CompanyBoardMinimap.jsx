@@ -55,7 +55,7 @@ function CompanyBoardMinimap({ results }) {
           <span className="animate-pulse" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#00e676', display: 'inline-block' }}></span>
           🔮 リアルタイム会社盤ミニマップ
         </h4>
-        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>※盤面上のコマ配置を自動シミュレート</span>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>※盤面上のコマ配置を自動シミュレート</span>
       </div>
 
       {isInventoryOverLimit && (
@@ -90,7 +90,7 @@ function CompanyBoardMinimap({ results }) {
             justifyContent: 'space-between'
           }}>
             <div>
-              <div style={{ fontSize: '0.65rem', fontWeight: '800', color: '#ff9800', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>材料倉庫</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#ff9800', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>材料倉庫</div>
               
               {activeMdChips > 0 && (
                 <div style={{ marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '2px' }}>
@@ -121,7 +121,7 @@ function CompanyBoardMinimap({ results }) {
                   />
                 ))}
                 {mat.endingCount === 0 && (
-                  <div style={{ fontSize: '0.65rem', color: 'rgba(255, 152, 0, 0.5)', fontStyle: 'italic' }}>倉庫空っぽ</div>
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(255, 152, 0, 0.5)', fontStyle: 'italic' }}>倉庫空っぽ</div>
                 )}
               </div>
             </div>
@@ -141,7 +141,7 @@ function CompanyBoardMinimap({ results }) {
             justifyContent: 'space-between'
           }}>
             <div>
-              <div style={{ fontSize: '0.65rem', fontWeight: '800', color: '#e040fb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>工場ライン</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#e040fb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>工場ライン</div>
               
               {activePacChips > 0 && (
                 <div style={{ marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '2px' }}>
@@ -257,7 +257,7 @@ function CompanyBoardMinimap({ results }) {
                   />
                 ))}
                 {wip.endingCount === 0 && (
-                  <div style={{ fontSize: '0.62rem', color: 'rgba(156, 39, 176, 0.5)', fontStyle: 'italic' }}>稼働ラインなし</div>
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(156, 39, 176, 0.5)', fontStyle: 'italic' }}>稼働ラインなし</div>
                 )}
               </div>
 
@@ -296,7 +296,7 @@ function CompanyBoardMinimap({ results }) {
             justifyContent: 'space-between'
           }}>
             <div>
-              <div style={{ fontSize: '0.65rem', fontWeight: '800', color: '#4caf50', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>販売所</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#4caf50', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>販売所</div>
 
               {activeResearchChips > 0 && (
                 <div style={{ marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '2px' }}>
@@ -337,7 +337,7 @@ function CompanyBoardMinimap({ results }) {
                   />
                 ))}
                 {prod.endingCount === 0 && (
-                  <div style={{ fontSize: '0.65rem', color: 'rgba(76, 175, 80, 0.5)', fontStyle: 'italic' }}>製品なし</div>
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(76, 175, 80, 0.5)', fontStyle: 'italic' }}>製品なし</div>
                 )}
               </div>
             </div>
@@ -360,25 +360,25 @@ function CompanyBoardMinimap({ results }) {
             gap: '8px',
             flexWrap: 'wrap'
           }}>
-            <div style={{ fontSize: '0.65rem', fontWeight: '800', color: '#2196f3', textTransform: 'uppercase', letterSpacing: '0.5px' }}>本部</div>
+            <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2196f3', textTransform: 'uppercase', letterSpacing: '0.5px' }}>本部</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
               {activeAdChips > 0 && (
-                <div style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '4px', border: '1px solid #ef5350' }}>
+                <div style={{ padding: '2px 6px', fontSize: '0.75rem', fontWeight: '800', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '4px', border: '1px solid #ef5350' }}>
                   赤チップ (広告) 📣 × {activeAdChips}
                 </div>
               )}
               {activeInsuranceChips > 0 && (
-                <div style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#fff59d', color: '#f57f17', borderRadius: '4px', border: '1px solid #fbc02d' }}>
+                <div style={{ padding: '2px 6px', fontSize: '0.75rem', fontWeight: '800', backgroundColor: '#fff59d', color: '#f57f17', borderRadius: '4px', border: '1px solid #fbc02d' }}>
                   黄色チップ (保険) 🛡️ × {activeInsuranceChips}
                 </div>
               )}
               {activeRdChips > 0 && (
-                <div style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#e3f2fd', color: '#1565c0', borderRadius: '4px', border: '1px solid #42a5f5' }}>
+                <div style={{ padding: '2px 6px', fontSize: '0.75rem', fontWeight: '800', backgroundColor: '#e3f2fd', color: '#1565c0', borderRadius: '4px', border: '1px solid #42a5f5' }}>
                   青チップ (研究開発) 🔬 × {activeRdChips}
                 </div>
               )}
               {activeGenericGreenChips > 0 && (
-                <div style={{ padding: '2px 6px', fontSize: '0.62rem', fontWeight: '800', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', border: '1px solid #66bb6a' }}>
+                <div style={{ padding: '2px 6px', fontSize: '0.75rem', fontWeight: '800', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', border: '1px solid #66bb6a' }}>
                   緑チップ (その他) 🟢 × {activeGenericGreenChips}
                 </div>
               )}

@@ -1,0 +1,132 @@
+/* 汎用トーストとフォーム内インラインエラーの見た目。
+   色はテーマ変数（--text-* / --bg-* / --color-accent）を優先し、
+   未定義の環境でも読めるようフォールバック値を添える。 */
+
+.app-toast {
+  /* .phone-shell（position: relative）基準で下部に固定する */
+  position: absolute;
+  left: 16px;
+  /* 右下の＋ボタン（56px＋右余白16px）に重ならないよう右側を空ける */
+  right: 88px;
+  bottom: calc(var(--nav-height, 72px) + var(--safe-area-bottom, 0px) + 16px);
+  z-index: 1000;
+  max-width: 480px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  border-radius: 12px;
+  /* 背景は本文と反転させ、ライト/ダークどちらでも浮いて見えるようにする */
+  background: var(--toast-bg, #1f2937);
+  color: var(--toast-fg, #f9fafb);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  animation: app-toast-in 0.18s ease-out;
+}
+
+[data-theme="dark"] .app-toast {
+  --toast-bg: #e5e7eb;
+  --toast-fg: #111827;
+}
+
+.app-toast--error {
+  --toast-bg: #b91c1c;
+  --toast-fg: #ffffff;
+}
+
+[data-theme="dark"] .app-toast--error {
+  --toast-bg: #fecaca;
+  --toast-fg: #7f1d1d;
+}
+
+.app-toast__message {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.app-toast__action,
+.app-toast__close {
+  flex: 0 0 auto;
+  min-height: 44px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  font-family: inherit;
+}
+
+.app-toast__action {
+  padding: 0 12px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #93c5fd;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+[data-theme="dark"] .app-toast__action {
+  color: #1d4ed8;
+}
+
+.app-toast__close {
+  min-width: 44px;
+  font-size: 1.2rem;
+  opacity: 0.75;
+}
+
+.app-toast__action:focus-visible,
+.app-toast__close:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+@keyframes app-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-toast { animation: none; }
+}
+
+/* フォーム内のインラインエラー（送信ボタンの直前に出す） */
+.form-inline-error {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+  color: #b91c1c;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+[data-theme="dark"] .form-inline-error {
+  border-color: #f87171;
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
+}
+
+/* 編集モードの案内（モーダル上部） */
+.form-edit-notice {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(var(--color-accent-rgb, 42, 132, 255), 0.35);
+  background: rgba(var(--color-accent-rgb, 42, 132, 255), 0.08);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.form-edit-notice__warn {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary);
+}

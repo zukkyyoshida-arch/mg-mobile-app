@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listArchives } from '../pocketbase';
+import { listArchives } from '../sync/client';
+import { listTeacherRooms } from '../sync/store';
 
 export default function Archives() {
   const navigate = useNavigate();
@@ -10,8 +11,10 @@ export default function Archives() {
   useEffect(() => {
     const fetchArchives = async () => {
       try {
-        const data = await listArchives();
-        setArchives(data);
+        // 講師キーを保存しているルームの記録だけを集める（アーカイブの閲覧は講師キーが必要）
+        const results = await Promise.allSettled(listTeacherRooms().map((r) => listArchives(r)));
+        setArchives(results.flatMap((x) => (x.status === 'fulfilled' ? x.value : []))
+          .sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp))));
       } catch (error) {
         console.error("Failed to fetch archives:", error);
       } finally {

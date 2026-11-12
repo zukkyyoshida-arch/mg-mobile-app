@@ -162,19 +162,19 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>MQ 付加価値額</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>MQ 付加価値額</span>
                 <div className="electric-number" style={{ fontSize: '2.2rem', color: 'var(--mg-pink)', margin: '4px 0' }}>
                   ¥{pl.margin.toLocaleString()}<span style={{ fontSize: '1rem' }}>万</span>
                 </div>
-                <span className="badge badge-pink" style={{ fontSize: '0.65rem' }}>m率 {pl.marginRatio.toFixed(1)}%</span>
+                <span className="badge badge-pink" style={{ fontSize: '0.75rem' }}>m率 {pl.marginRatio.toFixed(1)}%</span>
               </div>
               
               <div style={{ borderLeft: '1px solid var(--border-glass)', paddingLeft: '20px', textAlign: 'right' }}>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>G 経常利益</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>G 経常利益</span>
                 <div className="electric-number" style={{ fontSize: '2.2rem', color: pl.operatingProfit >= 0 ? 'var(--mg-green)' : '#ef4444', margin: '4px 0' }}>
                   ¥{pl.operatingProfit >= 0 ? '+' : ''}{pl.operatingProfit.toLocaleString()}<span style={{ fontSize: '1rem' }}>万</span>
                 </div>
-                <span className={`badge badge-${pl.operatingProfit >= 0 ? 'green' : 'pink'}`} style={{ fontSize: '0.65rem' }}>
+                <span className={`badge badge-${pl.operatingProfit >= 0 ? 'green' : 'pink'}`} style={{ fontSize: '0.75rem' }}>
                   評価: {results.rank} ランク
                 </span>
               </div>
@@ -182,7 +182,7 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
 
             {/* 簡易財務比率メーター (SVGインラインゲージ) */}
             <div style={{ marginTop: '18px', padding: '14px', background: 'var(--surface-subtle)', border: '1px solid var(--border-glass)', borderRadius: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
                 <span>変動費 vPQ ({((pl.variableCost / (pl.salesRevenue || 1)) * 100).toFixed(0)}%)</span>
                 <span>固定費 F ({((pl.fixedCost / (pl.salesRevenue || 1)) * 100).toFixed(0)}%)</span>
                 <span>経常利益 G</span>
@@ -214,7 +214,7 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                   <td style={{ textAlign: 'right', fontWeight: '800', color: 'var(--mg-pink)' }}>¥{pl.margin.toLocaleString()}万</td>
                 </tr>
                 <tr>
-                  <td style={{ fontWeight: '700' }}>固定費 (F) <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>(f/m比: {pl.fmRatio.toFixed(0)}%)</span></td>
+                  <td style={{ fontWeight: '700' }}>固定費 (F) <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>(f/m比: {pl.fmRatio.toFixed(0)}%)</span></td>
                   <td style={{ textAlign: 'right', fontWeight: '800', color: 'var(--mg-blue)' }}>-¥{pl.fixedCost.toLocaleString()}万</td>
                 </tr>
                 <tr>
@@ -288,7 +288,7 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
               <span style={{ fontWeight: '800', color: '#ef4444', fontSize: '0.88rem' }}>
                 🚨 貸借対照表が不一致です！ズレ金額: ¥{bs.difference.toLocaleString()}万
               </span>
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
                 期首繰越のバランス、出納帳の計算間違い、または期末の棚卸数が正しく合っているかチェックしてください。
               </p>
             </div>
@@ -314,15 +314,15 @@ function FinancialStatements({ results, carryover, currentPeriod, ledger, onShow
                     </tr>
                     <tr>
                       <td>材料在庫 (ツ - コ - 火災)</td>
-                      <td style={{ textAlign: 'right' }}>¥{bs.materialsValue.toLocaleString()}万 <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>({results.mat.endingCount}個)</span></td>
+                      <td style={{ textAlign: 'right' }}>¥{bs.materialsValue.toLocaleString()}万 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({results.mat.endingCount}個)</span></td>
                     </tr>
                     <tr>
                       <td>仕掛品在庫 (コ + サ - ミス)</td>
-                      <td style={{ textAlign: 'right' }}>¥{bs.wipValue.toLocaleString()}万 <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>({results.wip.endingCount}個)</span></td>
+                      <td style={{ textAlign: 'right' }}>¥{bs.wipValue.toLocaleString()}万 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({results.wip.endingCount}個)</span></td>
                     </tr>
                     <tr>
                       <td>製品在庫 (完成 - 売上 - 盗難)</td>
-                      <td style={{ textAlign: 'right' }}>¥{bs.productValue.toLocaleString()}万 <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>({results.prod.endingCount}個)</span></td>
+                      <td style={{ textAlign: 'right' }}>¥{bs.productValue.toLocaleString()}万 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({results.prod.endingCount}個)</span></td>
                     </tr>
                     <tr style={{ fontWeight: '700', backgroundColor: '#f9fafb' }}>
                       <td>流動資産合計</td>

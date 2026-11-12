@@ -276,7 +276,7 @@ export default function TrendCharts({ periods, currentPeriod }) {
       <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '4px', color: 'var(--text-primary)' }}>
         📈 期別推移
       </h3>
-      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
         第{data[0].period}期〜第{data[data.length - 1].period}期の期末値推移（現在: 第{currentPeriod}期）
       </p>
 
@@ -331,7 +331,7 @@ export default function TrendCharts({ periods, currentPeriod }) {
           const last = data[data.length - 1];
           return (
             <div key={s.key} style={{ background: 'var(--surface-subtle, rgba(128,128,128,0.06))', borderRadius: '10px', padding: '8px 10px' }}>
-              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{s.label} (第{last.period}期)</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.label} (第{last.period}期)</div>
               <div style={{ fontSize: '0.9rem', fontWeight: '800', color: colorFor(s.key) }}>{formatYen(last[s.key])}</div>
             </div>
           );

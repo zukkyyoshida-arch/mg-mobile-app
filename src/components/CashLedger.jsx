@@ -1,17 +1,43 @@
 import { CATEGORIES } from './cashledger/constants';
 import CompanyBoardMinimap from './CompanyBoardMinimap';
-import { useState, useRef } from 'react';
-import { buildTransactionEntries, removeEntry, toSafeInt } from './cashledger/buildTransactionEntries';
+import { useState, useRef, useEffect } from 'react';
+import { buildTransactionEntries, toSafeInt } from './cashledger/buildTransactionEntries';
+import {
+  entryToFormState,
+  getEntryGroup,
+  getGroupVoucherNos,
+  removeEntryWithPositions,
+  restoreRemovedEntries
+} from './cashledger/editTransaction';
+import { getSalesLimitError } from './cashledger/salesLimits';
 import AddTransactionModal from './cashledger/AddTransactionModal';
 import TimelineList from './cashledger/TimelineList';
+import Toast from './Toast';
 
 function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod, transactionMode, setTransactionMode, enableCredit = true }) {
   const modalContentRef = useRef(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // 「直す」で取り消した取引の元伝票番号。次の登録1回に引き継ぎ、
-  // 修正のたびに欠番が増えて番号が付け替わるのを防ぐ。
-  const [redoVoucherNo, setRedoVoucherNo] = useState(null);
+  // 「入力し直す」で削除した取引の情報。null なら通常の新規追加。
+  // { voucherNo, voucherLabel, note }
+  //   voucherNo … 元の伝票番号（次の登録1回に引き継ぎ、番号の付け替わりを防ぐ）
+  //   note      … 元の値を完全には事前入力できなかったときの案内
+  const [redoInfo, setRedoInfo] = useState(null);
+
+  // 登録時の検証エラー（モーダル内の送信ボタン付近にインライン表示する）。
+  // { message, key } … key は同じ文言が続いたときにも再スクロールさせるため。
+  const [formError, setFormError] = useState(null);
+
+  // 画面下部のトースト（削除の取り消し・自動計上のお知らせなど）
+  const [toast, setToast] = useState(null);
+
+  // 「元に戻す」は数秒後に押されるため、押した時点の最新 ledger / 期を参照する
+  const ledgerRef = useRef(ledger);
+  const periodRef = useRef(currentPeriod);
+  useEffect(() => {
+    ledgerRef.current = ledger;
+    periodRef.current = currentPeriod;
+  }, [ledger, currentPeriod]);
 
   const [selectedCategory, setSelectedCategory] = useState('キ'); // Default to現金売上
   const [quantity, setQuantity] = useState('');
@@ -124,9 +150,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     setCalcInput('');
   };
 
-  // 新規取引の追加。
-  // 中核ロジックは純粋関数 buildTransactionEntries に委譲し、ここでは
-  // 「フォーム値の収集 → 純粋関数呼び出し → エラー/通知の alert・ledger 更新・後処理」だけを行う。
+  // 新規取引の追加／編集の保存。
+  // 中核ロジックは純粋関数（buildTransactionEntries / buildEditedLedger）に委譲し、ここでは
+  // 「フォーム値の収集 → 純粋関数呼び出し → エラー表示・ledger 更新・後処理」だけを行う。
   const handleAddTransaction = (e) => {
     e.preventDefault();
 
@@ -138,22 +164,35 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       marketQuantities, salesData, machineQuantities, machineSaleQuantities,
       adQuantities, rdPrice, greenChips
     };
-    const ctx = { carryover, ledger, results, currentPeriod, transactionMode, redoVoucherNo };
+    const ctx = { carryover, ledger, results, currentPeriod, transactionMode };
 
-    const result = buildTransactionEntries(ctx, form);
-
-    if (result.error) {
-      alert(result.error);
+    // 販売数の上限（在庫・販売能力）を手入力にも適用する。MAX ボタンと同じ計算。
+    const limitError = getSalesLimitError(form, results);
+    if (limitError) {
+      setFormError({ message: limitError, key: Date.now() });
       return;
     }
 
-    // 成功時の通知（借入利息の自動計上など）。元コードは onUpdateLedger より前に alert していたため順序を合わせる。
-    (result.infoAlerts || []).forEach(msg => alert(msg));
+    const result = buildTransactionEntries(
+      { ...ctx, redoVoucherNo: redoInfo?.voucherNo ?? null },
+      form
+    );
+
+    if (result.error) {
+      setFormError({ message: result.error, key: Date.now() });
+      return;
+    }
+    setFormError(null);
 
     onUpdateLedger(result.ledger);
 
-    // 引き継ぎ用の元伝票番号は登録1回で使い切る
-    setRedoVoucherNo(null);
+    // お知らせ（借入利息の自動計上など）は1つのトーストにまとめる。
+    // 新しい登録があったら、直前の削除の「元に戻す」は無効にする
+    // （戻すと新しい取引と伝票番号が重なりうるため）。
+    const infos = result.infoAlerts || [];
+    // 元番号の引き継ぎは1回だけ（2件目以降は通常の連番）
+    if (redoInfo) setRedoInfo(null);
+    setToast(infos.length > 0 ? { id: Date.now(), message: infos.join('\n'), duration: 6000 } : null);
 
     // フォームリセット
     resetForm();
@@ -164,72 +203,116 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 取引の削除
+  // モーダルを閉じる。「入力し直す」を途中でやめた場合は、伝票番号の引き継ぎも破棄する
+  // （別カテゴリの次の登録に元番号が誤って付くのを防ぐ）。
+  const closeModal = () => {
+    setRedoInfo(null);
+    setFormError(null);
+    setShowAddModal(false);
+  };
+
+  // 新規追加でモーダルを開く
+  const openAddModal = (category) => {
+    setRedoInfo(null);
+    setFormError(null);
+    setSelectedCategory(category);
+    setShowAddModal(true);
+  };
+
+  // 取引の削除。確認ダイアログは出さず、代わりに「元に戻す」付きのトーストを出す。
+  // 組（借入＋自動利息など）は組ごと削除し、元に戻すときも組ごと元の位置へ戻す。
   const handleDeleteTransaction = (id) => {
     const entryToDelete = ledger.find(t => t.id === id);
     if (!entryToDelete) return;
 
-    if (window.confirm("この取引データを削除してもよろしいですか？（関連する処理も同時に削除されます）")) {
-      onUpdateLedger(removeEntry(ledger, entryToDelete));
-    }
+    const { ledger: nextLedger, removed } = removeEntryWithPositions(ledger, entryToDelete);
+    onUpdateLedger(nextLedger);
+
+    const nos = getGroupVoucherNos(removed.map(r => r.entry));
+    const catMeta = CATEGORIES[entryToDelete.category];
+    const name = entryToDelete.customName || catMeta?.actionName || catMeta?.label || entryToDelete.category;
+    const what = nos.length > 0 ? nos.map(n => `#${n}`).join('・') : `「${name}」`;
+    const periodAtDelete = currentPeriod;
+
+    setToast({
+      id: Date.now(),
+      message: `${what} を削除しました`,
+      actionLabel: '元に戻す',
+      onAction: () => {
+        // 期を切り替えた後に押された場合は、別の期の帳簿へ混ぜないよう何もしない
+        if (periodRef.current !== periodAtDelete) return;
+        onUpdateLedger(restoreRemovedEntries(ledgerRef.current, removed));
+      }
+    });
   };
 
-  // 取引のやり直し（＝編集）。
+  // 取引の「入力し直す」。
   //
-  // 取引はカテゴリごとに構造が大きく異なる（採用は人数・販売は都市別・機械は種類別）ため、
-  // 汎用の編集フォームを別に作ると AddTransactionModal を二重実装することになり、
-  // 検証や計算がずれる。そこで「該当取引を取り消して、同じ項目の入力画面を開く」方式にする。
-  // 受講者は正しい値を入れ直すだけで済み、既存の検証（残高ガードを含む）がそのまま効く。
+  // 確認後に元取引を削除し、元の項目を選んだ状態で入力画面を開く（復元できる値は事前入力）。
+  // 1回の登録で複数行になった取引（借入＋利息、独占販売の市場別行、生産のコ＋サ など）は
+  // 全行まとめて削除し、一部が残って二重計上になるのを防ぐ。
+  // 元の伝票番号は次の登録1回に引き継ぐ。
   const handleRedoTransaction = (id) => {
     const entry = ledger.find(t => t.id === id);
     if (!entry) return;
 
+    const group = getEntryGroup(ledger, entry);
+    const nos = getGroupVoucherNos(group);
+    const label = nos.length > 0 ? nos.map(n => `#${n}`).join('・') : '';
     const catMeta = CATEGORIES[entry.category];
     const name = entry.customName || catMeta?.actionName || catMeta?.label || entry.category;
-
     const ok = window.confirm(
       `「${name}（#${entry.voucherNo ?? '—'}）¥${Number(entry.amount || 0).toLocaleString()}万」を取り消して、`
       + `入力し直しますか？\n\n`
       + `この取引を帳簿から削除し、同じ項目の入力画面を開きます。`
-      + `${entry.groupId ? '\n※ 同時に登録された関連処理もまとめて取り消されます。' : ''}`
+      + (group.length > 1 ? `\n※ 同じ登録でできた${group.length}行（${label || '関連処理'}）をまとめて取り消します。` : '')
     );
     if (!ok) return;
 
-    onUpdateLedger(removeEntry(ledger, entry));
+    const { form: restored, note } = entryToFormState(entry, group);
+    const { ledger: nextLedger } = removeEntryWithPositions(ledger, entry);
+    onUpdateLedger(nextLedger);
+    // 削除済みの取引を「元に戻す」トーストが残っていると、引き継いだ番号と重なりうるため閉じる
+    setToast(null);
 
-    // 入力し直しやすいように、元のカテゴリを選んだ状態でモーダルを開く。
-    // 金額や数量は敢えて復元しない（打ち間違いを直すのが目的で、
-    // 誤った値が入ったまま再登録される方が事故になりやすい）。
     resetForm();
-    let reopenCategory = entry.category === 'タ' ? 'オ' : entry.category;
-    let group = [entry];
-    if (entry.groupId) {
-      // 組で登録された取引（借入オ＋自動利息タ／売掛割引ア＋手数料タ）は、
-      // 組のどちらを選んでも「組の起点」の入力画面を開き直す。
-      group = ledger.filter(t => t.groupId === entry.groupId);
-      if (group.some(t => t.category === 'オ')) reopenCategory = 'オ';
-      else if (group.some(t => t.category === 'ア')) reopenCategory = '売掛割引';
-      // オ/ア を含まない組はリスクカード由来（退職＋退職費用・盗難＋保険金など）。
-      // 元カテゴリ（退職 等）を直接開くと、必須属性（workersResigned 等）を持たない
-      // 裸のエントリが検証なしで作られてしまうため、リスクカードの選択画面へ戻す。
-      else reopenCategory = 'リスクカード';
-    }
-
-    // 元の伝票番号（組は先頭の番号）を控えて、次の登録で引き継ぐ
-    const nums = group.map(t => Number.parseInt(t.voucherNo, 10)).filter(n => Number.isFinite(n) && n > 0);
-    setRedoVoucherNo(nums.length > 0 ? Math.min(...nums) : null);
-
     // setSelectedCategory 直呼びではなく handleCategorySelect を通す。
     // コ=単価2・サ=単価1 などのプリセットが入らないと、単価欄が disabled かつ空のまま
-    // 金額が常に0になり、生産エントリが二度と再登録できなくなるため。
-    handleCategorySelect(reopenCategory);
+    // 金額が常に0になるため。プリセットの後に復元値で上書きする。
+    handleCategorySelect(restored.selectedCategory);
+    applyRestoredForm(restored);
+
+    setRedoInfo({ voucherNo: nos.length > 0 ? nos[0] : null, voucherLabel: label, note });
+    setFormError(null);
+    setShowCalculator(false);
     setShowAddModal(true);
     if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'auto' });
+  };
+
+  // entryToFormState が返した値をフォーム state へ反映する（含まれないキーは初期値のまま）
+  const applyRestoredForm = (restored) => {
+    const setters = {
+      quantity: setQuantity, price: setPrice, amount: setAmount,
+      isFireSale: setIsFireSale, fireSaleQty: setFireSaleQty,
+      workersHired: setWorkersHired, salesmenHired: setSalesmenHired, hirePrice: setHirePrice,
+      productionKo: setProductionKo, productionSa: setProductionSa,
+      transferW2S: setTransferW2S, transferS2W: setTransferS2W,
+      factoringAmount: setFactoringAmount, repaymentAmount: setRepaymentAmount,
+      riskTab: setRiskTab, riskAction: setRiskAction, riskQty: setRiskQty, riskPrice: setRiskPrice,
+      riskMonopolyAdQtys: setRiskMonopolyAdQtys,
+      marketQuantities: setMarketQuantities, salesData: setSalesData,
+      machineQuantities: setMachineQuantities, machineSaleQuantities: setMachineSaleQuantities,
+      adQuantities: setAdQuantities, rdPrice: setRdPrice, greenChips: setGreenChips
+    };
+    Object.entries(restored).forEach(([key, value]) => {
+      if (setters[key]) setters[key](value);
+    });
   };
 
   // 取引カテゴリ切り替え時の自動表示制御
   const handleCategorySelect = (symbol) => {
     setSelectedCategory(symbol);
+    setFormError(null);
     setIsFireSale(false);
     setFireSaleQty('');
     // 数量が必要ない科目の場合は数量と単価をリセット
@@ -307,6 +390,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
   const visibleLedger = ledger.filter(entry => entry.category !== '期首処理');
 
+
   // 単価情報 (P, V, M) の計算
   const salesQty = results?.prod?.salesCount || 0;
   const salesRev = results?.pl?.salesRevenue || 0;
@@ -367,21 +451,21 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
           borderTop: '1px solid var(--border-glass)',
           paddingTop: '8px',
           marginTop: '8px',
-          fontSize: '0.75rem',
+          fontSize: '0.8rem',
           color: 'var(--text-secondary)'
         }}>
           <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>平均単価 (P)</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>平均単価 (P)</div>
             <strong style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>{avgPriceDisplay}</strong>
           </div>
           <div style={{ width: '1px', height: '18px', background: 'var(--border-glass)' }}></div>
           <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>変動単価 (V)</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>変動単価 (V)</div>
             <strong style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>{varPriceDisplay}</strong>
           </div>
           <div style={{ width: '1px', height: '18px', background: 'var(--border-glass)' }}></div>
           <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>粗利単価 (M)</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>粗利単価 (M)</div>
             <strong style={{ color: 'var(--mg-pink)', fontSize: '0.85rem' }}>{marginPriceDisplay}</strong>
           </div>
         </div>
@@ -446,10 +530,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
         <div style={{ margin: '0 16px 8px 16px' }}>
           <button
             type="button"
-            onClick={() => {
-              setSelectedCategory('期首処理');
-              setShowAddModal(true);
-            }}
+            onClick={() => openAddModal('期首処理')}
             className="btn-premium"
             style={{
               width: '100%',
@@ -484,10 +565,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
       {/* 新規取引追加フローティングボタン(FAB) */}
       <button
-        onClick={() => {
-          setSelectedCategory(transactionMode === 'credit' ? 'ノ' : 'ツ');
-          setShowAddModal(true);
-        }}
+        onClick={() => openAddModal(transactionMode === 'credit' ? 'ノ' : 'ツ')}
         className="fab-btn"
         style={{ position: 'absolute' }}
         aria-label="Add transaction"
@@ -515,12 +593,24 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
           handleCategorySelect={handleCategorySelect}
           handleQtyPriceChange={handleQtyPriceChange}
           handleCalcBtnClick={handleCalcBtnClick}
+          redoInfo={redoInfo}
+          formError={formError}
           setShowAddModal={(open) => {
-            // 「直す」を途中でやめてモーダルを閉じたら、伝票番号の引き継ぎも破棄する
-            // （別カテゴリの次の登録に元番号が誤って付くのを防ぐ）
-            if (!open) setRedoVoucherNo(null);
-            setShowAddModal(open);
+            if (!open) closeModal();
+            else setShowAddModal(true);
           }}
+        />
+      )}
+
+      {/* 画面下部のトースト（削除の取り消し・自動計上のお知らせ） */}
+      {toast && (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          actionLabel={toast.actionLabel}
+          onAction={toast.onAction}
+          duration={toast.duration ?? 5000}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

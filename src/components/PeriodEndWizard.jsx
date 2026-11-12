@@ -9,6 +9,25 @@ import { toSafeInt } from '../utils/inputSanitizers';
 // 確定済みの期で再実行するとシ・セ・ソが同額で二重計上されるため、再確定をブロックする。
 import { hasPeriodEndEntries } from '../utils/constants';
 
+const bookBtnStyle = {
+  minHeight: '44px', padding: '6px 8px', fontSize: '0.75rem', fontWeight: 600,
+  background: 'transparent', color: 'var(--text-secondary)',
+  border: '1px dashed var(--border-color, rgba(128,128,128,0.5))', borderRadius: '8px', cursor: 'pointer'
+};
+
+// 棚卸・人数の照合表示。ボタンに見えないよう、枠なしの文字ステータスにする
+function InvBadge({ value, expected, unit }) {
+  const empty = value === '' || value === null || value === undefined;
+  let text, color;
+  if (empty) { text = '未入力'; color = 'var(--text-muted)'; }
+  else {
+    const diff = Number(value) - expected;
+    if (diff === 0) { text = '✅ 一致'; color = 'var(--mg-green, #059669)'; }
+    else { text = `⚠️ ズレ ${diff > 0 ? '+' : '−'}${Math.abs(diff)}${unit}`; color = 'var(--mg-pink, #dc2626)'; }
+  }
+  return <span role="status" style={{ display: 'block', width: '100%', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color, padding: '4px 0' }}>{text}</span>;
+}
+
 function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdateLedger, currentPeriod, results, onShowPerformance }) {
   const [currentStep, setCurrentStep] = useState(1);
   
@@ -58,14 +77,6 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const wipTheoretical = results.wip.endingCount;
   const prodTheoretical = results.prod.endingCount;
 
-  // 在庫不一致チェック
-  const safeMat = actualMaterials === '' ? 0 : actualMaterials;
-  const safeWip = actualWip === '' ? 0 : actualWip;
-  const safeProd = actualProduct === '' ? 0 : actualProduct;
-
-  const matMatches = matTheoretical === safeMat;
-  const wipMatches = wipTheoretical === safeWip;
-  const prodMatches = prodTheoretical === safeProd;
 
   const handleNextStep = () => {
     const safeMat = actualMaterials === '' ? 0 : actualMaterials;
@@ -304,13 +315,10 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                         style={{ padding: '10px' }}
                       />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      {matMatches ? (
-                        <span className="badge badge-green" style={{ width: '100%', padding: '8px 0' }}>✅ 一致 (OK)</span>
-                      ) : (
-                        <span className="badge badge-pink" style={{ width: '100%', padding: '8px 0' }}>⚠️ ズレあり</span>
-                      )}
-                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+<InvBadge value={actualMaterials} expected={matTheoretical} unit="個" />
+<button type="button" onClick={() => handleActualChange('mat', String(matTheoretical))} style={bookBtnStyle}>帳簿どおり（{matTheoretical}）</button>
+</div>
                   </div>
                 </div>
 
@@ -336,13 +344,10 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                         style={{ padding: '10px' }}
                       />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      {wipMatches ? (
-                        <span className="badge badge-green" style={{ width: '100%', padding: '8px 0' }}>✅ 一致 (OK)</span>
-                      ) : (
-                        <span className="badge badge-pink" style={{ width: '100%', padding: '8px 0' }}>⚠️ ズレあり</span>
-                      )}
-                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+<InvBadge value={actualWip} expected={wipTheoretical} unit="個" />
+<button type="button" onClick={() => handleActualChange('wip', String(wipTheoretical))} style={bookBtnStyle}>帳簿どおり（{wipTheoretical}）</button>
+</div>
                   </div>
                 </div>
 
@@ -368,18 +373,27 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                         style={{ padding: '10px' }}
                       />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      {prodMatches ? (
-                        <span className="badge badge-green" style={{ width: '100%', padding: '8px 0' }}>✅ 一致 (OK)</span>
-                      ) : (
-                        <span className="badge badge-pink" style={{ width: '100%', padding: '8px 0' }}>⚠️ ズレあり</span>
-                      )}
-                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+<InvBadge value={actualProduct} expected={prodTheoretical} unit="個" />
+<button type="button" onClick={() => handleActualChange('prod', String(prodTheoretical))} style={bookBtnStyle}>帳簿どおり（{prodTheoretical}）</button>
+</div>
                   </div>
                 </div>
                 
+                {(() => {
+                  const missing = [];
+                  if (actualMaterials === '') missing.push('材料');
+                  if (actualWip === '') missing.push('仕掛品');
+                  if (actualProduct === '') missing.push('製品');
+                  return missing.length > 0 ? (
+                    <p role="alert" style={{ margin: '12px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {missing.join('・')}の実数を入力してください（0個なら0と入力）
+                    </p>
+                  ) : null;
+                })()}
                 <button 
                   onClick={handleNextStep} 
+                  disabled={actualMaterials === '' || actualWip === '' || actualProduct === ''}
                   className="btn-premium" 
                   style={{ 
                     width: '100%', 
@@ -387,7 +401,9 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                     background: 'linear-gradient(135deg, rgba(0, 176, 255, 0.2) 0%, rgba(0, 119, 255, 0.2) 100%)',
                     border: '1px solid rgba(0, 176, 255, 0.4)',
                     color: '#40c4ff',
-                    boxShadow: '0 4px 16px rgba(0, 176, 255, 0.15)'
+                    boxShadow: '0 4px 16px rgba(0, 176, 255, 0.15)',
+                    opacity: (actualMaterials === '' || actualWip === '' || actualProduct === '') ? 0.5 : 1,
+                    cursor: (actualMaterials === '' || actualWip === '' || actualProduct === '') ? 'not-allowed' : 'pointer'
                   }}
                 >
                   次へ：人数の確定と給与支払 →
@@ -569,13 +585,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                       style={{ padding: '10px' }}
                     />
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    {periodEndWorkers !== '' && Number(periodEndWorkers) === (results?.workers || 0) ? (
-                      <span className="badge badge-green" style={{ width: '100%', padding: '8px 0' }}>✅ 一致 (OK)</span>
-                    ) : (
-                      <span className="badge badge-pink" style={{ width: '100%', padding: '8px 0' }}>⚠️ ズレあり</span>
-                    )}
-                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}><InvBadge value={periodEndWorkers} expected={(results?.workers || 0)} unit="人" /></div>
                 </div>
               </div>
 
@@ -601,13 +611,7 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
                       style={{ padding: '10px' }}
                     />
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    {periodEndSalesmen !== '' && Number(periodEndSalesmen) === (results?.salesmen || 0) ? (
-                      <span className="badge badge-green" style={{ width: '100%', padding: '8px 0' }}>✅ 一致 (OK)</span>
-                    ) : (
-                      <span className="badge badge-pink" style={{ width: '100%', padding: '8px 0' }}>⚠️ ズレあり</span>
-                    )}
-                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}><InvBadge value={periodEndSalesmen} expected={(results?.salesmen || 0)} unit="人" /></div>
                 </div>
               </div>
             </div>

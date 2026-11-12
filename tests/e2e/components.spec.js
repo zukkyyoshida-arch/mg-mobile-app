@@ -130,19 +130,17 @@ test.describe('MG Mobile App - コンポーネント機能テスト', () => {
 
   test.describe('現金残高のガード', () => {
     test('残高を超える支出は登録できず、不足額を伝える警告が出ること', async ({ page }) => {
-      // beforeEach のハンドラが accept するので、ここでは message を覗くだけにする
-      const messages = [];
-      page.on('dialog', dialog => messages.push(dialog.message()));
-
       await page.getByRole('button', { name: 'Add transaction' }).click();
       await page.getByRole('button', { name: 'その他出金' }).click();
       await page.getByPlaceholder('金額を入力').fill('5000');
       await page.getByRole('button', { name: '取引を追加する' }).click();
 
       // 残高300万に対する5000万の出金 → 4,700万の不足を伝えてブロックする
-      expect(messages.join('\n')).toContain('不足');
-      expect(messages.join('\n')).toContain('4,700');
-      expect(messages.join('\n')).toContain('銀行借入');
+      // （alert() ではなく、モーダル内の送信ボタン付近に role="alert" で表示する）
+      const alertBox = page.getByRole('alert');
+      await expect(alertBox).toContainText('不足');
+      await expect(alertBox).toContainText('4,700');
+      await expect(alertBox).toContainText('銀行借入');
 
       // 登録されていないこと（モーダルを閉じてタイムラインを確認）
       await page.getByRole('button', { name: '×' }).click();

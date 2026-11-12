@@ -880,3 +880,70 @@ describe('calculateFinancials - carryover未定義への防御（旧5期版デ�
     expect(() => calculateFinancials(null, [], {}, 20)).not.toThrow();
   });
 });
+
+describe('calculateFinancials - 保険ルール統一（被害0では消費されない）', () => {
+  it('被害0個の火災では保険チップが消費されず、その後の盗難で保険金が入る', () => {
+    const ledger = [
+      { category: '保険', amount: 20, quantity: 1 },
+      { category: '火災', amount: 0, quantity: 0 }, // 材料0個 = 被害なし
+      { category: 'ツ', amount: 20, quantity: 2 },
+      { category: 'コ', amount: 2, quantity: 2 },
+      { category: 'サ', amount: 2, quantity: 2 },
+      { category: '盗難', amount: 0, quantity: 2 },
+    ];
+    const res = calculateFinancials(freshCarryover(), ledger, {}, 1);
+    expect(res.pl.extraordinaryGain).toBe(20);
+    expect(res.activeInsuranceChips).toBe(0);
+  });
+
+  it('被害0個の火災だけなら保険は有効のまま・保険金0', () => {
+    const ledger = [
+      { category: '保険', amount: 20, quantity: 1 },
+      { category: '火災', amount: 0, quantity: 0 },
+    ];
+    const res = calculateFinancials(freshCarryover(), ledger, {}, 1);
+    expect(res.activeInsuranceChips).toBe(1);
+    expect(res.pl.extraordinaryGain).toBe(0);
+  });
+
+  it('保険が消費された後は買い直せて、2回目の火災でも保険金が入る', () => {
+    const ledger = [
+      { category: 'ツ', amount: 10, quantity: 1 },
+      { category: '保険', amount: 20, quantity: 1 },
+      { category: '火災', amount: 0, quantity: 1 },
+      { category: 'ツ', amount: 10, quantity: 1 },
+      { category: '保険', amount: 20, quantity: 1 },
+      { category: '火災', amount: 0, quantity: 1 },
+    ];
+    const res = calculateFinancials(freshCarryover(), ledger, {}, 1);
+    expect(res.pl.extraordinaryGain).toBe(16);
+    expect(res.activeInsuranceChips).toBe(0);
+  });
+});
+
+describe('calculateFinancials - 広告チップ枚数', () => {
+  it('クレーム処理費・セールスマン給与は広告チップに数えない', () => {
+    const ledger = [
+      { category: 'セ', amount: 10, quantity: 2, customShortName: '広告' },
+      { category: 'セ', amount: 5, quantity: 1, customName: 'クレーム処理費用', customShortName: '苦情' },
+      { category: 'セ', amount: 36, quantity: 1, customName: 'セールスマン給与' },
+    ];
+    const res = calculateFinancials(freshCarryover(), ledger, {}, 1);
+    expect(res.activeAdChips).toBe(2);
+  });
+});
+
+describe('calculateFinancials - 完成費は完成品原価にだけ乗る', () => {
+  it('材料3個を投入し1個完成: 完成費は製品原価のみ、仕掛品は材料+投入費だけで評価', () => {
+    const ledger = [
+      { category: 'ツ', amount: 30, quantity: 3 },
+      { category: 'コ', amount: 6, quantity: 3 },
+      { category: 'サ', amount: 3, quantity: 1 },
+    ];
+    const res = calculateFinancials(freshCarryover(), ledger, {}, 1);
+    // 仕掛品: (30+6)/3 = 12/個。完成1個 = 12 + 完成費3 = 15、残2個 = 24
+    expect(res.wip.completedValue).toBe(15);
+    expect(res.wip.endingValue).toBe(24);
+    expect(res.prod.endingValue).toBe(15);
+  });
+});

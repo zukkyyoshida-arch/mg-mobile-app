@@ -8,6 +8,9 @@ import { MARKETS, MACHINES, ADS, MARKET_MAX_PRICES, CATEGORIES } from './constan
 // toSafeInt: 数値入力の防御的クランプ（Infinity/NaN→0・下限0・整数化）。
 // 各入力欄の上限は従来どおり Math.min が担当する。
 import { getNextVoucherNo, toSafeInt } from './buildTransactionEntries';
+import { getRiskSaleLimit, describeRiskSaleLimit } from './salesLimits';
+import { useEffect, useRef } from 'react';
+import '../Toast.css';
 
 function AddTransactionModal({
   // コンテキスト（CashLedger の props 由来）
@@ -31,8 +34,20 @@ function AddTransactionModal({
   handleCategorySelect,
   handleQtyPriceChange,
   handleCalcBtnClick,
-  setShowAddModal
+  setShowAddModal,
+  // 「入力し直す」で開いたときの情報（{ voucherNo, voucherLabel, note } | null）
+  redoInfo = null,
+  // 登録時の検証エラー（{ message, key } | null）。送信ボタンの直前に表示する
+  formError = null
 }) {
+  // エラーが出たら、送信ボタン付近のエラー表示までスクロールして気づけるようにする
+  const errorRef = useRef(null);
+  useEffect(() => {
+    if (formError && errorRef.current?.scrollIntoView) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [formError]);
+
   const {
     selectedCategory,
     quantity,
@@ -110,9 +125,19 @@ function AddTransactionModal({
               <div className="form-group">
                 <label className="form-label">伝票番号（自動連番）</label>
                 <div className="form-input" style={{ background: 'rgba(0, 0, 0, 0.04)', color: 'var(--text-muted)', cursor: 'default', userSelect: 'none' }}>
-                  #{getNextVoucherNo(ledger)}
+                  #{redoInfo?.voucherNo ?? getNextVoucherNo(ledger)}
+                  {redoInfo?.voucherNo != null && <span style={{ marginLeft: '6px', fontSize: '0.8rem' }}>（元の番号を引き継ぎ）</span>}
                 </div>
               </div>
+              )}
+
+              {/* 「入力し直す」の案内 */}
+              {redoInfo && (
+                <div className="form-edit-notice">
+                  {redoInfo.voucherLabel ? `${redoInfo.voucherLabel} を削除しました。` : '元の取引を削除しました。'}
+                  内容を確認して登録し直してください。
+                  {redoInfo.note && <span className="form-edit-notice__warn">{redoInfo.note}</span>}
+                </div>
               )}
 
               {/* 項目の選択グリッド */}
@@ -212,7 +237,7 @@ function AddTransactionModal({
 )}
 
                   {/* リスクカード */}
-                  <span style={{ fontSize: '0.65rem', color: '#9c27b0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginTop: '16px', marginBottom: '6px' }}>🃏 リスクカード</span>
+                  <span style={{ fontSize: '0.75rem', color: '#9c27b0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginTop: '16px', marginBottom: '6px' }}>🃏 リスクカード</span>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     <button
                       type="button"
@@ -404,7 +429,7 @@ function AddTransactionModal({
                             <span style={{ fontWeight: 'bold', marginBottom: '4px', color: 'var(--text-primary)' }}>{btn.label}</span>
                             {/* 説明文の色: 非選択(btn-secondary=白背景)では旧ダークテーマの白文字が
                                 見えなくなるため、選択中(青背景)のみ白系・非選択は text-secondary */}
-                            <span style={{ fontSize: '0.65rem', color: riskAction === btn.id ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)' }}>{btn.desc}</span>
+                            <span style={{ fontSize: '0.75rem', color: riskAction === btn.id ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)' }}>{btn.desc}</span>
                           </button>
                         ))}
                       </div>
@@ -415,12 +440,13 @@ function AddTransactionModal({
                             <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
                               <span>販売数量</span>
                               <button type="button" onClick={() => {
-                                const capacity = riskAction === 'monopoly_salesman' ? (results?.activeSalesmen || 0) * 2
-                                  : (results?.activeRdChips || 0) * 2;
-                                setRiskQty(Math.min(capacity, results?.prod?.endingCount || 0));
+                                setRiskQty(getRiskSaleLimit(riskAction, results)?.limit ?? 0);
                               }} style={{ fontSize: '0.75rem', padding: '4px 10px', minWidth: '44px', minHeight: '44px', background: 'var(--color-accent)', border: 'none', borderRadius: '6px', color: 'var(--text-primary)', fontWeight: 'bold' }}>MAX</button>
                             </label>
                             <input type="number" inputMode="numeric" min="0" className="form-input" value={riskQty} onChange={e => { const v = e.target.value; setRiskQty(v === '' ? '' : String(toSafeInt(v))); }} />
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                              販売可能: <strong style={{ color: 'var(--text-primary)' }}>{getRiskSaleLimit(riskAction, results)?.limit ?? 0}個</strong>（{describeRiskSaleLimit(getRiskSaleLimit(riskAction, results))}）
+                            </div>
                           </div>
                           <div className="form-group">
                             <label className="form-label">販売単価</label>
@@ -439,7 +465,7 @@ function AddTransactionModal({
                         <div style={{ background: 'rgba(0,0,0,0.04)', padding: '12px', borderRadius: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                             <span>各市場の販売数量 (上限価格固定)</span>
-                            <span>販売可能: <strong style={{ color: 'var(--text-primary)' }}>{Math.min((results?.activeAdChips || 0) * 2, results?.prod?.endingCount || 0)}個</strong></span>
+                            <span>販売可能: <strong style={{ color: 'var(--text-primary)' }}>{getRiskSaleLimit('monopoly_ad', results)?.limit ?? 0}個</strong></span>
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                             {[
@@ -532,7 +558,7 @@ function AddTransactionModal({
                           >
                             <span style={{ fontWeight: 'bold', marginBottom: '4px', color: 'var(--text-primary)' }}>{btn.label}</span>
                             {/* 説明文の色: 非選択(白背景)で白文字が見えない問題の修正（ポジティブ側と同じ） */}
-                            <span style={{ fontSize: '0.65rem', color: riskAction === btn.id ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)' }}>{btn.desc}</span>
+                            <span style={{ fontSize: '0.75rem', color: riskAction === btn.id ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)' }}>{btn.desc}</span>
                           </button>
                         ))}
                       </div>
@@ -838,7 +864,7 @@ function AddTransactionModal({
                             <div>
                               <div style={{ fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 {chip.name}
-                                {isBought && <span style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px' }}>購入済</span>}
+                                {isBought && <span style={{ fontSize: '0.75rem', padding: '2px 6px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px' }}>購入済</span>}
                               </div>
                               <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{chip.desc}</div>
                             </div>
@@ -1258,6 +1284,13 @@ function AddTransactionModal({
                 )}
               </div>
               </>
+              )}
+
+              {/* 登録時の検証エラー（alert() の代わりに送信ボタンの直前へ表示） */}
+              {formError?.message && (
+                <div key={formError.key} ref={errorRef} role="alert" className="form-inline-error">
+                  {formError.message}
+                </div>
               )}
 
               {/* 決定ボタン */}

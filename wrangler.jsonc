@@ -1,10 +1,22 @@
 {
   "name": "mg-mobile-app",
+  "main": "worker/index.js",
   "compatibility_date": "2026-08-26",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // /api/* は SPA フォールバックより先に Worker で処理する
+    "run_worker_first": ["/api/*"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mg-mobile-sync",
+      "database_id": "5a0235d8-e0f6-467c-989d-b1f596e9841a",
+      "migrations_dir": "migrations"
+    }
+  ],
   "workers_dev": true,
   "preview_urls": false
 }

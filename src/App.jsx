@@ -7,11 +7,16 @@ import ManagementPlan from './components/ManagementPlan';
 import PriorPeriodCarryover from './components/PriorPeriodCarryover';
 import PerformanceReport from './components/PerformanceReport';
 import ErrorBoundary from './components/ErrorBoundary';
-import { syncPlayerData, fetchPlayerRecord, isRemoteNewer } from './pocketbase';
+import StorageRecoveryBanner from './components/StorageRecoveryBanner';
+import { loadPeriodsSafely, saveWithBackup, findLatestValidBackup, buildCorruptBlob } from './utils/storageRecovery';
+import { joinRoom, pushPlayer, overwriteServer, fetchPlayerRecord, hasDeviceToken, getStoredVersion, getBaseHashes, markSynced, setPushBlocked, PushBlockedError } from './sync/client';
+import { mergePeriods, applyConflictChoices, updateTombstones, buildBaseHashes, stableStringify } from './sync/merge';
+import { getTombstones, setTombstones } from './sync/store';
+import MergeConflictModal from './components/MergeConflictModal';
 import { TOTAL_PERIODS, isAllLedgersEmpty, buildPeriodsSummary, normalizePeriods, buildNextCarryover, createDefaultPeriodData } from './utils/constants';
 import { useDebounce } from 'react-use';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, FileText, CalendarCheck, Target, Settings } from 'lucide-react';
+import { BookOpen, FileText, CalendarCheck, Target, Settings, CloudOff, CloudCheck, CloudAlert, RefreshCw } from 'lucide-react';
 
 // 安全な localStorage ラッパー
 const safeStorage = {
@@ -23,7 +28,18 @@ const safeStorage = {
   }
 };
 
+// storageRecovery 用の localStorage アダプタ（例外は呼び出し側で扱う）
+const lsAdapter = {
+  getItem: (k) => localStorage.getItem(k),
+  setItem: (k, v) => localStorage.setItem(k, v),
+  removeItem: (k) => localStorage.removeItem(k)
+};
+
 function App() {
+  // 保存データの読み込み結果（壊れていても上書きせず、退避してバナーで通知する）
+  const [initialLoad] = useState(() => loadPeriodsSafely(lsAdapter));
+  const [storageIssue, setStorageIssue] = useState(initialLoad.issue);
+
   // テーマの状態 (ダーク / ライト)
   const [theme] = useState(() => {
     const saved = safeStorage.getItem('mg_theme');
@@ -35,17 +51,9 @@ function App() {
 
   // 全期 (1期〜5期) のデータ管理
   const [periods, setPeriods] = useState(() => {
-    const saved = safeStorage.getItem('mg_periods_data');
-    if (saved) {
-      try {
-        // 旧データ（キー1〜5のみ）や欠損フィールドを20期分に補完（第6期以降の白画面対策）
-        return normalizePeriods(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse periods data", e);
-      }
-    }
-    // 初期データ (1期〜20期)
-    return normalizePeriods(null);
+    // 旧データ（キー1〜5のみ）や欠損フィールドを20期分に補完（第6期以降の白画面対策）
+    // 読み込み失敗時は null → 初期データ（ただし blocking の間は保存しない）
+    return normalizePeriods(initialLoad.periods);
   });
 
   // 現在の期 (1〜5)
@@ -79,12 +87,23 @@ function App() {
     return !safeStorage.getItem('mg_room_id') || !safeStorage.getItem('mg_player_id');
   });
   
-  const [loginInput, setLoginInput] = useState({ room: safeStorage.getItem('mg_room_id') || '', player: safeStorage.getItem('mg_player_id') || '' });
+  const [loginInput, setLoginInput] = useState({ room: safeStorage.getItem('mg_room_id') || '', player: safeStorage.getItem('mg_player_id') || '', pin: '' });
 
   const navigate = useNavigate();
 
   // 同期ステータス表示用
   const [syncStatus, setSyncStatus] = useState(isOffline ? 'オフライン' : '未同期');
+
+  // ヘッダーの相対時刻を更新するためのtick（表示専用）
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    const t = setTimeout(() => setNowMs(Date.now()), 0);
+    return () => clearTimeout(t);
+  }, [syncStatus]);
 
   // 「最後のリセットを取り消す」ボタン表示用（mg_reset_backup の有無・退避日時）
   const [resetBackupInfo, setResetBackupInfo] = useState(() => {
@@ -117,8 +136,39 @@ function App() {
 
   // データ変更時に localStorage に保存
   useEffect(() => {
-    safeStorage.setItem('mg_periods_data', JSON.stringify(periods));
-  }, [periods]);
+    // 読み込み失敗中は、初期データで壊れた元データを上書きしない
+    if (storageIssue?.blocking) return;
+    try {
+      saveWithBackup(lsAdapter, 'mg_periods_data', JSON.stringify(periods));
+    } catch (e) {
+      console.error('[storage] 保存に失敗しました', e);
+    }
+  }, [periods, storageIssue]);
+
+  // 保存データ復旧バナーの操作
+  const handleStorageRestore = () => {
+    const backup = findLatestValidBackup(lsAdapter, 'mg_periods_data');
+    if (!backup) return;
+    if (!storageIssue?.blocking && !window.confirm('壊れていない期も含め、予備のスナップショットの内容に置き換えます。よろしいですか？')) return;
+    setPeriods(normalizePeriods(backup.periods));
+    setStorageIssue(null);
+  };
+  const handleStorageDownload = () => {
+    if (!storageIssue) return;
+    const url = URL.createObjectURL(buildCorruptBlob(storageIssue));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mg_corrupt_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const handleStorageReset = () => {
+    if (!window.confirm('保存データを初期化して最初から始めます。壊れたデータは退避済みですが、よろしいですか？')) return;
+    setPeriods(normalizePeriods(null));
+    setStorageIssue(null);
+  };
 
   useEffect(() => {
     safeStorage.setItem('mg_current_period', String(currentPeriod));
@@ -178,51 +228,132 @@ function App() {
     return {
       periods,
       currentPeriod,
-      savedAt: Date.now()
+      savedAt: Date.now(),
+      deletedIds: getTombstones()
     };
   };
 
-  // C2対策: リトライのクロージャが古いレンダーのペイロード生成関数を捕捉して
-  // 古いスナップショットを再送しないよう、最新の生成関数を常に ref に持たせ、
-  // 送信直前に ref 経由で再生成する（refの更新はレンダー中でなくエフェクトで行う）
+  // 最新の state を同期処理から参照するための ref（古いクロージャの再送防止）
   const payloadFnsRef = useRef({ sync: generateSyncPayload, backup: generateBackupPayload });
+  const stateRef = useRef({ periods, currentPeriod });
   useEffect(() => {
     payloadFnsRef.current = { sync: generateSyncPayload, backup: generateBackupPayload };
+    stateRef.current = { periods, currentPeriod };
   });
+
+  // 保存データ破損中（storageIssue.blocking）はサーバーへ push しない（pull は許可）
+  useEffect(() => {
+    setPushBlocked(!!storageIssue?.blocking);
+  }, [storageIssue]);
+
+  // 削除した取引を tombstone（削除済みID）として記録する。マージ時に「消したものが復活」しないため。
+  const prevPeriodsRef = useRef(periods);
+  const firstEditRunRef = useRef(true);
+  const lastEditRef = useRef(Number(safeStorage.getItem('mg_last_local_edit')) || 0);
+  useEffect(() => {
+    if (!storageIssue?.blocking) {
+      setTombstones(updateTombstones(prevPeriodsRef.current, periods, getTombstones()));
+    }
+    prevPeriodsRef.current = periods;
+    if (firstEditRunRef.current) { firstEditRunRef.current = false; return; } // 読み込み直後は編集ではない
+    lastEditRef.current = Date.now();
+    safeStorage.setItem('mg_last_local_edit', String(lastEditRef.current));
+  }, [periods, storageIssue]);
+
+  // 競合（同じ取引が両側で別内容に変わった）の確認待ち
+  const [mergeConflicts, setMergeConflicts] = useState(null);
+  const conflictPendingRef = useRef(false);
+  const conflictLoopRef = useRef(0);
+
+  // サーバーの内容とこの端末の内容を自動マージする。戻り値: 'conflict' | 'changed' | 'unchanged'
+  const mergeWithServer = (server) => {
+    const cur = stateRef.current.periods;
+    const sb = server?.backup;
+    if (!sb || !sb.periods) {
+      markSynced(roomId, playerId, server.version);
+      return 'unchanged';
+    }
+    const r = mergePeriods({
+      local: cur,
+      remote: normalizePeriods(sb.periods),
+      localDeleted: getTombstones(),
+      remoteDeleted: sb.deletedIds || [],
+      baseHashes: getBaseHashes(roomId, playerId),
+      localTs: lastEditRef.current,
+      remoteTs: Number(sb.savedAt) || Number(server.data?.lastUpdated) || 0
+    });
+    setTombstones(r.deletedIds);
+    markSynced(roomId, playerId, server.version);
+    if (r.conflicts.length > 0) {
+      conflictPendingRef.current = true;
+      setMergeConflicts({ conflicts: r.conflicts, periods: r.periods });
+      setSyncStatus('競合の選択待ち');
+      return 'conflict';
+    }
+    const merged = normalizePeriods(r.periods);
+    if (stableStringify(merged) === stableStringify(cur)) return 'unchanged';
+    setPeriods(merged); // 変更後の状態は次のデバウンス同期で送られる
+    return 'changed';
+  };
+
+  const resolveConflicts = (choices) => {
+    const pending = mergeConflicts;
+    if (!pending) return;
+    const resolved = normalizePeriods(applyConflictChoices(pending.periods, pending.conflicts, choices));
+    conflictPendingRef.current = false;
+    setMergeConflicts(null);
+    setPeriods(resolved);
+    setSyncStatus('同期中...');
+  };
 
   // 自動リトライ付き同期（初回同期・デバウンス同期で共用）
   // 失敗時は 5秒→15秒→30秒 の最大3回まで自動再送。3回目も失敗したときだけ onFinalError を発火する。
   const RETRY_DELAYS = [5000, 15000, 30000];
   const syncWithRetry = (onFinalError) => {
     if (!roomId || !playerId) return;
+    if (conflictPendingRef.current) return;
 
     const attempt = () => {
-      // 送信直前に ref 経由で最新stateからペイロードを再生成する（古いスナップショットの再送防止）
       setSyncStatus(retryCountRef.current > 0 ? `再試行中(${retryCountRef.current}/${RETRY_DELAYS.length})...` : '同期中...');
       const payload = payloadFnsRef.current.sync();
       const backup = payloadFnsRef.current.backup();
-      syncPlayerData(roomId, playerId, payload, backup)
+      const sentPeriods = stateRef.current.periods;
+      pushPlayer(roomId, playerId, payload, backup)
         .then((result) => {
           retryCountRef.current = 0;
           retryTimerRef.current = null;
-          if (result?.skipped) {
-            // サーバー側が新しいため上書きしなかった（C2ガード）
-            setSyncStatus(`同期スキップ：サーバー側が新しいため (${new Date().toLocaleTimeString()})`);
-          } else {
-            // 最後にサーバーへ反映できた時刻を記録（C3のリロード時比較に使う）
-            safeStorage.setItem('mg_last_synced_at', String(payload.lastUpdated));
-            setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
+          if (result.conflict) {
+            // 409: 他の端末が先に保存していた → 取引IDで突き合わせて自動マージ
+            conflictLoopRef.current += 1;
+            if (conflictLoopRef.current > 5) {
+              conflictLoopRef.current = 0;
+              setSyncStatus('同期エラー（競合が解消しません）');
+              return;
+            }
+            const outcome = mergeWithServer(result.server);
+            if (outcome === 'unchanged') attempt(); // 内容は変わらないので新しい版で即再送
+            return;
           }
+          conflictLoopRef.current = 0;
+          markSynced(roomId, playerId, result.version, backup === undefined ? getBaseHashes(roomId, playerId) : buildBaseHashes(sentPeriods));
+          // 最後にサーバーへ反映できた時刻を記録（ヘッダーのチップ表示に使う）
+          safeStorage.setItem('mg_last_synced_at', String(payload.lastUpdated));
+          setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
         })
         .catch((err) => {
           console.error('Sync error:', err);
-          if (retryCountRef.current < RETRY_DELAYS.length) {
+          if (err instanceof PushBlockedError) {
+            retryCountRef.current = 0;
+            setSyncStatus('送信停止中（保存データを確認してください）');
+            return;
+          }
+          const fatal = err && err.status >= 400 && err.status < 500 && err.status !== 429;
+          if (!fatal && retryCountRef.current < RETRY_DELAYS.length) {
             const delay = RETRY_DELAYS[retryCountRef.current];
             retryCountRef.current += 1;
             setSyncStatus(`再試行中(${retryCountRef.current}/${RETRY_DELAYS.length})...`);
             retryTimerRef.current = setTimeout(attempt, delay);
           } else {
-            // 最大リトライ到達＝最終失敗
             retryCountRef.current = 0;
             retryTimerRef.current = null;
             setSyncStatus('同期エラー');
@@ -234,77 +365,108 @@ function App() {
     attempt();
   };
 
-  // 初回接続時（またはリロード時）に即座に同期してダッシュボードに表示させる
-  // C3対策: 保存済み認証で起動した端末が無確認でサーバーをpushしないよう、
-  // 同期の前に fetchPlayerRecord でサーバー側を確認し、サーバーの lastUpdated が
-  // この端末の最終同期時刻（mg_last_synced_at）より新しい場合は確認ダイアログを挟む。
+  // 初回接続時（またはリロード時）: まずサーバーの版を確認し、他端末の変更があれば自動マージしてから同期する
   useEffect(() => {
     if (!roomId || !playerId) return undefined;
-    cancelRetry(); // ルーム参加/リロード時は保留中のリトライを破棄してからやり直す
+    cancelRetry();
     initialCheckDoneRef.current = false; // 確認が終わるまでデバウンス同期のpushを止める
     let cancelled = false;
 
     (async () => {
+      if (!hasDeviceToken(roomId, playerId)) {
+        // 旧方式で参加済みの端末など、端末トークンが無い → PINで再参加してもらう
+        setSyncStatus('再参加が必要です');
+        setShowLogin(true);
+        return;
+      }
       try {
         setSyncStatus('サーバー確認中...');
         const record = await fetchPlayerRecord(roomId, playerId);
         if (cancelled) return;
-        const localSyncedTs = Number(safeStorage.getItem('mg_last_synced_at')) || 0;
-        if (record && isRemoteNewer(record.data, localSyncedTs)) {
-          const load = window.confirm(
-            'サーバーに新しいデータがあります。読み込みますか？\n\n・『OK』：サーバーのデータをこの端末に読み込んで再開します。\n・『キャンセル』：この端末のデータでサーバーを上書きして続行します。'
-          );
-          if (load) {
-            const backup = record.backup;
-            if (backup && backup.periods) {
-              const restored = normalizePeriods(backup.periods);
-              setPeriods(restored);
-              setCurrentPeriod(backup.currentPeriod || 1);
-              safeStorage.setItem('mg_periods_data', JSON.stringify(restored));
-              safeStorage.setItem('mg_current_period', String(backup.currentPeriod || 1));
-            } else {
-              alert('サーバーに読み込める明細データ（バックアップ）がありませんでした。この端末のデータで続行します。');
-            }
-            // 読み込んだサーバー時点までは同期済みとして記録し、次回リロードでの再確認を防ぐ
-            safeStorage.setItem('mg_last_synced_at', String(Number(record.data?.lastUpdated) || Date.now()));
-            setSyncStatus(`サーバーから読み込み完了 (${new Date().toLocaleTimeString()})`);
-            initialCheckDoneRef.current = true; // 以後の変更はデバウンス同期が拾う
-            return; // push しない
-          }
-          // キャンセル＝この端末の内容で上書きすることをユーザーが明示的に選択した
+        const stored = getStoredVersion(roomId, playerId);
+        if (record.version !== stored) {
+          initialCheckDoneRef.current = true;
+          const outcome = mergeWithServer(record);
+          if (outcome !== 'unchanged') return; // conflict=選択待ち / changed=変更後のデバウンス同期に任せる
         }
       } catch (err) {
-        // fetch失敗（DB不達）→ 従来どおりリトライ同期に任せる（C2のlastUpdatedガードが最後の防波堤）
         console.error('Initial fetchPlayerRecord failed, falling back to retry sync:', err);
       }
       if (cancelled) return;
       initialCheckDoneRef.current = true;
-      // 初回同期は最終失敗しても alert は出さず、ステータス表示のみ（従来挙動を踏襲）
       syncWithRetry(null);
     })();
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, playerId]); // ルーム参加時に1回だけ即時実行
+  }, [roomId, playerId]);
 
-  // Firebaseへデータ同期（通信量を抑えるために2秒ディレイでデバウンス送信）
+  // 2秒ディレイでデバウンス送信（通信量を抑える）
   useDebounce(
     () => {
       if (roomId && playerId) {
-        // C3対策: 初回のサーバー確認が終わるまではマウント直後の発火でpushしない
-        // （確認完了後の変更は、次のstate変化で改めてこのデバウンスが発火して同期される）
         if (!initialCheckDoneRef.current) return;
-        // 新しいデバウンス同期が走ったら、前回の保留中リトライは破棄する
         cancelRetry();
-        // 最終失敗（3回目失敗）時のみ alert を発火する
         syncWithRetry((err) => {
-          alert("データベース接続エラー（URLや権限の可能性があります）: " + err.message);
+          alert("データベース接続エラー（通信状況を確認してください）: " + err.message);
         });
       }
     },
-    2000, // 2秒間操作が落ち着いたら送信
+    2000,
     [periods, currentPeriod, roomId, playerId]
   );
+
+  // ［この端末の内容でサーバーを上書き］
+  const overwriteServerWithLocal = async () => {
+    if (!roomId || !playerId) { alert('ルームに参加していません'); return; }
+    if (storageIssue?.blocking) { alert('保存データの確認が済むまで、サーバーへ送信できません。'); return; }
+    if (!window.confirm('この端末の内容でサーバーを上書きします。\n他の端末だけにある入力はサーバーから消えます。よろしいですか？')) return;
+    cancelRetry();
+    setSyncStatus('同期中...');
+    try {
+      const payload = generateSyncPayload();
+      const full = { periods, currentPeriod, savedAt: Date.now(), deletedIds: getTombstones() };
+      const r = await overwriteServer(roomId, playerId, payload, full);
+      if (r.conflict) { setSyncStatus('同期エラー'); alert('操作の直前にサーバーが更新されました。もう一度お試しください。'); return; }
+      markSynced(roomId, playerId, r.version, buildBaseHashes(periods));
+      safeStorage.setItem('mg_last_synced_at', String(payload.lastUpdated));
+      setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
+      alert('この端末の内容でサーバーを上書きしました');
+    } catch (err) {
+      setSyncStatus('同期エラー');
+      alert('エラー: ' + err.message);
+    }
+  };
+
+  // ［サーバーの内容でこの端末を上書き］（pull なので保存データ破損中でも可能）
+  const overwriteLocalWithServer = async () => {
+    if (!roomId || !playerId) { alert('ルームに参加していません'); return; }
+    if (!window.confirm('サーバーの内容でこの端末を上書きします。\nこの端末だけにある入力は消えます。よろしいですか？')) return;
+    cancelRetry();
+    setSyncStatus('サーバー確認中...');
+    try {
+      const record = await fetchPlayerRecord(roomId, playerId);
+      const backup = record.backup;
+      if (!backup || !backup.periods) {
+        setSyncStatus('未同期');
+        alert('サーバーに読み込める明細データがありませんでした。この端末は変更していません。');
+        return;
+      }
+      const restored = normalizePeriods(backup.periods);
+      prevPeriodsRef.current = restored; // 置き換えで消える分を tombstone にしない
+      setTombstones(backup.deletedIds || []);
+      setPeriods(restored);
+      setCurrentPeriod(backup.currentPeriod || 1);
+      safeStorage.setItem('mg_current_period', String(backup.currentPeriod || 1));
+      markSynced(roomId, playerId, record.version, buildBaseHashes(restored));
+      safeStorage.setItem('mg_last_synced_at', String(Number(record.data?.lastUpdated) || Date.now()));
+      setSyncStatus(`サーバーから読み込み完了 (${new Date().toLocaleTimeString()})`);
+      alert('サーバーの内容でこの端末を上書きしました');
+    } catch (err) {
+      setSyncStatus('同期エラー');
+      alert('エラー: ' + err.message);
+    }
+  };
 
   // アンマウント時にリトライタイマーをクリアする
   useEffect(() => {
@@ -441,19 +603,53 @@ function App() {
 
   return (
     <div className="phone-shell">
+      <StorageRecoveryBanner
+        issue={storageIssue}
+        onRestore={handleStorageRestore}
+        onDownload={handleStorageDownload}
+        onReset={handleStorageReset}
+        onDismiss={() => setStorageIssue(null)}
+      />
       {/* アプリ共通ヘッダー */}
       <header className="app-header">
         <div className="app-header__content">
           <div className="app-header__title-row">
             <h1 className="app-title" style={{ fontSize: '1.2rem', margin: 0 }}>戦略MG</h1>
             <span className="badge badge-blue">第{currentPeriod}期</span>
-          </div>
-          <div
-            className={`app-header__status ${syncStatus.includes('エラー') ? 'is-error' : ''}`}
-            aria-live="polite"
-          >
-            <span aria-hidden="true">☁️</span>
-            <span>{syncStatus}</span>
+            {(() => {
+              // 表示専用：既存の syncStatus 文字列と mg_last_synced_at から状態を導出（同期ロジックは変更しない）
+              let kind = 'idle';
+              if (isOffline || syncStatus === 'オフライン') kind = 'offline';
+              else if (syncStatus.includes('エラー')) kind = 'error';
+              else if (/同期中|再試行|確認中/.test(syncStatus)) kind = 'syncing';
+              else if (/同期完了|読み込み完了|同期スキップ/.test(syncStatus)) kind = 'ok';
+              const ts = Number(safeStorage.getItem('mg_last_synced_at')) || 0;
+              let rel = '';
+              if (ts > 0) {
+                const m = Math.max(0, Math.floor((nowMs - ts) / 60000));
+                rel = m < 1 ? 'たった今' : m < 60 ? `${m}分前` : m < 1440 ? `${Math.floor(m / 60)}時間前` : `${Math.floor(m / 1440)}日前`;
+              }
+              const labels = { offline: 'オフライン', error: '同期エラー', syncing: '同期中', ok: rel ? `同期済 ${rel}` : '同期済', idle: '未同期' };
+              const Icon = { offline: CloudOff, error: CloudAlert, syncing: RefreshCw, ok: CloudCheck, idle: CloudOff }[kind];
+              const detail = isOffline ? 'オフラインモード（同期なし）' : `ルーム: ${roomId || '未参加'} / プレイヤー: ${playerId || '未設定'}`;
+              return (
+                <button
+                  type="button"
+                  className={`sync-chip sync-chip--${kind}`}
+                  aria-live="polite"
+                  title={`${syncStatus}\n${detail}`}
+                  aria-label={`同期状態: ${labels[kind]}。${detail}。タップでネットワーク設定を開く`}
+                  onClick={() => {
+                    setActiveTab('settings');
+                    setTimeout(() => document.getElementById('network-settings')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+                  }}
+                >
+                  <Icon size={14} aria-hidden="true" className={kind === 'syncing' ? 'sync-chip__spin' : undefined} />
+                  <span className="sync-chip__label">{labels[kind]}</span>
+                  {!isOffline && playerId && <span className="sync-chip__who">{playerId}</span>}
+                </button>
+              );
+            })()}
           </div>
         </div>
       </header>
@@ -528,7 +724,7 @@ function App() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <span style={{ fontSize: '0.88rem', fontWeight: 'bold' }}>掛け取引ルールを有効にする</span>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                         無効にすると、2期目以降も現金取引（現金売上・仕入）のみになります。
                       </div>
                     </div>
@@ -588,14 +784,14 @@ function App() {
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
+              <div id="network-settings" className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
                 <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
                   <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ネットワーク設定</h3>
                 </div>
 
                 <div style={{ display: 'grid', gap: '10px', marginBottom: '14px' }}>
                   <div style={{ padding: '10px 0', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '4px' }}>同期状態</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '4px' }}>同期状態</div>
                     <div style={{ fontSize: '0.92rem', fontWeight: '800', color: syncStatus.includes('エラー') ? '#b91c1c' : 'var(--text-primary)', lineHeight: 1.4, wordBreak: 'break-word' }}>
                       {isOffline ? 'オフライン' : syncStatus}
                     </div>
@@ -603,11 +799,11 @@ function App() {
 
                   <div style={{ display: 'grid', gap: '8px' }}>
                     <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px' }}>
-                      <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginBottom: '4px' }}>ルームID</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>ルームID</div>
                       <div style={{ fontSize: '0.92rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.35 }}>{roomId || '未参加'}</div>
                     </div>
                     <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px' }}>
-                      <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginBottom: '4px' }}>プレイヤー名</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>プレイヤー名</div>
                       <div style={{ fontSize: '0.92rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.35 }}>{playerId || '未設定'}</div>
                     </div>
                   </div>
@@ -631,33 +827,19 @@ function App() {
                 )}
 
                 <div style={{ display: 'grid', gap: '10px' }}>
-                  <button 
+                  <button
                     className="btn-secondary"
-                    onClick={() => {
-                      if (roomId && playerId) {
-                        cancelRetry(); // 手動同期が保留中リトライを引き継ぐ
-                        setSyncStatus('同期中...');
-                        const payload = generateSyncPayload();
-                        syncPlayerData(roomId, playerId, payload, generateBackupPayload()).then((result) => {
-                          if (result?.skipped) {
-                            setSyncStatus(`同期スキップ：サーバー側が新しいため (${new Date().toLocaleTimeString()})`);
-                            alert('サーバーに、この端末より新しいデータがあるため上書きしませんでした。');
-                          } else {
-                            safeStorage.setItem('mg_last_synced_at', String(payload.lastUpdated));
-                            setSyncStatus(`同期完了 (${new Date().toLocaleTimeString()})`);
-                            alert('手動での強制同期が完了しました');
-                          }
-                        }).catch(err => {
-                          setSyncStatus('同期エラー');
-                          alert("エラー: " + err.message);
-                        });
-                      } else {
-                        alert("ルームに参加していません");
-                      }
-                    }}
+                    onClick={overwriteServerWithLocal}
                     style={{ width: '100%', padding: '12px' }}
                   >
-                    手動で強制同期する
+                    この端末の内容でサーバーを上書き
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={overwriteLocalWithServer}
+                    style={{ width: '100%', padding: '12px' }}
+                  >
+                    サーバーの内容でこの端末を上書き
                   </button>
                   
                   <button 
@@ -703,7 +885,7 @@ function App() {
                   >
                     ⏪ 最後のリセットを取り消す
                   </button>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '6px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px', textAlign: 'center' }}>
                     退避日時: {resetBackupInfo.ts ? new Date(resetBackupInfo.ts).toLocaleString() : '不明'}
                   </div>
                 </div>
@@ -784,6 +966,8 @@ function App() {
         </button>
       </nav>
 
+      {mergeConflicts && <MergeConflictModal conflicts={mergeConflicts.conflicts} onResolve={resolveConflicts} />}
+
       {/* ルーム・プレイヤー登録モーダル */}
       {showLogin && (
         <div style={{
@@ -805,6 +989,19 @@ function App() {
               />
             </div>
             <div className="form-group">
+              <label className="form-label">ルームPIN（講師から指定された6桁の数字）</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={6}
+                className="form-input"
+                value={loginInput.pin || ''}
+                onChange={e => setLoginInput({...loginInput, pin: e.target.value.replace(/\D/g, '')})}
+                placeholder="例: 123456"
+              />
+            </div>
+            <div className="form-group">
               <label className="form-label">プレイヤー名（表示名）</label>
               <input 
                 type="text" 
@@ -820,8 +1017,9 @@ function App() {
               onClick={async () => {
                 const cleanRoom = loginInput.room.trim();
                 const cleanPlayer = loginInput.player.trim();
-                if (!cleanRoom || !cleanPlayer) {
-                  alert("ルームIDとプレイヤー名を入力してください");
+                const cleanPin = (loginInput.pin || '').trim();
+                if (!cleanRoom || !cleanPlayer || !/^\d{6}$/.test(cleanPin)) {
+                  alert("ルームID・6桁のPIN・プレイヤー名を入力してください");
                   return;
                 }
 
@@ -832,12 +1030,13 @@ function App() {
                                         periods[1].carryover.loan !== 0;
 
                 // 参加確定処理（localStorage＋stateへ反映してモーダルを閉じる）
+                let finalName = cleanPlayer; // 同名の別人がいた場合、サーバーが「名前(2)」に変える
                 const commitJoin = () => {
                   safeStorage.setItem('mg_room_id', cleanRoom);
-                  safeStorage.setItem('mg_player_id', cleanPlayer);
+                  safeStorage.setItem('mg_player_id', finalName);
                   safeStorage.setItem('mg_offline_mode', 'false');
                   setRoomId(cleanRoom);
-                  setPlayerId(cleanPlayer);
+                  setPlayerId(finalName);
                   setIsOffline(false);
                   setShowLogin(false);
                 };
@@ -877,61 +1076,45 @@ function App() {
                   commitJoin();
                 };
 
-                // サーバー上の同名レコードを確認（通信エラー時は確認をスキップして従来フローへ＝オフライン耐性）
-                let serverRecord;
+                // サーバーへ参加（PIN検証・端末トークン発行・同名なら名前を自動でずらす）
+                let joined;
                 try {
-                  serverRecord = await fetchPlayerRecord(cleanRoom, cleanPlayer);
+                  joined = await joinRoom(cleanRoom, cleanPlayer, cleanPin);
                 } catch (err) {
-                  console.error('fetchPlayerRecord failed, fallback to legacy flow:', err);
+                  if (err.status === 403) alert('ルームPINが正しくありません。');
+                  else if (err.status === 404) alert('そのルームIDは見つかりません。講師にルームIDを確認してください。');
+                  else if (err.status === 429) alert(err.message);
+                  else alert('サーバーに接続できません（' + err.message + '）。通信を確認するか、「参加せずに一人でプレイする」を使ってください。');
+                  return;
+                }
+                finalName = joined.player;
+                if (joined.renamed) {
+                  alert(`『${cleanPlayer}』は既に使われていたため、『${finalName}』という名前で参加しました。`);
+                }
+                safeStorage.setItem('mg_last_synced_at', '0');
+
+                if (joined.created) {
+                  // 新規登録: 版は0から。ローカルの既存データの扱いを従来どおり確認する
+                  markSynced(cleanRoom, finalName, 0, {});
                   legacyJoinFlow();
                   return;
                 }
 
-                if (serverRecord) {
-                  if (!hasExistingData) {
-                    // サーバーに同名あり & ローカルにデータなし → 復元 or 別人としてキャンセル
-                    const ok = window.confirm(
-                      `このルームには既に『${cleanPlayer}』さんのデータがあります。\n\n・あなた自身の続きなら『OK』（サーバーのデータを復元して再開します）\n・別人なら『キャンセル』して名前を変えてください`
-                    );
-                    if (!ok) {
-                      // 参加中断（モーダルに留まる）
-                      return;
-                    }
-                    const backup = serverRecord.backup;
-                    if (backup && backup.periods) {
-                      const restored = normalizePeriods(backup.periods);
-                      setPeriods(restored);
-                      setCurrentPeriod(backup.currentPeriod || 1);
-                      safeStorage.setItem('mg_periods_data', JSON.stringify(restored));
-                      safeStorage.setItem('mg_current_period', String(backup.currentPeriod || 1));
-                      setActiveTab('ledger');
-                    } else {
-                      // 古いレコードで復元可能なbackupが無い → そのまま参加（＝新規上書き）
-                      alert('サーバーに復元できるデータがありませんでした。新規として参加します。');
-                    }
-                    // サーバー時点まで同期済みとして記録（直後の初回同期で再確認ダイアログを出さない）
-                    safeStorage.setItem('mg_last_synced_at', String(Number(serverRecord.data?.lastUpdated) || Date.now()));
-                    commitJoin();
-                    return;
-                  } else {
-                    // サーバーに同名あり & ローカルにデータあり → 今の端末の内容で上書きするか確認
-                    const ok = window.confirm(
-                      `サーバーに同名『${cleanPlayer}』さんのデータが既にあります。\n\n・あなたの以前のデータなら『OK』（今のこの端末の内容で上書きして続行します）\n・他の参加者の可能性があるなら『キャンセル』して名前を変えてください`
-                    );
-                    if (!ok) {
-                      // 参加中断（モーダルに留まる）
-                      return;
-                    }
-                    // OK＝今の端末のデータのまま参加（初回同期でサーバーが上書きされる）
-                    // ユーザーが上書きを明示的に選択したので、直後の初回同期で再確認ダイアログを出さない
-                    safeStorage.setItem('mg_last_synced_at', String(Number(serverRecord.data?.lastUpdated) || Date.now()));
-                    commitJoin();
-                    return;
-                  }
+                // 以前この端末で参加していた名前への再参加
+                const backup = joined.record?.backup;
+                if (!hasExistingData && backup && backup.periods) {
+                  const restored = normalizePeriods(backup.periods);
+                  setPeriods(restored);
+                  setCurrentPeriod(backup.currentPeriod || 1);
+                  safeStorage.setItem('mg_periods_data', JSON.stringify(restored));
+                  safeStorage.setItem('mg_current_period', String(backup.currentPeriod || 1));
+                  setTombstones(backup.deletedIds || []);
+                  prevPeriodsRef.current = restored;
+                  markSynced(cleanRoom, finalName, joined.record.version, buildBaseHashes(restored));
+                  setActiveTab('ledger');
                 }
-
-                // サーバーに同名レコードなし → 従来フロー
-                legacyJoinFlow();
+                // ローカルにデータがある場合はそのまま参加し、初回同期で自動マージする
+                commitJoin();
               }}
             >
               参加する

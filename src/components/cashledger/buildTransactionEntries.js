@@ -16,8 +16,8 @@
 //   now:  数値（既定 Date.now()）。元コードの Date.now() 相当
 //   rand: () => number（既定 Math.random）。monopoly_ad のタイムスタンプ生成で使用
 
+import { calculateFinancials, resolveInsuranceEvent, FIRE_INSURANCE_UNIT, THEFT_INSURANCE_UNIT } from '../../utils/calculations';
 import { MARKETS, MACHINES, ADS, CATEGORIES } from './constants';
-import { calculateFinancials } from '../../utils/calculations';
 
 // 入力値の上限 MAX_AMOUNT と「0以上の整数」への防御的正規化 toSafeInt は
 // src/utils/inputSanitizers.js が正（単一実装）。既存の参照元（AddTransactionModal /
@@ -232,6 +232,11 @@ function buildFactoring(ctx, form) {
   return { ledger: [...ledger, ...newTransactions] };
 }
 
+// 現在の帳簿で有効な保険チップ数（集計側 calculateFinancials と同じ時系列シミュレーション結果）
+function currentInsuranceChips(ctx) {
+  return calculateFinancials(ctx.carryover || {}, ctx.ledger, {}, ctx.currentPeriod || 1).activeInsuranceChips || 0;
+}
+
 // リスクカード（早期リターン枝）
 function buildRiskCard(ctx, form) {
   const { ledger, results, transactionMode, now, rand } = ctx;
@@ -306,10 +311,9 @@ function buildRiskCard(ctx, form) {
       const qtyToLose = Math.min(2, results?.prod?.endingCount || 0);
       newTransactions.push({ id: tsGroup + '-theft', groupId: tsGroup, category: '盗難', quantity: qtyToLose, amount: 0, price: 0, timestamp, customName: '盗難による製品ロス', customShortName: '盗難' });
 
-      const purchasedIns = ledger.filter(tx => tx.category === '保険').reduce((sum, tx) => sum + (Number(tx.quantity) || 0), 0);
-      const usedIns = ledger.filter(tx => tx.category === '特別利益' && tx.customName?.includes('保険金')).length;
-      if (purchasedIns > usedIns && qtyToLose > 0) {
-        const payout = qtyToLose * 10;
+      const ins = resolveInsuranceEvent(currentInsuranceChips(ctx), qtyToLose, THEFT_INSURANCE_UNIT);
+      if (ins.payout > 0) {
+        const payout = ins.payout;
         newTransactions.push({ id: tsGroup + '-theft-ins', groupId: tsGroup, category: '特別利益', quantity: 1, amount: payout, price: payout, timestamp: new Date(now + 1).toISOString(), customName: '盗難保険金収入', customShortName: '保険金' });
       }
     } else if (riskAction === 'miss') {
@@ -318,10 +322,9 @@ function buildRiskCard(ctx, form) {
       const qtyToLose = results?.mat?.endingCount || 0;
       newTransactions.push({ id: tsGroup + '-fire', groupId: tsGroup, category: '火災', quantity: qtyToLose, amount: 0, price: 0, timestamp, customName: '火災による材料ロス', customShortName: '火災' });
 
-      const purchasedIns = ledger.filter(tx => tx.category === '保険').reduce((sum, tx) => sum + (Number(tx.quantity) || 0), 0);
-      const usedIns = ledger.filter(tx => tx.category === '特別利益' && tx.customName?.includes('保険金')).length;
-      if (purchasedIns > usedIns && qtyToLose > 0) {
-        const payout = qtyToLose * 8;
+      const ins = resolveInsuranceEvent(currentInsuranceChips(ctx), qtyToLose, FIRE_INSURANCE_UNIT);
+      if (ins.payout > 0) {
+        const payout = ins.payout;
         newTransactions.push({ id: tsGroup + '-fire-ins', groupId: tsGroup, category: '特別利益', quantity: 1, amount: payout, price: payout, timestamp: new Date(now + 1).toISOString(), customName: '火災保険金収入', customShortName: '保険金' });
       }
     }

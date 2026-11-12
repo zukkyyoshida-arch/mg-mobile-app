@@ -42,7 +42,7 @@ test.describe('NG-9 と NG-10(a) の修正', () => {
   });
 
   test('NG-10(a): リセット説明が「全20期分」になっている', async ({ page }) => {
-    await page.getByRole('button', { name: '設定' }).click();
+    await page.getByRole('button', { name: '設定', exact: true }).click();
     const body = await page.locator('body').innerText();
     const line = body.split('\n').find(l => l.includes('すべての取引データ'));
     console.log('NG-10 リセット説明:', JSON.stringify(line));
@@ -50,6 +50,8 @@ test.describe('NG-9 と NG-10(a) の修正', () => {
     expect(line).not.toContain('全5期分');
 
     // 期選択グリッドも20個あることを確認（説明文と実態が一致）
+    // 期一覧はステッパーのタップで開く（折りたたみ）ので先に開く
+    await page.locator('button[aria-expanded]').click();
     // 実装のボタンラベルは「1期」〜「20期」（PriorPeriodCarryover.jsx の {p}期）なので
     // 「数字のみ」ではなく「数字+期」で照合する
     const btns = await page.locator('button').evaluateAll(bs =>
