@@ -9,6 +9,7 @@ import {
   removeEntryWithPositions,
   restoreRemovedEntries
 } from './cashledger/editTransaction';
+import { getSalesLimitError } from './cashledger/salesLimits';
 import AddTransactionModal from './cashledger/AddTransactionModal';
 import TimelineList from './cashledger/TimelineList';
 import Toast from './Toast';
@@ -166,7 +167,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     const ctx = { carryover, ledger, results, currentPeriod, transactionMode };
 
     // 販売数の上限（在庫・販売能力）を手入力にも適用する。MAX ボタンと同じ計算。
-    const limitError = getSalesLimitError(form);
+    const limitError = getSalesLimitError(form, results);
     if (limitError) {
       setFormError({ message: limitError, key: Date.now() });
       return;

@@ -18,7 +18,6 @@
 
 import { calculateFinancials, resolveInsuranceEvent, FIRE_INSURANCE_UNIT, THEFT_INSURANCE_UNIT } from '../../utils/calculations';
 import { MARKETS, MACHINES, ADS, CATEGORIES } from './constants';
-import { calculateFinancials } from '../../utils/calculations';
 
 // 入力値の上限 MAX_AMOUNT と「0以上の整数」への防御的正規化 toSafeInt は
 // src/utils/inputSanitizers.js が正（単一実装）。既存の参照元（AddTransactionModal /

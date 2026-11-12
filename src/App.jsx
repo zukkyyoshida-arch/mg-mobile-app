@@ -7,6 +7,8 @@ import ManagementPlan from './components/ManagementPlan';
 import PriorPeriodCarryover from './components/PriorPeriodCarryover';
 import PerformanceReport from './components/PerformanceReport';
 import ErrorBoundary from './components/ErrorBoundary';
+import StorageRecoveryBanner from './components/StorageRecoveryBanner';
+import { loadPeriodsSafely, saveWithBackup, findLatestValidBackup, buildCorruptBlob } from './utils/storageRecovery';
 import { syncPlayerData, fetchPlayerRecord, isRemoteNewer } from './pocketbase';
 import { TOTAL_PERIODS, isAllLedgersEmpty, buildPeriodsSummary, normalizePeriods, buildNextCarryover, createDefaultPeriodData } from './utils/constants';
 import { useDebounce } from 'react-use';
@@ -23,7 +25,18 @@ const safeStorage = {
   }
 };
 
+// storageRecovery 用の localStorage アダプタ（例外は呼び出し側で扱う）
+const lsAdapter = {
+  getItem: (k) => localStorage.getItem(k),
+  setItem: (k, v) => localStorage.setItem(k, v),
+  removeItem: (k) => localStorage.removeItem(k)
+};
+
 function App() {
+  // 保存データの読み込み結果（壊れていても上書きせず、退避してバナーで通知する）
+  const [initialLoad] = useState(() => loadPeriodsSafely(lsAdapter));
+  const [storageIssue, setStorageIssue] = useState(initialLoad.issue);
+
   // テーマの状態 (ダーク / ライト)
   const [theme] = useState(() => {
     const saved = safeStorage.getItem('mg_theme');
@@ -35,17 +48,9 @@ function App() {
 
   // 全期 (1期〜5期) のデータ管理
   const [periods, setPeriods] = useState(() => {
-    const saved = safeStorage.getItem('mg_periods_data');
-    if (saved) {
-      try {
-        // 旧データ（キー1〜5のみ）や欠損フィールドを20期分に補完（第6期以降の白画面対策）
-        return normalizePeriods(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse periods data", e);
-      }
-    }
-    // 初期データ (1期〜20期)
-    return normalizePeriods(null);
+    // 旧データ（キー1〜5のみ）や欠損フィールドを20期分に補完（第6期以降の白画面対策）
+    // 読み込み失敗時は null → 初期データ（ただし blocking の間は保存しない）
+    return normalizePeriods(initialLoad.periods);
   });
 
   // 現在の期 (1〜5)
@@ -128,8 +133,39 @@ function App() {
 
   // データ変更時に localStorage に保存
   useEffect(() => {
-    safeStorage.setItem('mg_periods_data', JSON.stringify(periods));
-  }, [periods]);
+    // 読み込み失敗中は、初期データで壊れた元データを上書きしない
+    if (storageIssue?.blocking) return;
+    try {
+      saveWithBackup(lsAdapter, 'mg_periods_data', JSON.stringify(periods));
+    } catch (e) {
+      console.error('[storage] 保存に失敗しました', e);
+    }
+  }, [periods, storageIssue]);
+
+  // 保存データ復旧バナーの操作
+  const handleStorageRestore = () => {
+    const backup = findLatestValidBackup(lsAdapter, 'mg_periods_data');
+    if (!backup) return;
+    if (!storageIssue?.blocking && !window.confirm('壊れていない期も含め、予備のスナップショットの内容に置き換えます。よろしいですか？')) return;
+    setPeriods(normalizePeriods(backup.periods));
+    setStorageIssue(null);
+  };
+  const handleStorageDownload = () => {
+    if (!storageIssue) return;
+    const url = URL.createObjectURL(buildCorruptBlob(storageIssue));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mg_corrupt_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const handleStorageReset = () => {
+    if (!window.confirm('保存データを初期化して最初から始めます。壊れたデータは退避済みですが、よろしいですか？')) return;
+    setPeriods(normalizePeriods(null));
+    setStorageIssue(null);
+  };
 
   useEffect(() => {
     safeStorage.setItem('mg_current_period', String(currentPeriod));
@@ -452,6 +488,13 @@ function App() {
 
   return (
     <div className="phone-shell">
+      <StorageRecoveryBanner
+        issue={storageIssue}
+        onRestore={handleStorageRestore}
+        onDownload={handleStorageDownload}
+        onReset={handleStorageReset}
+        onDismiss={() => setStorageIssue(null)}
+      />
       {/* アプリ共通ヘッダー */}
       <header className="app-header">
         <div className="app-header__content">
