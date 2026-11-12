@@ -258,9 +258,16 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
     const group = getEntryGroup(ledger, entry);
     const nos = getGroupVoucherNos(group);
-    const label = nos.length > 0 ? nos.map(n => `#${n}`).join('・') : 'この取引';
-    const extra = group.length > 1 ? `\n（同じ登録でできた${group.length}行をまとめて削除します）` : '';
-    if (!window.confirm(`${label} を削除して、入力し直しますか？${extra}`)) return;
+    const label = nos.length > 0 ? nos.map(n => `#${n}`).join('・') : '';
+    const catMeta = CATEGORIES[entry.category];
+    const name = entry.customName || catMeta?.actionName || catMeta?.label || entry.category;
+    const ok = window.confirm(
+      `「${name}（#${entry.voucherNo ?? '—'}）¥${Number(entry.amount || 0).toLocaleString()}万」を取り消して、`
+      + `入力し直しますか？\n\n`
+      + `この取引を帳簿から削除し、同じ項目の入力画面を開きます。`
+      + (group.length > 1 ? `\n※ 同じ登録でできた${group.length}行（${label || '関連処理'}）をまとめて取り消します。` : '')
+    );
+    if (!ok) return;
 
     const { form: restored, note } = entryToFormState(entry, group);
     const { ledger: nextLedger } = removeEntryWithPositions(ledger, entry);
@@ -275,7 +282,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     handleCategorySelect(restored.selectedCategory);
     applyRestoredForm(restored);
 
-    setRedoInfo({ voucherNo: nos.length > 0 ? nos[0] : null, voucherLabel: nos.length > 0 ? label : '', note });
+    setRedoInfo({ voucherNo: nos.length > 0 ? nos[0] : null, voucherLabel: label, note });
     setFormError(null);
     setShowCalculator(false);
     setShowAddModal(true);

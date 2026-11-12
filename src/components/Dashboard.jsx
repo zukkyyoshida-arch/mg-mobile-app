@@ -4,7 +4,8 @@
 // ユニットテストから直接 import できるよう、あえてコンポーネントと
 // 同一ファイルから export している。Fast Refresh の対象外になるだけで動作に影響しない。
 import { useState, useEffect } from 'react';
-import { subscribeToRoom, archiveRoom } from '../pocketbase';
+import { subscribeToRoom, archiveRoom, createRoom } from '../sync/client';
+import { getTeacherInfo, setTeacherInfo } from '../sync/store';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { useNavigate } from 'react-router-dom';
@@ -83,6 +84,11 @@ export default function Dashboard() {
   });
   const [selectedTab, setSelectedTab] = useState('overall');
   const [playersData, setPlayersData] = useState({});
+  // 講師キー（このブラウザに保存。別端末で開くときは入力する）
+  const [teacherKey, setTeacherKey] = useState(() => getTeacherInfo(localStorage.getItem('dashboard_room_id') || '')?.teacherKey || '');
+  const [roomPin, setRoomPin] = useState(() => getTeacherInfo(localStorage.getItem('dashboard_room_id') || '')?.pin || '');
+  const [syncError, setSyncError] = useState('');
+  const [createdInfo, setCreatedInfo] = useState(null);
   const { width, height } = useWindowSize();
 
   // 状態が変わるたびにlocalStorageに保存
@@ -100,11 +106,12 @@ export default function Dashboard() {
     const cleanRoom = roomId.trim();
     // Firebaseからのリアルタイム同期
     const unsubscribe = subscribeToRoom(cleanRoom, (data) => {
+      setSyncError('');
       setPlayersData(data || {});
-    });
+    }, { teacherKey, onError: (e) => setSyncError(e.status === 403 ? '講師キーが正しくありません' : '受信エラー: ' + e.message) });
 
     return () => unsubscribe();
-  }, [roomId, isSubscribed]);
+  }, [roomId, isSubscribed, teacherKey]);
 
   // 総合(overall)基準でソート済みプレイヤーリストを算出する（アーカイブ保存専用、selectedTabに非依存）
   const getOverallPlayers = () => {
@@ -169,14 +176,49 @@ export default function Dashboard() {
               style={{ fontSize: '1.5rem', padding: '16px', textAlign: 'center' }}
             />
           </div>
+          <div className="form-group">
+            <label className="form-label">講師キー</label>
+            <input
+              type="password"
+              autoComplete="off"
+              className="form-input"
+              value={teacherKey}
+              onChange={(e) => setTeacherKey(e.target.value.trim())}
+              placeholder="ルーム作成時に表示されたキー"
+            />
+          </div>
           <button 
             className="btn-primary" 
             style={{ width: '100%', padding: '16px', fontSize: '1.2rem', marginTop: '20px' }}
-            onClick={() => setIsSubscribed(true)}
-            disabled={!roomId}
+            onClick={() => { if (teacherKey) setTeacherInfo(roomId.trim(), { ...(getTeacherInfo(roomId.trim()) || {}), teacherKey }); setIsSubscribed(true); }}
+            disabled={!roomId || !teacherKey}
           >
             モニタリング開始
           </button>
+          <button
+            className="btn-secondary"
+            style={{ width: '100%', padding: '16px', fontSize: '1.2rem', marginTop: '12px' }}
+            disabled={!roomId.trim()}
+            onClick={async () => {
+              if (!window.confirm(`ルーム『${roomId.trim()}』を新しく作成します。よろしいですか？`)) return;
+              try {
+                const r = await createRoom(roomId.trim());
+                setTeacherKey(r.teacherKey);
+                setRoomPin(r.pin);
+                setCreatedInfo(r);
+              } catch (e) {
+                alert('作成できませんでした: ' + e.message);
+              }
+            }}
+          >
+            このルームIDで新しく作成（講師）
+          </button>
+          {createdInfo && (
+            <div style={{ marginTop: '16px', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '10px', fontSize: '0.95rem', lineHeight: 1.7, wordBreak: 'break-all' }}>
+              <div>ルームPIN（参加者に伝える）：<strong style={{ fontSize: '1.4rem' }}>{createdInfo.pin}</strong></div>
+              <div>講師キー（他の人に見せない・この端末に保存済み）：<strong>{createdInfo.teacherKey}</strong></div>
+            </div>
+          )}
           <button 
             onClick={() => navigate('/')}
             className="btn-secondary"
@@ -213,12 +255,14 @@ export default function Dashboard() {
           </button>
             <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', padding: '8px 12px', background: 'var(--surface-subtle)', border: '1px solid var(--border-glass)', borderRadius: '999px' }}>
               ルームID: <strong style={{ color: 'var(--text-primary)' }}>{roomId}</strong>
+              {roomPin && <> ／ PIN: <strong style={{ color: 'var(--text-primary)' }}>{roomPin}</strong></>}
             </span>
+          {syncError && <span style={{ color: '#b91c1c', fontWeight: 700 }}>{syncError}</span>}
           <button
             onClick={() => {
               const overallPlayers = getOverallPlayers();
               if(window.confirm(`${overallPlayers.length}名の総合成績を保存します。よろしいですか？`)) {
-                archiveRoom(roomId, overallPlayers)
+                archiveRoom(roomId, overallPlayers, teacherKey)
                   .then(() => alert('✅ 成績をアーカイブに保存しました！'))
                   .catch(e => alert('保存に失敗しました: ' + e.message));
               }
