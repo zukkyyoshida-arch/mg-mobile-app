@@ -299,7 +299,7 @@ function PriorPeriodCarryover({
                 <h4 style={{ fontSize: '0.85rem', color: 'var(--mg-purple)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>固定資産（⑭機械・設備）</h4>
                 <div className="grid-3" style={{ marginBottom: '8px' }}>
                   <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.65rem' }}>大型機械 (台)</label>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>大型機械 (台)</label>
                     <input
                       type="number"
                       inputMode="numeric"
@@ -311,7 +311,7 @@ function PriorPeriodCarryover({
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.65rem' }}>小型機械 (台)</label>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>小型機械 (台)</label>
                     <input
                       type="number"
                       inputMode="numeric"
@@ -323,7 +323,7 @@ function PriorPeriodCarryover({
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.65rem' }}>アタッチ (個)</label>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>アタッチ (個)</label>
                     <input
                       type="number"
                       inputMode="numeric"

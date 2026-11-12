@@ -205,7 +205,7 @@ function ManagementPlan({ carryover, onUpdateBudget, results, currentPeriod }) {
 
   const renderInput = (field, opts = {}) => (
     <div style={{ display: 'grid', gap: '6px' }}>
-      <label style={{ fontSize: '0.74rem', lineHeight: 1.35, color: 'var(--text-secondary)', fontWeight: '600' }}>{opts.label}</label>
+      <label style={{ fontSize: '0.75rem', lineHeight: 1.35, color: 'var(--text-secondary)', fontWeight: '600' }}>{opts.label}</label>
       <input
         type="number"
         inputMode="numeric"
@@ -222,7 +222,7 @@ function ManagementPlan({ carryover, onUpdateBudget, results, currentPeriod }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <div>
           <div style={{ fontSize: '0.86rem', fontWeight: '800', color: 'var(--text-primary)' }}>{group.label}</div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>必要な項目だけ順番に入力</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>必要な項目だけ順番に入力</div>
         </div>
         <div style={{ fontSize: '0.82rem', fontWeight: '800', color: 'var(--mg-blue)' }}>¥{activeResult[group.key].toLocaleString()}万</div>
       </div>
@@ -236,7 +236,7 @@ function ManagementPlan({ carryover, onUpdateBudget, results, currentPeriod }) {
               {row.rateField && renderInput(row.rateField, { label: `金利 (${row.rateSuffix || '%'})` })}
             </div>
             {row.multiplier && (
-              <div style={{ marginTop: '8px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                 1件あたり {row.multiplier}万で計算
               </div>
             )}
@@ -245,10 +245,10 @@ function ManagementPlan({ carryover, onUpdateBudget, results, currentPeriod }) {
       </div>
       {group.key === 'nonOperatingBudget' && activeResult.autoInterestCost > 0 && (
         <div style={{ marginTop: '10px', padding: '10px', background: '#fff7ed', border: '1px dashed #fb923c', borderRadius: '10px' }}>
-          <div style={{ fontSize: '0.74rem', fontWeight: '700', color: '#c2410c' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#c2410c' }}>
             前期繰越からの自動計上: 支払利息 {activeResult.autoInterestCost.toLocaleString()}万
           </div>
-          <div style={{ marginTop: '4px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+          <div style={{ marginTop: '4px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             前期繰越の借入残高 {(carryover?.loan || 0).toLocaleString()}万 × {Math.round(activeResult.autoInterestRate * 100)}%（手入力の営業外費用とは別に固定費Fへ自動加算・手入力欄では編集不可）
           </div>
         </div>
@@ -399,18 +399,18 @@ function ManagementPlan({ carryover, onUpdateBudget, results, currentPeriod }) {
             <div style={{ fontSize: '0.92rem', fontWeight: '800', marginBottom: '12px' }}>6. 予算サマリー</div>
             <div style={{ display: 'grid', gap: '8px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
-                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>P</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedP}</div></div>
-                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>vP</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedVP}</div></div>
-                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>mP / Q</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedMP.toLocaleString()} / {activeResult.requiredQ}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>P</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedP}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>vP</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedVP}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>mP / Q</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedMP.toLocaleString()} / {activeResult.requiredQ}</div></div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>PQ</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedSales.toLocaleString()}</div></div>
-                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>vPQ</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedVariableCost.toLocaleString()}</div></div>
-                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>mPQ</div><div style={{ fontWeight: '800', marginTop: '6px', color: 'var(--mg-blue)' }}>¥{activeResult.requiredMQ.toLocaleString()}</div></div>
-                <div style={cardStyle}><div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>F / G</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.fixedCostTotal.toLocaleString()} / ¥{activeResult.targetG.toLocaleString()}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>PQ</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedSales.toLocaleString()}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>vPQ</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.plannedVariableCost.toLocaleString()}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>mPQ</div><div style={{ fontWeight: '800', marginTop: '6px', color: 'var(--mg-blue)' }}>¥{activeResult.requiredMQ.toLocaleString()}</div></div>
+                <div style={cardStyle}><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>F / G</div><div style={{ fontWeight: '800', marginTop: '6px' }}>¥{activeResult.fixedCostTotal.toLocaleString()} / ¥{activeResult.targetG.toLocaleString()}</div></div>
               </div>
               <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>f/m</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>f/m</span>
                 <strong>{activeResult.fmRatio}%</strong>
               </div>
             </div>

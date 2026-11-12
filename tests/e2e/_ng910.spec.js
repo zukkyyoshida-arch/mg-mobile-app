@@ -42,7 +42,7 @@ test.describe('NG-9 と NG-10(a) の修正', () => {
   });
 
   test('NG-10(a): リセット説明が「全20期分」になっている', async ({ page }) => {
-    await page.getByRole('button', { name: '設定' }).click();
+    await page.getByRole('button', { name: '設定', exact: true }).click();
     const body = await page.locator('body').innerText();
     const line = body.split('\n').find(l => l.includes('すべての取引データ'));
     console.log('NG-10 リセット説明:', JSON.stringify(line));

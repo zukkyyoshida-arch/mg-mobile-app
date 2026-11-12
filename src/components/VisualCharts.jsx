@@ -392,14 +392,14 @@ function VisualCharts({ results, carryover, ledger }) {
             <div style={resourceRowStyle}>
               <div>
                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '4px' }}>工場(W)</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem', fontVariantNumeric: 'tabular-nums' }}>{workerBeg} + {workerIn} - {workerOut}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontVariantNumeric: 'tabular-nums' }}>{workerBeg} + {workerIn} - {workerOut}</div>
               </div>
               <span style={{ fontWeight: '900', fontSize: '1.08rem', color: 'var(--mg-blue)', fontVariantNumeric: 'tabular-nums' }}>{workerEnd} 人</span>
             </div>
             <div style={{ ...resourceRowStyle, borderBottom: 'none' }}>
               <div>
                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '4px' }}>営業(S)</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem', fontVariantNumeric: 'tabular-nums' }}>{salesmanBeg} + {salesmanIn} - {salesmanOut}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontVariantNumeric: 'tabular-nums' }}>{salesmanBeg} + {salesmanIn} - {salesmanOut}</div>
               </div>
               <span style={{ fontWeight: '900', fontSize: '1.08rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{salesmanEnd} 人</span>
             </div>

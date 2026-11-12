@@ -237,7 +237,7 @@ function AddTransactionModal({
 )}
 
                   {/* リスクカード */}
-                  <span style={{ fontSize: '0.65rem', color: '#9c27b0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginTop: '16px', marginBottom: '6px' }}>🃏 リスクカード</span>
+                  <span style={{ fontSize: '0.75rem', color: '#9c27b0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginTop: '16px', marginBottom: '6px' }}>🃏 リスクカード</span>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     <button
                       type="button"
@@ -429,7 +429,7 @@ function AddTransactionModal({
                             <span style={{ fontWeight: 'bold', marginBottom: '4px', color: 'var(--text-primary)' }}>{btn.label}</span>
                             {/* 説明文の色: 非選択(btn-secondary=白背景)では旧ダークテーマの白文字が
                                 見えなくなるため、選択中(青背景)のみ白系・非選択は text-secondary */}
-                            <span style={{ fontSize: '0.65rem', color: riskAction === btn.id ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)' }}>{btn.desc}</span>
+                            <span style={{ fontSize: '0.75rem', color: riskAction === btn.id ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)' }}>{btn.desc}</span>
                           </button>
                         ))}
                       </div>
@@ -558,7 +558,7 @@ function AddTransactionModal({
                           >
                             <span style={{ fontWeight: 'bold', marginBottom: '4px', color: 'var(--text-primary)' }}>{btn.label}</span>
                             {/* 説明文の色: 非選択(白背景)で白文字が見えない問題の修正（ポジティブ側と同じ） */}
-                            <span style={{ fontSize: '0.65rem', color: riskAction === btn.id ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)' }}>{btn.desc}</span>
+                            <span style={{ fontSize: '0.75rem', color: riskAction === btn.id ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)' }}>{btn.desc}</span>
                           </button>
                         ))}
                       </div>
@@ -864,7 +864,7 @@ function AddTransactionModal({
                             <div>
                               <div style={{ fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 {chip.name}
-                                {isBought && <span style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px' }}>購入済</span>}
+                                {isBought && <span style={{ fontSize: '0.75rem', padding: '2px 6px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px' }}>購入済</span>}
                               </div>
                               <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{chip.desc}</div>
                             </div>
