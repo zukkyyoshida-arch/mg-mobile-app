@@ -77,14 +77,6 @@ function PeriodEndWizard({ carryover, ledger, actuals, onUpdateActuals, onUpdate
   const wipTheoretical = results.wip.endingCount;
   const prodTheoretical = results.prod.endingCount;
 
-  // 在庫不一致チェック
-  const safeMat = actualMaterials === '' ? 0 : actualMaterials;
-  const safeWip = actualWip === '' ? 0 : actualWip;
-  const safeProd = actualProduct === '' ? 0 : actualProduct;
-
-  const matMatches = matTheoretical === safeMat;
-  const wipMatches = wipTheoretical === safeWip;
-  const prodMatches = prodTheoretical === safeProd;
 
   const handleNextStep = () => {
     const safeMat = actualMaterials === '' ? 0 : actualMaterials;

@@ -1,21 +1,32 @@
 // 期の総数はアプリ全体で共有の定数を参照する（期選択グリッドとリセット説明文の両方で使う）。
 // 以前は説明文に「全5期分」とハードコードされており、実際は20期分あるため
 // データ全削除の説明が実態と食い違っていた（押す前に読む文章なので危険）。
+import { useState } from 'react';
 import { TOTAL_PERIODS } from '../utils/constants';
 // toSafeInt: 数値入力の防御的サニタイズ（非有限=Infinity/NaN拒否・下限0・整数化）。
 // 期首繰越は資本金・現金・在庫・人数などすべて0以上の整数が前提のため、
 // 負数や 1e999（→Infinity→JSON保存でnull化→リロードで0円化）をここで確実に落とす。
 import { toSafeInt } from '../utils/inputSanitizers';
 
+const stepBtn = {
+  minWidth: '44px', minHeight: '44px', fontSize: '1rem', fontWeight: 700, cursor: 'pointer',
+  background: 'var(--bg-secondary, transparent)', color: 'var(--text-primary)',
+  border: '1px solid var(--border-color, rgba(128,128,128,0.4))', borderRadius: '10px'
+};
+
 function PriorPeriodCarryover({
   carryover, 
   onUpdateCarryover, 
   currentPeriod, 
+  periods,
   setCurrentPeriod, 
   rollForwardFromPrevious, 
   resetAllData 
 }) {
   
+  const [listOpen, setListOpen] = useState(false);
+  const hasData = (p) => (periods?.[p]?.ledger?.length || 0) > 0;
+
   const handleInputChange = (field, value) => {
     const numVal = value === '' ? 0 : toSafeInt(value);
     onUpdateCarryover({
@@ -37,18 +48,49 @@ function PriorPeriodCarryover({
           </h3>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', margin: '12px 0' }}>
-          {Array.from({ length: TOTAL_PERIODS }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              onClick={() => setCurrentPeriod(p)}
-              className={`btn-premium ${currentPeriod === p ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ padding: '10px 0', fontSize: '0.85rem' }}
-            >
-              {p}期
-            </button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0' }}>
+          <button
+            type="button"
+            aria-label="前の期へ"
+            disabled={currentPeriod <= 1}
+            onClick={() => setCurrentPeriod(currentPeriod - 1)}
+            style={{ ...stepBtn, opacity: currentPeriod <= 1 ? 0.4 : 1 }}
+          >◀</button>
+          <button
+            type="button"
+            aria-expanded={listOpen}
+            onClick={() => setListOpen(o => !o)}
+            style={{ ...stepBtn, flex: 1, minWidth: 0 }}
+          >
+            第{currentPeriod}期 {hasData(currentPeriod) && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>（取引あり）</span>} {listOpen ? '▲' : '▼'}
+          </button>
+          <button
+            type="button"
+            aria-label="次の期へ"
+            disabled={currentPeriod >= TOTAL_PERIODS}
+            onClick={() => setCurrentPeriod(currentPeriod + 1)}
+            style={{ ...stepBtn, opacity: currentPeriod >= TOTAL_PERIODS ? 0.4 : 1 }}
+          >▶</button>
         </div>
+
+        {listOpen && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', marginBottom: '8px' }}>
+              {Array.from({ length: TOTAL_PERIODS }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => { setCurrentPeriod(p); setListOpen(false); }}
+                  className={`btn-premium ${currentPeriod === p ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '0', minHeight: '44px', fontSize: '0.85rem', position: 'relative' }}
+                >
+                  {p}期
+                  {hasData(p) && <span aria-hidden="true" style={{ position: 'absolute', top: '5px', right: '5px', width: '7px', height: '7px', borderRadius: '50%', background: 'var(--mg-green, #059669)' }} />}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>● 緑の点は取引データのある期です</div>
+          </div>
+        )}
 
         {currentPeriod > 1 && (
           <button

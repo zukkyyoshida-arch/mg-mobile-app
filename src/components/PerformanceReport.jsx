@@ -29,10 +29,10 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
           .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
           .kpi-card { background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 12px; text-align: center; }
           .kpi-value { font-size: 1.25rem; font-weight: bold; color: var(--text-primary); margin: 6px 0 2px; }
-          .kpi-label { font-size: 0.7rem; color: var(--text-secondary); }
+          .kpi-label { font-size: 0.75rem; color: var(--text-secondary); }
           .rank-badge { font-size: 2.5rem; font-weight: 900; background-clip: text; -webkit-background-clip: text; color: transparent; display: inline-block; }
           .bar-container { width: 100%; height: 20px; background: #f3f4f6; border-radius: 10px; overflow: hidden; display: flex; margin-top: 6px; }
-          .bar-fill { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold; color: rgba(255,255,255,0.9); }
+          .bar-fill { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; color: rgba(255,255,255,0.9); }
         `}
       </style>
 
@@ -197,12 +197,12 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
           <div className="kpi-card">
             <div className="kpi-label">P (平均販売単価)</div>
             <div className="kpi-value" style={{ color: 'var(--mg-blue)' }}>¥{analytics.P.toFixed(1)}万</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>総販売数: {analytics.totals.salesQty}個</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>総販売数: {analytics.totals.salesQty}個</div>
           </div>
           <div className="kpi-card">
             <div className="kpi-label">V (平均仕入単価)</div>
             <div className="kpi-value" style={{ color: 'var(--mg-green)' }}>¥{analytics.V.toFixed(1)}万</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>総仕入数: {analytics.totals.purchaseQty}個</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>総仕入数: {analytics.totals.purchaseQty}個</div>
           </div>
         </div>
         
@@ -210,7 +210,7 @@ export default function PerformanceReport({ ledger, results, prevLedger, prevRes
           <div className="kpi-card" style={{ flex: 1, borderBottom: '3px solid var(--mg-pink)' }}>
             <div className="kpi-label">M (1個あたり粗利)</div>
             <div className="kpi-value" style={{ color: 'var(--mg-pink)' }}>¥{analytics.M.toFixed(1)}万</div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>高いほど利益が出やすい体質</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>高いほど利益が出やすい体質</div>
           </div>
         </div>
 

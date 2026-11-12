@@ -264,6 +264,9 @@ function ManagementPlan({ carryover, onUpdateBudget, results, currentPeriod }) {
     const isPositive = isCost ? gap <= 0 : gap >= 0;
     const gapColor = gap === 0 ? 'var(--text-secondary)' : (isPositive ? 'var(--mg-green)' : '#ef4444');
     const sign = gap > 0 ? '+' : '';
+    // 色だけに頼らないよう、記号と文字を併記する（▲=予算より多い／▼=予算より少ない）
+    const gapIcon = gap === 0 ? '' : (gap > 0 ? '▲' : '▼');
+    const gapText = gap === 0 ? '予算どおり' : (isCost ? (gap > 0 ? '超過' : '節約') : (gap > 0 ? '上振れ' : '未達'));
     
     const rowStyle = isSubItem 
       ? { display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr', gap: '4px', padding: '6px 0', borderBottom: '1px dashed rgba(0,0,0,0.05)', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)' }
@@ -274,7 +277,10 @@ function ManagementPlan({ carryover, onUpdateBudget, results, currentPeriod }) {
         <div style={{ fontWeight: isSubItem ? '600' : '800', color: isSubItem ? 'inherit' : 'var(--text-secondary)' }}>{label}</div>
         <div style={{ textAlign: 'right', fontWeight: '700', color: isSubItem ? 'inherit' : 'var(--text-muted)' }}>¥{budget.toLocaleString()}</div>
         <div style={{ textAlign: 'right', fontWeight: '700', color: isSubItem ? 'inherit' : 'var(--text-primary)' }}>¥{actual.toLocaleString()}</div>
-        <div style={{ textAlign: 'right', fontWeight: '900', color: gapColor }}>{sign}{gap.toLocaleString()}</div>
+        <div style={{ textAlign: 'right', fontWeight: '900', color: gapColor }}>
+          <div>{sign}{gap.toLocaleString()}</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: '700' }}>{gapIcon}{gapText}</div>
+        </div>
       </div>
     );
   };
@@ -445,8 +451,8 @@ function ManagementPlan({ carryover, onUpdateBudget, results, currentPeriod }) {
 
           <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
             <strong>💡 見方のポイント:</strong><br/>
-            利益(G)や売上(PQ/mPQ)はプラス(+)が大きいほど計画上振れ（好調）です。<br/>
-            費用(vPQ/F)はプラス(+)が大きいほど計画よりコスト超過、マイナス(-)はコスト削減を意味します。
+            利益(G)や売上(PQ/mPQ)はプラス(+)が大きいほど計画上振れ（▲上振れ＝好調、▼未達＝計画割れ）です。<br/>
+            費用(vPQ/F)はプラス(+)が大きいほど計画よりコスト超過（▲超過）、マイナス(-)はコスト削減（▼節約）を意味します。
           </div>
         </div>
       )}

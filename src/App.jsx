@@ -11,7 +11,7 @@ import { syncPlayerData, fetchPlayerRecord, isRemoteNewer } from './pocketbase';
 import { TOTAL_PERIODS, isAllLedgersEmpty, buildPeriodsSummary, normalizePeriods, buildNextCarryover, createDefaultPeriodData } from './utils/constants';
 import { useDebounce } from 'react-use';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, FileText, CalendarCheck, Target, Settings } from 'lucide-react';
+import { BookOpen, FileText, CalendarCheck, Target, Settings, CloudOff, CloudCheck, CloudAlert, RefreshCw } from 'lucide-react';
 
 // 安全な localStorage ラッパー
 const safeStorage = {
@@ -85,6 +85,17 @@ function App() {
 
   // 同期ステータス表示用
   const [syncStatus, setSyncStatus] = useState(isOffline ? 'オフライン' : '未同期');
+
+  // ヘッダーの相対時刻を更新するためのtick（表示専用）
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    const t = setTimeout(() => setNowMs(Date.now()), 0);
+    return () => clearTimeout(t);
+  }, [syncStatus]);
 
   // 「最後のリセットを取り消す」ボタン表示用（mg_reset_backup の有無・退避日時）
   const [resetBackupInfo, setResetBackupInfo] = useState(() => {
@@ -447,13 +458,40 @@ function App() {
           <div className="app-header__title-row">
             <h1 className="app-title" style={{ fontSize: '1.2rem', margin: 0 }}>戦略MG</h1>
             <span className="badge badge-blue">第{currentPeriod}期</span>
-          </div>
-          <div
-            className={`app-header__status ${syncStatus.includes('エラー') ? 'is-error' : ''}`}
-            aria-live="polite"
-          >
-            <span aria-hidden="true">☁️</span>
-            <span>{syncStatus}</span>
+            {(() => {
+              // 表示専用：既存の syncStatus 文字列と mg_last_synced_at から状態を導出（同期ロジックは変更しない）
+              let kind = 'idle';
+              if (isOffline || syncStatus === 'オフライン') kind = 'offline';
+              else if (syncStatus.includes('エラー')) kind = 'error';
+              else if (/同期中|再試行|確認中/.test(syncStatus)) kind = 'syncing';
+              else if (/同期完了|読み込み完了|同期スキップ/.test(syncStatus)) kind = 'ok';
+              const ts = Number(safeStorage.getItem('mg_last_synced_at')) || 0;
+              let rel = '';
+              if (ts > 0) {
+                const m = Math.max(0, Math.floor((nowMs - ts) / 60000));
+                rel = m < 1 ? 'たった今' : m < 60 ? `${m}分前` : m < 1440 ? `${Math.floor(m / 60)}時間前` : `${Math.floor(m / 1440)}日前`;
+              }
+              const labels = { offline: 'オフライン', error: '同期エラー', syncing: '同期中', ok: rel ? `同期済 ${rel}` : '同期済', idle: '未同期' };
+              const Icon = { offline: CloudOff, error: CloudAlert, syncing: RefreshCw, ok: CloudCheck, idle: CloudOff }[kind];
+              const detail = isOffline ? 'オフラインモード（同期なし）' : `ルーム: ${roomId || '未参加'} / プレイヤー: ${playerId || '未設定'}`;
+              return (
+                <button
+                  type="button"
+                  className={`sync-chip sync-chip--${kind}`}
+                  aria-live="polite"
+                  title={`${syncStatus}\n${detail}`}
+                  aria-label={`同期状態: ${labels[kind]}。${detail}。タップでネットワーク設定を開く`}
+                  onClick={() => {
+                    setActiveTab('settings');
+                    setTimeout(() => document.getElementById('network-settings')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+                  }}
+                >
+                  <Icon size={14} aria-hidden="true" className={kind === 'syncing' ? 'sync-chip__spin' : undefined} />
+                  <span className="sync-chip__label">{labels[kind]}</span>
+                  {!isOffline && playerId && <span className="sync-chip__who">{playerId}</span>}
+                </button>
+              );
+            })()}
           </div>
         </div>
       </header>
@@ -528,7 +566,7 @@ function App() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <span style={{ fontSize: '0.88rem', fontWeight: 'bold' }}>掛け取引ルールを有効にする</span>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                         無効にすると、2期目以降も現金取引（現金売上・仕入）のみになります。
                       </div>
                     </div>
@@ -588,14 +626,14 @@ function App() {
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
+              <div id="network-settings" className="glass-card" style={{ padding: '18px 16px', marginBottom: '20px' }}>
                 <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
                   <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.35 }}>ネットワーク設定</h3>
                 </div>
 
                 <div style={{ display: 'grid', gap: '10px', marginBottom: '14px' }}>
                   <div style={{ padding: '10px 0', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '4px' }}>同期状態</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '4px' }}>同期状態</div>
                     <div style={{ fontSize: '0.92rem', fontWeight: '800', color: syncStatus.includes('エラー') ? '#b91c1c' : 'var(--text-primary)', lineHeight: 1.4, wordBreak: 'break-word' }}>
                       {isOffline ? 'オフライン' : syncStatus}
                     </div>
@@ -603,11 +641,11 @@ function App() {
 
                   <div style={{ display: 'grid', gap: '8px' }}>
                     <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px' }}>
-                      <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginBottom: '4px' }}>ルームID</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>ルームID</div>
                       <div style={{ fontSize: '0.92rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.35 }}>{roomId || '未参加'}</div>
                     </div>
                     <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px' }}>
-                      <div style={{ fontSize: '0.69rem', color: 'var(--text-muted)', marginBottom: '4px' }}>プレイヤー名</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>プレイヤー名</div>
                       <div style={{ fontSize: '0.92rem', fontWeight: '800', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.35 }}>{playerId || '未設定'}</div>
                     </div>
                   </div>
@@ -703,7 +741,7 @@ function App() {
                   >
                     ⏪ 最後のリセットを取り消す
                   </button>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '6px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px', textAlign: 'center' }}>
                     退避日時: {resetBackupInfo.ts ? new Date(resetBackupInfo.ts).toLocaleString() : '不明'}
                   </div>
                 </div>
