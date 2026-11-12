@@ -13,9 +13,7 @@
     {
       "binding": "DB",
       "database_name": "mg-mobile-sync",
-      // 本番反映前に `npx wrangler d1 create mg-mobile-sync` が表示する database_id へ差し替える。
-      // ローカル検証（wrangler dev --local / d1 migrations apply --local）では、このままで動く。
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "5a0235d8-e0f6-467c-989d-b1f596e9841a",
       "migrations_dir": "migrations"
     }
   ],
