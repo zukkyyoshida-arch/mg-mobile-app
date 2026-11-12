@@ -3,14 +3,12 @@ import CompanyBoardMinimap from './CompanyBoardMinimap';
 import { useState, useRef, useEffect } from 'react';
 import { buildTransactionEntries, toSafeInt } from './cashledger/buildTransactionEntries';
 import {
-  buildEditedLedger,
   entryToFormState,
   getEntryGroup,
   getGroupVoucherNos,
   removeEntryWithPositions,
   restoreRemovedEntries
 } from './cashledger/editTransaction';
-import { calculateFinancials } from '../utils/calculations';
 import AddTransactionModal from './cashledger/AddTransactionModal';
 import TimelineList from './cashledger/TimelineList';
 import Toast from './Toast';
@@ -19,10 +17,11 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
   const modalContentRef = useRef(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // 「直す」（編集モード）の対象。null なら新規追加モード。
-  // { entryId, voucherNo, voucherLabel, groupSize, note }
-  // 元取引は保存するまで帳簿に残す（キャンセルしても消えない）。
-  const [editTarget, setEditTarget] = useState(null);
+  // 「入力し直す」で削除した取引の情報。null なら通常の新規追加。
+  // { voucherNo, voucherLabel, note }
+  //   voucherNo … 元の伝票番号（次の登録1回に引き継ぎ、番号の付け替わりを防ぐ）
+  //   note      … 元の値を完全には事前入力できなかったときの案内
+  const [redoInfo, setRedoInfo] = useState(null);
 
   // 登録時の検証エラー（モーダル内の送信ボタン付近にインライン表示する）。
   // { message, key } … key は同じ文言が続いたときにも再スクロールさせるため。
@@ -166,21 +165,17 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     };
     const ctx = { carryover, ledger, results, currentPeriod, transactionMode };
 
-    let result;
-    if (editTarget) {
-      const original = ledger.find(t => t.id === editTarget.entryId);
-      if (!original) {
-        setFormError({ message: '編集中の取引が帳簿に見つかりません（別の画面で削除された可能性があります）。×で閉じて、タイムラインを確認してください。', key: Date.now() });
-        return;
-      }
-      // 検証用の results は「元取引がなかったら」の帳簿で計算し直す
-      // （元取引の分まで在庫・保有台数・保険を数えて、正しい修正が弾かれるのを防ぐ）
-      result = buildEditedLedger(ctx, form, original, {
-        computeResults: (base) => calculateFinancials(carryover, base, undefined, currentPeriod)
-      });
-    } else {
-      result = buildTransactionEntries(ctx, form);
+    // 販売数の上限（在庫・販売能力）を手入力にも適用する。MAX ボタンと同じ計算。
+    const limitError = getSalesLimitError(form);
+    if (limitError) {
+      setFormError({ message: limitError, key: Date.now() });
+      return;
     }
+
+    const result = buildTransactionEntries(
+      { ...ctx, redoVoucherNo: redoInfo?.voucherNo ?? null },
+      form
+    );
 
     if (result.error) {
       setFormError({ message: result.error, key: Date.now() });
@@ -194,12 +189,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     // 新しい登録があったら、直前の削除の「元に戻す」は無効にする
     // （戻すと新しい取引と伝票番号が重なりうるため）。
     const infos = result.infoAlerts || [];
-    if (editTarget) {
-      const head = editTarget.voucherNo != null ? `#${editTarget.voucherNo} を修正しました` : '取引を修正しました';
-      setToast({ id: Date.now(), message: [head, ...infos].join('\n') });
-      closeModal();
-      return;
-    }
+    // 元番号の引き継ぎは1回だけ（2件目以降は通常の連番）
+    if (redoInfo) setRedoInfo(null);
     setToast(infos.length > 0 ? { id: Date.now(), message: infos.join('\n'), duration: 6000 } : null);
 
     // フォームリセット
@@ -211,23 +202,17 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     if (modalContentRef.current) modalContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // モーダルを閉じる。編集モードだった場合は、復元した値を新規入力へ持ち越さないよう
-  // フォームも初期化する（帳簿には一切触れない＝キャンセル）。
+  // モーダルを閉じる。「入力し直す」を途中でやめた場合は、伝票番号の引き継ぎも破棄する
+  // （別カテゴリの次の登録に元番号が誤って付くのを防ぐ）。
   const closeModal = () => {
-    if (editTarget) {
-      resetForm();
-      setEditTarget(null);
-    }
+    setRedoInfo(null);
     setFormError(null);
     setShowAddModal(false);
   };
 
-  // 新規追加モードでモーダルを開く
+  // 新規追加でモーダルを開く
   const openAddModal = (category) => {
-    if (editTarget) {
-      resetForm();
-      setEditTarget(null);
-    }
+    setRedoInfo(null);
     setFormError(null);
     setSelectedCategory(category);
     setShowAddModal(true);
@@ -260,19 +245,27 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     });
   };
 
-  // 取引の「直す」（編集モード）。
+  // 取引の「入力し直す」。
   //
-  // 元取引は消さずに、入力画面へ元の値を復元して開く。保存したときだけ元取引
-  // （組なら組ごと）を新しい内容で置き換え、伝票番号は元の番号を維持する。
-  // ×で閉じた場合は帳簿は何も変わらない。
-  // 入力画面は新規追加と同じ AddTransactionModal を使うため、検証（残高ガード等）がそのまま効く。
+  // 確認後に元取引を削除し、元の項目を選んだ状態で入力画面を開く（復元できる値は事前入力）。
+  // 1回の登録で複数行になった取引（借入＋利息、独占販売の市場別行、生産のコ＋サ など）は
+  // 全行まとめて削除し、一部が残って二重計上になるのを防ぐ。
+  // 元の伝票番号は次の登録1回に引き継ぐ。
   const handleRedoTransaction = (id) => {
     const entry = ledger.find(t => t.id === id);
     if (!entry) return;
 
     const group = getEntryGroup(ledger, entry);
-    const { form: restored, note } = entryToFormState(entry, group);
     const nos = getGroupVoucherNos(group);
+    const label = nos.length > 0 ? nos.map(n => `#${n}`).join('・') : 'この取引';
+    const extra = group.length > 1 ? `\n（同じ登録でできた${group.length}行をまとめて削除します）` : '';
+    if (!window.confirm(`${label} を削除して、入力し直しますか？${extra}`)) return;
+
+    const { form: restored, note } = entryToFormState(entry, group);
+    const { ledger: nextLedger } = removeEntryWithPositions(ledger, entry);
+    onUpdateLedger(nextLedger);
+    // 削除済みの取引を「元に戻す」トーストが残っていると、引き継いだ番号と重なりうるため閉じる
+    setToast(null);
 
     resetForm();
     // setSelectedCategory 直呼びではなく handleCategorySelect を通す。
@@ -281,13 +274,7 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
     handleCategorySelect(restored.selectedCategory);
     applyRestoredForm(restored);
 
-    setEditTarget({
-      entryId: entry.id,
-      voucherNo: nos.length > 0 ? nos[0] : null,
-      voucherLabel: nos.map(n => `#${n}`).join('・'),
-      groupSize: group.length,
-      note
-    });
+    setRedoInfo({ voucherNo: nos.length > 0 ? nos[0] : null, voucherLabel: nos.length > 0 ? label : '', note });
     setFormError(null);
     setShowCalculator(false);
     setShowAddModal(true);
@@ -395,17 +382,6 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
 
   const visibleLedger = ledger.filter(entry => entry.category !== '期首処理');
 
-  // 編集モードでは、モーダルの表示（在庫・借入上限など）も「元取引がなかったら」の帳簿で見せる
-  let modalLedger = ledger;
-  let modalResults = results;
-  if (editTarget && showAddModal) {
-    const original = ledger.find(t => t.id === editTarget.entryId);
-    if (original) {
-      const ids = new Set(getEntryGroup(ledger, original).map(t => t.id));
-      modalLedger = ledger.filter(t => !ids.has(t.id));
-      modalResults = calculateFinancials(carryover, modalLedger, undefined, currentPeriod);
-    }
-  }
 
   // 単価情報 (P, V, M) の計算
   const salesQty = results?.prod?.salesCount || 0;
@@ -595,8 +571,8 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
       {showAddModal && (
         <AddTransactionModal
           carryover={carryover}
-          ledger={modalLedger}
-          results={modalResults}
+          ledger={ledger}
+          results={results}
           currentPeriod={currentPeriod}
           transactionMode={transactionMode}
           enableCredit={enableCredit}
@@ -609,10 +585,9 @@ function CashLedger({ carryover, ledger, onUpdateLedger, results, currentPeriod,
           handleCategorySelect={handleCategorySelect}
           handleQtyPriceChange={handleQtyPriceChange}
           handleCalcBtnClick={handleCalcBtnClick}
-          editInfo={editTarget}
+          redoInfo={redoInfo}
           formError={formError}
           setShowAddModal={(open) => {
-            // ×・背景タップで閉じたとき。編集モードなら何も保存せずに終える（キャンセル）
             if (!open) closeModal();
             else setShowAddModal(true);
           }}

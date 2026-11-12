@@ -1,28 +1,42 @@
-// タイムラインの「直す（編集）」と「削除の取り消し」を支える純粋関数群。
+// タイムラインの「入力し直す」と「削除の取り消し」を支える純粋関数群。
 //
-// 以前の「直す」は、確認後に元取引を先に削除してから空の入力画面を開いていた。
-// そのため × で閉じると取引が消えたままになる事故が起きた。
-// 現在は次の流れにしている。
-//   1. 元取引は消さずに、入力画面へ元の値を復元して開く（entryToFormState）
-//   2. 保存したときだけ、元取引（組なら組ごと）を新しい内容で置き換える（buildEditedLedger）
-//   3. キャンセルしたら帳簿は一切変わらない
+// 「入力し直す」は、確認後に元取引を削除してから入力画面を開く（受講者は古い取引を
+// 消して入れ直す運用のため）。ただし次の2点を守る。
+//   1. 1回の登録で複数行になった取引（借入＋利息、独占販売の市場別行、生産のコ＋サ など）は
+//      全行まとめて削除する（一部だけ残って二重計上になるのを防ぐ）… getEntryGroup
+//   2. 入力画面は元の項目を選んだ状態で開き、復元できる値は事前入力する … entryToFormState
+// 削除後の「元に戻す」も組ごと元の位置へ戻す … removeEntryWithPositions / restoreRemovedEntries
 // React に依存しないため、ここで単体テストできる。
 import { MARKETS, ADS } from './constants';
-import { buildTransactionEntries, getNextVoucherNo } from './buildTransactionEntries';
 
 const EMPTY_MARKET_QTYS = { sapporo: 0, sendai: 0, tokyo: 0, nagoya: 0, osaka: 0, fukuoka: 0 };
 
 const toStr = (v) => (v === null || v === undefined || !Number.isFinite(Number(v)) ? '' : String(Number(v)));
 const toNum = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
-// 取引が属する組（groupId で同時登録された取引群）。組でなければ自分だけ。
+// 1回の登録で同時に作られた行の id は「<登録時刻>-<種類>」の形になる
+// （例: 1700000000000-sale-tokyo / -ko / -sa / -pac-0 / -ar / -kisho）。
+// groupId を持たない旧来の複数行登録は、この時刻部分の一致で同じ登録とみなす。
+const SUBMISSION_ID = /^(\d+)-/;
+function submissionKey(entry) {
+  const m = String(entry?.id ?? '').match(SUBMISSION_ID);
+  return m ? m[1] : null;
+}
+
+// 取引が属する組（同じ登録から生まれた全行）。組でなければ自分だけ。
+//   - groupId があれば groupId が同じ行（借入＋自動利息、リスクカードの組など）
+//   - groupId がなければ、id の登録時刻部分が同じ行（独占販売の市場別行、生産のコ＋サ など）
 export function getEntryGroup(ledger, entry) {
   if (!entry) return [];
+  const list = ledger || [];
+  let group = [];
   if (entry.groupId) {
-    const group = (ledger || []).filter(e => e.groupId === entry.groupId);
-    return group.length > 0 ? group : [entry];
+    group = list.filter(e => e.groupId === entry.groupId);
+  } else {
+    const key = submissionKey(entry);
+    if (key) group = list.filter(e => !e.groupId && submissionKey(e) === key);
   }
-  return [entry];
+  return group.length > 0 ? group : [entry];
 }
 
 // 組の伝票番号（数値・昇順）。編集後もこの番号を引き継ぐ。
@@ -31,6 +45,16 @@ export function getGroupVoucherNos(group) {
     .map(t => Number.parseInt(t.voucherNo, 10))
     .filter(n => Number.isFinite(n) && n > 0)
     .sort((a, b) => a - b);
+}
+
+// 独占販売（広告）は市場ごとに1行ずつ登録される。組の全行から市場別の数量を戻す。
+function monopolyAdQtys(group) {
+  const qtys = { ...EMPTY_MARKET_QTYS };
+  group.forEach(t => {
+    const m = String(t.id ?? '').match(/-sale-([a-z]+)$/);
+    if (m && Object.prototype.hasOwnProperty.call(qtys, m[1])) qtys[m[1]] += toNum(t.quantity);
+  });
+  return qtys;
 }
 
 // リスクカード由来の取引から、リスクカード画面の選択状態を復元する。
@@ -78,7 +102,7 @@ function riskStateFromGroup(entry, group) {
       return {
         riskTab: 'positive',
         riskAction: 'monopoly_ad',
-        riskMonopolyAdQtys: { ...EMPTY_MARKET_QTYS, [m[1]]: toNum(entry.quantity) }
+        riskMonopolyAdQtys: monopolyAdQtys(group)
       };
     }
   }
@@ -118,6 +142,14 @@ export function entryToFormState(entry, group = [entry]) {
     return {
       form: { selectedCategory: 'リスクカード' },
       note: '元の取引の種類を特定できなかったため、リスクカードの項目を選び直してください。'
+    };
+  }
+
+  // --- groupId なしで同時登録された複数行 ---
+  if (group.some(t => t.category === '期首処理')) {
+    return {
+      form: { selectedCategory: '期首処理' },
+      note: '期首処理をまとめて削除しました。期首処理を登録し直してください。'
     };
   }
 
@@ -215,18 +247,22 @@ export function entryToFormState(entry, group = [entry]) {
   }
 
   if (cat === 'コ' || cat === 'サ') {
-    return {
-      form: {
-        selectedCategory: '生産',
-        productionKo: cat === 'コ' ? toStr(entry.quantity) : '',
-        productionSa: cat === 'サ' ? toStr(entry.quantity) : ''
-      }
+    // 生産はコ（完成投入）とサ（製造投入）が同時登録される。組の両方から戻す。
+    const qtyOf = (c) => {
+      const rows = group.filter(t => t.category === c);
+      return rows.length > 0 ? toStr(rows.reduce((sum, t) => sum + toNum(t.quantity), 0)) : '';
     };
+    return { form: { selectedCategory: '生産', productionKo: qtyOf('コ'), productionSa: qtyOf('サ') } };
   }
 
   if (cat === 'PAC' || cat === 'MD' || cat === 'リサーチ') {
-    const key = cat === 'PAC' ? 'pac' : cat === 'MD' ? 'md' : 'research';
-    return { form: { selectedCategory: '緑チップ', greenChips: { pac: 0, md: 0, research: 0, [key]: 1 } } };
+    const count = (c) => group.filter(t => t.category === c).length;
+    return {
+      form: {
+        selectedCategory: '緑チップ',
+        greenChips: { pac: count('PAC'), md: count('MD'), research: count('リサーチ') }
+      }
+    };
   }
 
   if (cat === '保険') {
@@ -242,72 +278,16 @@ export function entryToFormState(entry, group = [entry]) {
   return { form: { selectedCategory: cat, amount: toStr(entry.amount) } };
 }
 
-// 編集の保存: 元取引（組なら組ごと）を、フォームから作り直した取引で置き換えた ledger を返す。
-//   - 検証（残高・在庫・保有台数など）は「元取引がなかったら」の帳簿で行う
-//     （元取引の分まで二重に数えて、正しい修正が弾かれるのを防ぐ）
-//   - 置き換えた取引は元の位置に入れる（タイムラインの並びを変えない）
-//   - 伝票番号は元の番号を順に引き継ぐ。足りない分だけ新しい番号を振る
-// options.computeResults(ledgerWithoutOriginal) を渡すと、その結果を検証用の results に使う。
-// 戻り値: buildTransactionEntries と同じ形（{ ledger, infoAlerts? } か { error }）
-export function buildEditedLedger(ctx, form, originalEntry, options = {}) {
-  const { build = buildTransactionEntries, computeResults } = options;
-  const ledger = ctx.ledger || [];
-  const group = getEntryGroup(ledger, originalEntry);
-  const ids = new Set(group.map(e => e.id));
-  if (!ledger.some(e => ids.has(e.id))) {
-    return { error: '編集しようとした取引が見つかりません。画面を閉じて、もう一度お試しください。' };
-  }
-
-  const insertAt = ledger.findIndex(e => ids.has(e.id));
-  const base = ledger.filter(e => !ids.has(e.id));
-  const voucherNos = getGroupVoucherNos(group);
-  const results = computeResults ? computeResults(base) : ctx.results;
-
-  const result = build(
-    { ...ctx, ledger: base, results, redoVoucherNo: voucherNos[0] ?? null },
-    form
-  );
-  if (!result || result.error) return result;
-
-  const added = result.ledger.slice(base.length);
-
-  // 伝票番号の引き継ぎ（組の2件目以降も元の番号を使う）。
-  // 元より件数が増えた分だけ、既存・引き継ぎ番号と重ならない新しい番号を振る。
-  const used = new Set(
-    base.map(t => Number.parseInt(t.voucherNo, 10)).filter(n => Number.isFinite(n))
-  );
-  voucherNos.forEach(n => used.add(n));
-  let next = Math.max(getNextVoucherNo(base), ...voucherNos.map(n => n + 1));
-  let i = 0;
-  added.forEach(tx => {
-    if (tx.category === '期首処理') return;
-    if (i < voucherNos.length) {
-      tx.voucherNo = String(voucherNos[i]);
-    } else {
-      while (used.has(next)) next++;
-      tx.voucherNo = String(next);
-      used.add(next);
-      next++;
-    }
-    i++;
-  });
-
-  const replaced = [...base.slice(0, insertAt), ...added, ...base.slice(insertAt)];
-  return { ...result, ledger: replaced };
-}
-
 // 削除: 取り除いた取引と元の位置を返す（「元に戻す」用）。
-// 組（groupId）は組ごと取り除く（removeEntry と同じ規則）。
+// 同じ登録から生まれた行（getEntryGroup）はまとめて取り除く。
 export function removeEntryWithPositions(ledger, entry) {
   const list = ledger || [];
   if (!entry) return { ledger: list, removed: [] };
-  const match = entry.groupId
-    ? (e) => e.groupId === entry.groupId
-    : (e) => e.id === entry.id;
+  const ids = new Set(getEntryGroup(list, entry).map(e => e.id));
   const removed = [];
   const kept = [];
   list.forEach((e, index) => {
-    if (match(e)) removed.push({ entry: e, index });
+    if (ids.has(e.id)) removed.push({ entry: e, index });
     else kept.push(e);
   });
   return { ledger: kept, removed };

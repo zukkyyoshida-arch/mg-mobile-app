@@ -775,3 +775,37 @@ describe('同時登録の組（groupId）と一括削除', () => {
     expect(removeEntry(res.ledger, fee)).toHaveLength(0);
   });
 });
+
+describe('buildTransactionEntries - 保険ルール統一（タイムラインと集計の一致）', () => {
+  const risk = (action) => makeForm({ selectedCategory: 'リスクカード', riskTab: 'negative', riskAction: action });
+
+  it('被害0個の火災のあと盗難しても、消費済み扱いにならず保険金が出る', () => {
+    const ledger = [{ category: '保険', quantity: 1, amount: 20 }, { category: '火災', quantity: 0, amount: 0 }];
+    const res = buildTransactionEntries(makeCtx({ results: { prod: { endingCount: 5 } }, ledger }), risk('theft'));
+    expect(res.ledger.find(e => e.category === '特別利益').amount).toBe(20);
+  });
+
+  it('被害0個の火災では保険金エントリが出ない', () => {
+    const ledger = [{ category: '保険', quantity: 1, amount: 20 }];
+    const res = buildTransactionEntries(makeCtx({ results: { mat: { endingCount: 0 } }, ledger }), risk('fire'));
+    expect(res.ledger.find(e => e.category === '特別利益')).toBeUndefined();
+  });
+
+  it('被害0個の盗難のあと被害のある火災で保険金が出る（チップは消費されていない）', () => {
+    const ledger = [
+      { category: '保険', quantity: 1, amount: 20 }, { category: '盗難', quantity: 0, amount: 0 },
+      { category: 'ツ', quantity: 3, amount: 30 },
+    ];
+    const res = buildTransactionEntries(makeCtx({ results: { mat: { endingCount: 3 } }, ledger }), risk('fire'));
+    expect(res.ledger.find(e => e.category === '特別利益').amount).toBe(24);
+  });
+
+  it('消費済みの保険では2回目の盗難に保険金が出ない', () => {
+    const ledger = [
+      { category: 'ツ', quantity: 4, amount: 40 }, { category: 'コ', quantity: 4, amount: 4 }, { category: 'サ', quantity: 4, amount: 4 },
+      { category: '保険', quantity: 1, amount: 20 }, { category: '盗難', quantity: 2, amount: 0 },
+    ];
+    const res = buildTransactionEntries(makeCtx({ results: { prod: { endingCount: 2 } }, ledger }), risk('theft'));
+    expect(res.ledger.find(e => e.category === '特別利益')).toBeUndefined();
+  });
+});
